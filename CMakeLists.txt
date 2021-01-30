@@ -16,9 +16,10 @@ include("${CMAKE_BINARY_DIR}/conan.cmake")
 
 conan_cmake_run(CONANFILE "conanfile.txt" BASIC_SETUP UPDATE BUILD missing)
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+find_package(assimp)
+find_package(fmt)
 find_package(glfw3)
 find_package(glm)
-find_package(assimp)
 
 include("${CMAKE_SOURCE_DIR}/src/CMakeLists.txt")
 include("${CMAKE_SOURCE_DIR}/include/imgui/CMakeLists.txt")
@@ -54,7 +55,7 @@ set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)
 
 target_include_directories(cornell_box PRIVATE include)
-target_link_libraries(cornell_box PRIVATE glfw::glfw glm::glm assimp::assimp)
+target_link_libraries(cornell_box PRIVATE assimp::assimp fmt::fmt glfw::glfw glm::glm)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang|AppleClang|GNU)
     target_compile_options(cornell_box PRIVATE -Wall -Wextra -Wpedantic -Wunreachable-code)
