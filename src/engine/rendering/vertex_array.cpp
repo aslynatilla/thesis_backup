@@ -48,7 +48,7 @@ namespace engine{
                     break;
                 }
                 case ShaderDataType::None:
-                    fmt::print(fg(fmt::color::red), "[VERTEX ARRAY] Unknown ShaderDataType!");
+                    fmt::print("[VERTEX ARRAY] Unknown ShaderDataType!");
             }
             ++vbo_index;
         }

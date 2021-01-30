@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_SHADER_H
-#define IES_PARSER_SHADER_H
+#ifndef SHADER_H
+#define SHADER_H
 
 #include <fmt/core.h>
 #include <fmt/color.h>
@@ -54,4 +54,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_SHADER_H
+#endif //SHADER_H

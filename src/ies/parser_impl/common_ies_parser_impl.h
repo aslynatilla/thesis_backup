@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_COMMON_IES_PARSER_IMPL_H
-#define REWORKED_PARSER_COMMON_IES_PARSER_IMPL_H
+#ifndef COMMON_IES_PARSER_IMPL_H
+#define COMMON_IES_PARSER_IMPL_H
 
 #include <concepts>
 #include <optional>
@@ -62,4 +62,4 @@ namespace ies::parser_impl {
 
 }
 
-#endif //REWORKED_PARSER_COMMON_IES_PARSER_IMPL_H
+#endif //COMMON_IES_PARSER_IMPL_H

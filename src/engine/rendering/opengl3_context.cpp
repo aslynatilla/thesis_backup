@@ -9,7 +9,7 @@ namespace engine {
 
         int initialization_status = gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
         if (initialization_status == 0) {
-            fmt::print(fg(fmt::color::red), "[OPENGL3 CONTEXT] Failed to initialize GLAD\n");
+            fmt::print("[OPENGL3 CONTEXT] Failed to initialize GLAD\n");
         }
     }
 

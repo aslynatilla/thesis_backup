@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES02_PARSER_IMPL_H
-#define REWORKED_PARSER_IES02_PARSER_IMPL_H
+#ifndef IES02_PARSER_IMPL_H
+#define IES02_PARSER_IMPL_H
 
 #include "common_ies_parser_impl.h"
 #include "common_string_view_manipulation.h"
@@ -17,4 +17,4 @@ namespace ies::parser_impl {
         static bool no_more_entry_lines(const std::string_view& line);
     };
 }
-#endif //REWORKED_PARSER_IES02_PARSER_IMPL_H
+#endif //IES02_PARSER_IMPL_H

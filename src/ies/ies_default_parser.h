@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_DEFAULT_PARSER_H
-#define REWORKED_PARSER_IES_DEFAULT_PARSER_H
+#ifndef IES_DEFAULT_PARSER_H
+#define IES_DEFAULT_PARSER_H
 
 #include "ies_parsing.h"
 
@@ -24,4 +24,4 @@ namespace ies {
 }
 
 
-#endif //REWORKED_PARSER_IES_DEFAULT_PARSER_H
+#endif //IES_DEFAULT_PARSER_H

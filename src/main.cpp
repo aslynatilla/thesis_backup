@@ -1,7 +1,4 @@
-#include <iostream>
-
-#include <glad/glad.h>
-#include <glfw/glfw3.h>
+#include "application.h"
 
 #pragma warning(disable : 4061)
 #include <assimp/Importer.hpp>
@@ -12,9 +9,14 @@ int main(){
     Assimp::Importer test_importer;
     const aiScene* cornell_box_scene = test_importer.ReadFile("resources/cornell_box_multimaterial.obj", 0);
     if(cornell_box_scene != nullptr && cornell_box_scene->HasMeshes()){
-        std::cout << "Found " << cornell_box_scene->mNumMeshes << " meshes.\n";
+        fmt::print("[MAIN] Found {} meshes.\n", cornell_box_scene->mNumMeshes);
 
-        if(cornell_box_scene->mNumMaterials > 0) std::cout << "Found " << cornell_box_scene->mNumMaterials << " materials too.\n";
+        if(cornell_box_scene->mNumMaterials > 0){
+            fmt::print("[MAIN] Found {} materials too.\n", cornell_box_scene->mNumMaterials);
+        }
     }
+
+    Application built_application;
+    built_application.run();
     return 0;
 }

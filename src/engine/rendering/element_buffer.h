@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_ELEMENT_BUFFER_H
-#define IES_PARSER_ELEMENT_BUFFER_H
+#ifndef ELEMENT_BUFFER_H
+#define ELEMENT_BUFFER_H
 
 #include <glad/glad.h>
 
@@ -42,4 +42,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_ELEMENT_BUFFER_H
+#endif //ELEMENT_BUFFER_H

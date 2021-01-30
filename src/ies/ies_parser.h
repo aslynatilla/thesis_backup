@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_PARSER_H
-#define REWORKED_PARSER_IES_PARSER_H
+#ifndef IES_PARSER_H
+#define IES_PARSER_H
 
 #include "ies_parsing_chain.h"
 
@@ -16,4 +16,4 @@ namespace ies {
 
 }
 
-#endif //REWORKED_PARSER_IES_PARSER_H
+#endif //IES_PARSER_H

@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES86_PARSER_IMPL_H
-#define REWORKED_PARSER_IES86_PARSER_IMPL_H
+#ifndef IES86_PARSER_IMPL_H
+#define IES86_PARSER_IMPL_H
 
 #include "common_ies_parser_impl.h"
 #include "common_string_view_manipulation.h"
@@ -19,4 +19,4 @@ namespace ies::parser_impl {
 }
 
 
-#endif //REWORKED_PARSER_IES86_PARSER_IMPL_H
+#endif //IES86_PARSER_IMPL_H

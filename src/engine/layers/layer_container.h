@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_LAYER_CONTAINER_H
-#define IES_PARSER_LAYER_CONTAINER_H
+#ifndef LAYER_CONTAINER_H
+#define LAYER_CONTAINER_H
 
 #include "layer.h"
 
@@ -51,4 +51,4 @@ namespace engine {
 };
 
 
-#endif //IES_PARSER_LAYER_CONTAINER_H
+#endif //LAYER_CONTAINER_H

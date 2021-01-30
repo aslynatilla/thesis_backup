@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_WINDOW_EVENTS_H
-#define IES_PARSER_WINDOW_EVENTS_H
+#ifndef WINDOW_EVENTS_H
+#define WINDOW_EVENTS_H
 
 #include "event.h"
 #include "../rendering/window.h"
@@ -26,4 +26,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_WINDOW_EVENTS_H
+#endif //WINDOW_EVENTS_H

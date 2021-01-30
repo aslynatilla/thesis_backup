@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_GLFW_WINDOW_IMPL_H
-#define IES_PARSER_GLFW_WINDOW_IMPL_H
+#ifndef GLFW_WINDOW_IMPL_H
+#define GLFW_WINDOW_IMPL_H
 
 #include "window.h"
 #include "rendering_context.h"
@@ -62,4 +62,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_GLFW_WINDOW_IMPL_H
+#endif //GLFW_WINDOW_IMPL_H

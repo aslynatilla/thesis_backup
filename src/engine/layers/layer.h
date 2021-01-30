@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_LAYER_H
-#define IES_PARSER_LAYER_H
+#ifndef LAYER_H
+#define LAYER_H
 
 #include "../events/event.h"
 
@@ -17,4 +17,4 @@ namespace engine{
 
 }
 
-#endif //IES_PARSER_LAYER_H
+#endif //LAYER_H

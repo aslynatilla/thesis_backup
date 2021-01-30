@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_DATA_H
-#define REWORKED_PARSER_IES_DATA_H
+#ifndef IES_DATA_H
+#define IES_DATA_H
 
 #include <iomanip>
 
@@ -106,4 +106,4 @@ namespace ies {
     };
 }
 
-#endif //REWORKED_PARSER_IES_DATA_H
+#endif //IES_DATA_H

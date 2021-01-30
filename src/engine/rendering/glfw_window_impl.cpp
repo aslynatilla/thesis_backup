@@ -41,7 +41,7 @@ namespace engine {
         if (app_window_count == 0) {
             int successful_initialization = glfwInit();
             if (!successful_initialization) {
-                fmt::print(fg(fmt::color::red), "[GLFW WINDOW] Failed to create GLFW window.\n");
+                fmt::print("[GLFW WINDOW] Failed to create GLFW window.\n");
                 glfwTerminate();
             }
             //  check how hints are set here, else enable this

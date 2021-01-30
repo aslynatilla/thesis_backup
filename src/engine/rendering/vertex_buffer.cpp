@@ -26,7 +26,7 @@ namespace engine {
             case ShaderDataType::Mat4:
                 return 4 * 4 * 4;
             case ShaderDataType::None:
-                fmt::print(fg(fmt::color::red), "[VERTEX BUFFER] ShaderDataType is not recognized and size was not found.");
+                fmt::print("[VERTEX BUFFER] ShaderDataType is not recognized and size was not found.");
         }
         return 0;
     }
@@ -56,7 +56,7 @@ namespace engine {
             case ShaderDataType::Mat4:
                 return GL_FLOAT;
             case ShaderDataType::None:
-                fmt::print(fg(fmt::color::red), "[VERTEX BUFFER] Unknown ShaderDataType, it could not be converted to GLenum type.");
+                fmt::print("[VERTEX BUFFER] Unknown ShaderDataType, it could not be converted to GLenum type.");
         }
         return 0;
     }
@@ -94,7 +94,7 @@ namespace engine {
             case ShaderDataType::Mat4:
                 return 4; // to be intended as 4 * float4
             case ShaderDataType::None:
-                fmt::print(fg(fmt::color::red), "[VERTEX BUFFER] No components for this ShaderDataType; irregular type!");
+                fmt::print("[VERTEX BUFFER] No components for this ShaderDataType; irregular type!");
         }
         return 0;
     }

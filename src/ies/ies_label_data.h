@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_LABEL_DATA_H
-#define REWORKED_PARSER_LABEL_DATA_H
+#ifndef LABEL_DATA_H
+#define LABEL_DATA_H
 
 #include <algorithm>
 #include <iterator>
@@ -48,4 +48,4 @@ namespace ies {
 }
 
 
-#endif //REWORKED_PARSER_IES_LABEL_DATA_H
+#endif //IES_LABEL_DATA_H

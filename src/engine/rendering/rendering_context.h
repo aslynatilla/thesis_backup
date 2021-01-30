@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_RENDERING_CONTEXT_H
-#define IES_PARSER_RENDERING_CONTEXT_H
+#ifndef RENDERING_CONTEXT_H
+#define RENDERING_CONTEXT_H
 
 #include <memory>
 
@@ -16,4 +16,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_RENDERING_CONTEXT_H
+#endif //RENDERING_CONTEXT_H

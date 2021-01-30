@@ -1,5 +1,6 @@
 set(cornell_box_SOURCES main.cpp 
-                        glad.c)
+                        glad.c
+                        application.h application.cpp)
 
 include("${CMAKE_CURRENT_LIST_DIR}/engine/CMakeLists.txt")
 include("${CMAKE_CURRENT_LIST_DIR}/ies/CMakeLists.txt")

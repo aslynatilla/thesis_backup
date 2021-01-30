@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_MOUSE_EVENTS_H
-#define IES_PARSER_MOUSE_EVENTS_H
+#ifndef MOUSE_EVENTS_H
+#define MOUSE_EVENTS_H
 
 #include "event.h"
 
@@ -40,4 +40,4 @@ namespace engine {
         int button;
     };
 }
-#endif //IES_PARSER_MOUSE_EVENTS_H
+#endif //MOUSE_EVENTS_H

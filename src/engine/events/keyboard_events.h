@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_KEYBOARD_EVENTS_H
-#define IES_PARSER_KEYBOARD_EVENTS_H
+#ifndef KEYBOARD_EVENTS_H
+#define KEYBOARD_EVENTS_H
 
 #include "event.h"
 
@@ -36,4 +36,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_KEYBOARD_EVENTS_H
+#endif //KEYBOARD_EVENTS_H

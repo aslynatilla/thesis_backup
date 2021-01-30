@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_FILE_READER_H
-#define REWORKED_PARSER_FILE_READER_H
+#ifndef FILE_READER_H
+#define FILE_READER_H
 
 #include <fstream>
 #include <filesystem>
@@ -13,4 +13,4 @@ namespace files {
     [[nodiscard]] std::filesystem::path make_path_absolute(std::string&& input_path);
 }
 
-#endif //REWORKED_PARSER_FILE_READER_H
+#endif //FILE_READER_H

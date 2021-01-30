@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_IES_MESH_H
-#define IES_PARSER_IES_MESH_H
+#ifndef IES_MESH_H
+#define IES_MESH_H
 
 #include "ies_mesh_adapter.h"
 #include "ies_mesh_type_specific_adapter.h"
@@ -35,4 +35,4 @@ namespace ies::adapter {
 
 }
 
-#endif //IES_PARSER_IES_MESH_H
+#endif //IES_MESH_H

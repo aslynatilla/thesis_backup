@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_OPENGL3_CONTEXT_H
-#define IES_PARSER_OPENGL3_CONTEXT_H
+#ifndef OPENGL3_CONTEXT_H
+#define OPENGL3_CONTEXT_H
 
 #include "rendering_context.h"
 
@@ -24,4 +24,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_OPENGL3_CONTEXT_H
+#endif //OPENGL3_CONTEXT_H

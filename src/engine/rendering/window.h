@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_WINDOW_H
-#define IES_PARSER_WINDOW_H
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include <functional>
 #include <memory>
@@ -38,4 +38,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_WINDOW_H
+#endif //WINDOW_H

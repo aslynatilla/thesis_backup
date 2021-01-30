@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_PRINTING_H
-#define REWORKED_PARSER_IES_PRINTING_H
+#ifndef IES_PRINTING_H
+#define IES_PRINTING_H
 
 #include <algorithm>
 #include <sstream>
@@ -77,4 +77,4 @@ namespace ies::printing {
         print_container_spaced(lines.back(), output, space_width);
     }
 }
-#endif //REWORKED_PARSER_IES_PRINTING_H
+#endif //IES_PRINTING_H

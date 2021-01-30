@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_CAMERA_H
-#define IES_PARSER_CAMERA_H
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include "../events/window_events.h"
 
@@ -54,4 +54,4 @@ namespace engine{
 }
 
 
-#endif //IES_PARSER_CAMERA_H
+#endif //CAMERA_H

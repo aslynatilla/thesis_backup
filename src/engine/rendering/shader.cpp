@@ -122,7 +122,7 @@ namespace engine{
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
         if (success == 0) {
             glGetShaderInfoLog(shader_id, 512, nullptr, log);
-            fmt::print(fg(fmt::color::red), "SHADER >>> Compilation failed for shader with id: {} named {}\nInfo log >>> {}", shader_id, shader_name, log);
+            fmt::print("SHADER >>> Compilation failed for shader with id: {} named {}\nInfo log >>> {}", shader_id, shader_name, log);
             return false;
         } else {
             return true;
@@ -136,7 +136,7 @@ namespace engine{
         glGetProgramiv(shader_id, GL_LINK_STATUS, &success);
         if (success == 0) {
             glGetProgramInfoLog(shader_id, 512, nullptr, log);
-            fmt::print(fg(fmt::color::red), "SHADER >>> Linking failed for shader program with id: {}\nInfo log >>> {}", shader_id, log);
+            fmt::print("SHADER >>> Linking failed for shader program with id: {}\nInfo log >>> {}", shader_id, log);
             return false;
         }
         return true;

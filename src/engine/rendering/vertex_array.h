@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_VERTEX_ARRAY_H
-#define IES_PARSER_VERTEX_ARRAY_H
+#ifndef VERTEX_ARRAY_H
+#define VERTEX_ARRAY_H
 
 #include "vertex_buffer.h"
 #include "element_buffer.h"
@@ -34,4 +34,4 @@ namespace engine{
     };
 }
 
-#endif //IES_PARSER_VERTEX_ARRAY_H
+#endif //VERTEX_ARRAY_H

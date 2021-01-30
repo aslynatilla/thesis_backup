@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_IES_MESH_ADAPTER_H
-#define IES_PARSER_IES_MESH_ADAPTER_H
+#ifndef IES_MESH_ADAPTER_H
+#define IES_MESH_ADAPTER_H
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -45,4 +45,4 @@ namespace ies::adapter {
 }
 
 
-#endif //IES_PARSER_IES_MESH_ADAPTER_H
+#endif //IES_MESH_ADAPTER_H

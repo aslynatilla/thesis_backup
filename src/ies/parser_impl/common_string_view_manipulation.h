@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_COMMON_STRING_VIEW_MANIPULATION_H
-#define REWORKED_PARSER_COMMON_STRING_VIEW_MANIPULATION_H
+#ifndef COMMON_STRING_VIEW_MANIPULATION_H
+#define COMMON_STRING_VIEW_MANIPULATION_H
 
 #include <string_view>
 #include <locale>
@@ -32,4 +32,4 @@ namespace ies::string_view_manipulation {
     std::string_view remove_spaces_brackets_and_keyword(std::string_view view);
 }
 
-#endif //REWORKED_PARSER_COMMON_STRING_VIEW_MANIPULATION_H
+#endif //COMMON_STRING_VIEW_MANIPULATION_H

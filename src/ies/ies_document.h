@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_DOCUMENT_H
-#define REWORKED_PARSER_IES_DOCUMENT_H
+#ifndef IES_DOCUMENT_H
+#define IES_DOCUMENT_H
 
 #include <array>
 #include <string>
@@ -35,4 +35,4 @@ namespace ies {
     };
 }
 
-#endif //REWORKED_PARSER_IES_DOCUMENT_H
+#endif //IES_DOCUMENT_H

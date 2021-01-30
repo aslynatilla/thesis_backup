@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_VERTEX_BUFFER_H
-#define IES_PARSER_VERTEX_BUFFER_H
+#ifndef VERTEX_BUFFER_H
+#define VERTEX_BUFFER_H
 
 #include <fmt/core.h>
 #include <fmt/color.h>
@@ -92,4 +92,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_VERTEX_BUFFER_H
+#endif //VERTEX_BUFFER_H

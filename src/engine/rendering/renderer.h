@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_RENDERER_H
-#define IES_PARSER_RENDERER_H
+#ifndef RENDERER_H
+#define RENDERER_H
 
 #include "vertex_array.h"
 #include "shader.h"
@@ -30,4 +30,4 @@ namespace engine{
 
 }
 
-#endif //IES_PARSER_RENDERER_H
+#endif //RENDERER_H

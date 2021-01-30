@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_IMGUI_LAYER_H
-#define IES_PARSER_IMGUI_LAYER_H
+#ifndef IMGUI_LAYER_H
+#define IMGUI_LAYER_H
 
 #include "layer.h"
 #include "../events/window_events.h"
@@ -27,4 +27,4 @@ namespace engine {
     };
 }
 
-#endif //IES_PARSER_IMGUI_LAYER_H
+#endif //IMGUI_LAYER_H

@@ -1,5 +1,5 @@
-#ifndef IES_PARSER_EVENT_H
-#define IES_PARSER_EVENT_H
+#ifndef EVENT_H
+#define EVENT_H
 
 #include <string>
 #include <fmt/ostream.h>
@@ -54,4 +54,4 @@ namespace engine {
     };
 
 }
-#endif //IES_PARSER_EVENT_H
+#endif //EVENT_H

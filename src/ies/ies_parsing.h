@@ -1,5 +1,5 @@
-#ifndef REWORKED_PARSER_IES_PARSING_H
-#define REWORKED_PARSER_IES_PARSING_H
+#ifndef IES_PARSING_H
+#define IES_PARSING_H
 
 #include "ies_parser.h"
 
@@ -8,4 +8,4 @@
 #include "parser_impl/ies95_parser_impl.h"
 #include "parser_impl/ies02_parser_impl.h"
 
-#endif //REWORKED_PARSER_IES_PARSING_H
+#endif //IES_PARSING_H
