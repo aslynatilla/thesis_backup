@@ -10,7 +10,7 @@ Application::Application(const std::string& app_name) {
     instance = this;
 
     using namespace engine;
-    main_window = Window::create(WindowProperties(app_name));
+    main_window = Window::create(WindowProperties(app_name, 800, 800));
     main_window->set_event_callback([this](auto&& event) { return on_event(event); });
     OpenGL3_Renderer::initialize();
     running = true;
