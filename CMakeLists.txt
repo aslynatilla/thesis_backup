@@ -50,6 +50,7 @@ copy_if_different(cornell_box "resources/shaders/base.frag")
 
 #   Copy cornell box scene to resoruces
 copy_if_different(cornell_box "resources/cornell_box_multimaterial.obj")
+copy_if_different(cornell_box "resources/cornell_box.mtl")
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)

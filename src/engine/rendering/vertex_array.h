@@ -15,14 +15,19 @@ namespace engine{
         VertexArray();
         ~VertexArray();
 
+        VertexArray(const VertexArray& another_vao) = delete;
+        VertexArray(VertexArray&& another_vao) = delete;
+        VertexArray& operator=(const VertexArray& another_vao) = delete;
+        VertexArray& operator=(VertexArray&& another_vao) = delete;
+
         void bind() const;
         void unbind() const;
 
         void set_vbo(std::shared_ptr<VertexBuffer>&& vertex_buffer_object);
         void set_ebo(std::shared_ptr<ElementBuffer>&& element_buffer_object);
 
-        const std::shared_ptr<VertexBuffer>& get_vbo() const;
-        const std::shared_ptr<ElementBuffer>& get_ebo() const;
+        [[nodiscard]] const std::shared_ptr<VertexBuffer>& get_vbo() const;
+        [[nodiscard]] const std::shared_ptr<ElementBuffer>& get_ebo() const;
     private:
         unsigned int id;
         unsigned int vbo_index;

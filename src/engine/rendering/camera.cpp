@@ -21,6 +21,15 @@ namespace engine {
                    view_planes(planes),
                    projection_mode(mode) {}
 
+
+    glm::vec3 Camera::get_position() const {
+        return definition.position;
+    }
+
+    glm::vec3 Camera::get_direction() const {
+        return definition.look_at_position - definition.position;
+    }
+
     glm::mat4 Camera::get_view_matrix() const {
         return glm::lookAt(definition.position, definition.look_at_position, definition.up);
     }
