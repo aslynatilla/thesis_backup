@@ -15,32 +15,33 @@ uniform vec4 specular_color;
 uniform vec4 emissive_color;
 uniform vec4 transparent_color;
 
-uniform vec3 light_position = vec3(278.0, 548.0, 279.5);
 uniform vec3 camera_position;
+uniform vec3 light_position;
 
 void main(){
-
-    //  ambient component
-	vec3 ambient = ambient_color.w * ambient_color.xyz;
-	
-	vec3 n = normalize(normal);
-	vec3 light_distance = light_position - frag_pos;
-	float distance_from_light = length(light_distance);
-	vec3 l = normalize(light_distance);
-	float attenuation_factor = 1.0/(1.0 +
-	                                0.0014 * distance_from_light +
-	                                0.000007 * distance_from_light * distance_from_light);
+    //  common data
+    vec3 n = normalize(normal);
+    vec3 frag_to_light = light_position - frag_pos;
+    float distance_from_light = length(frag_to_light);
+    vec3 l = normalize(frag_to_light);
+    float attenuation_factor = 1.0/(1.0 + 0.003 * distance_from_light + 0.00005 * distance_from_light * distance_from_light);
+    vec3 camera_to_frag = normalize(frag_pos - camera_position);
+    vec3 v = - normalize(camera_to_frag);
 
     //  diffuse component
-	float diff = max(dot(n, l), 0.0);
-	vec3 diffuse = diff * vec3(1.0, 1.0, 1.0);
+    float d = max(dot(n, l), 0.0);
+    d = d * attenuation_factor;
+    vec3 diffuse_component = d * vec3(1.0);
 
-	//  specular component
-	vec3 view_direction = normalize(frag_pos - camera_position);
-	vec3 v = -view_direction;
-	vec3 reflection_direction = reflect(-l, n);
-    float specular_factor = pow(max(dot(v, reflection_direction), 0.0), shininess);
-    vec3 specular = specular_color.w * specular_factor * specular_color.xyz;
+    //  ambient component
+    vec3 ambient_component = ambient_color.xyz * ambient_color.w;
 
-	FragColor = vec4((ambient + diffuse + specular) * attenuation_factor, 1.0) * diffuse_color;
+    //  specular component
+    vec3 reflection_direction = reflect(-l, n);
+    //  beware of NaN when pow(0,0) - delete control and use the following line if you need performance
+    //float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
+    float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
+    vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
+
+    FragColor = vec4(diffuse_component + ambient_component + specular_component, 1.0) * diffuse_color;
 }

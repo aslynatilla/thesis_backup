@@ -24,6 +24,7 @@ namespace engine{
         Camera view_camera;
         std::shared_ptr<Shader> shader;
         std::vector<SceneObject> scene_objects;
+        glm::vec3 light_position;
     };
 }
 

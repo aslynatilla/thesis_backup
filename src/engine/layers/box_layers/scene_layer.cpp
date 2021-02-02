@@ -13,6 +13,8 @@ namespace engine{
                                                            .up{0.0f, 1.0f, 0.0f}}, 45.0f, 1.0f,
                                  CameraPlanes{0.1f, 10000.0f}, CameraMode::Perspective);
 
+            light_position = glm::vec3(278.0f, 548.0f, 279.5f);
+
             const auto vertex_path = files::make_path_absolute("resources/shaders/base.vert");
             const auto fragment_path = files::make_path_absolute("resources/shaders/base.frag");
             auto vertex_source = files::read_file(vertex_path);
@@ -37,6 +39,7 @@ namespace engine{
         shader->set_mat4("view", view_camera.get_view_matrix());
         shader->set_mat4("projection", view_camera.get_projection_matrix());
         shader->set_vec3("camera_position", view_camera.get_position());
+        shader->set_vec3("light_position", light_position);
         if(!scene_objects.empty()){
             for(const auto& drawable : scene_objects){
                 drawable.material.bind_uniforms_to(shader);

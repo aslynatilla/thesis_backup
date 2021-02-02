@@ -36,21 +36,18 @@ file(MAKE_DIRECTORY
 file(MAKE_DIRECTORY
         "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources/ies")
 
-function(copy_if_different target_executable relative_path)
-    add_custom_command(TARGET ${target_executable} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/${relative_path} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${relative_path}")
+function(install_file_to_bin source_dir file_name)
+    file(INSTALL ${CMAKE_SOURCE_DIR}/${source_dir}/${file_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${source_dir})
 endfunction()
 
 #   Copy IES files used for testing and executing the application
-copy_if_different(cornell_box "resources/ies/TEST.IES")
-
+install_file_to_bin(resources/ies TEST.IES)
 #   Copy shaders
-copy_if_different(cornell_box "resources/shaders/base.vert")
-copy_if_different(cornell_box "resources/shaders/base.frag")
-
+install_file_to_bin(resources/shaders base.vert)
+install_file_to_bin(resources/shaders base.frag)
 #   Copy cornell box scene to resoruces
-copy_if_different(cornell_box "resources/cornell_box_multimaterial.obj")
-copy_if_different(cornell_box "resources/cornell_box.mtl")
+install_file_to_bin(resources cornell_box_multimaterial.obj)
+install_file_to_bin(resources cornell_box.mtl)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)
