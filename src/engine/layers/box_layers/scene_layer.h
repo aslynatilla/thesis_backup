@@ -4,9 +4,10 @@
 #include "../layer.h"
 
 #include "../../rendering/camera.h"
-#include "../../rendering/shader.h"
 #include "../../rendering/renderer.h"
+#include "../../rendering/shader_loading.h"
 #include "../../scene_management/scene_loading.h"
+#include "../../scene_management/point_light.h"
 #include "../../../utility/file_reader.h"
 
 #include <glm/glm.hpp>
@@ -22,9 +23,9 @@ namespace engine{
 
     private:
         Camera view_camera;
+        PointLight point_light;
         std::shared_ptr<Shader> shader;
         std::vector<SceneObject> scene_objects;
-        glm::vec3 light_position;
     };
 }
 

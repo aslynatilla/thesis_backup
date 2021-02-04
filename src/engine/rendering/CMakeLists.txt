@@ -2,6 +2,7 @@ set(renderer_SOURCES 	camera.h camera.cpp
 			window.h window.cpp
 			renderer.h renderer.cpp
 			shader.h shader.cpp
+			shader_loading.h shader_loading.cpp
 			material.h material.cpp
 			vertex_array.h vertex_array.cpp
 			vertex_buffer.h vertex_buffer.cpp
