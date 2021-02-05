@@ -9,6 +9,8 @@ set(renderer_SOURCES 	camera.h camera.cpp
 			element_buffer.h
 			glfw_window_impl.h glfw_window_impl.cpp
 			opengl3_context.h opengl3_context.cpp
+			opengl3_framebuffer.h opengl3_framebuffer.cpp
+			opengl3_texture.h opengl3_texture.cpp
 			rendering_context.h rendering_context.cpp
 			)
 
