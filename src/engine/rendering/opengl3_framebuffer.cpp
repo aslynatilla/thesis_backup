@@ -27,6 +27,7 @@ namespace engine{
                                                       const int mipmap_level) noexcept{
         glBindFramebuffer(target_binding_mode, id);
         glFramebufferTexture2D(target_binding_mode, target_attachment_point, texture_type, texture_id, mipmap_level);
-        glBindFramebuffer(target_binding_mode, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
 }

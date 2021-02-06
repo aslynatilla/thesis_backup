@@ -8,12 +8,9 @@ namespace engine{
 
     class PointLight{
     public:
+        PointLight() = default;
         explicit PointLight(glm::vec3 light_position) noexcept;
         glm::vec3 position;
-
-        //  consider something that returns directions to bind
-        //  to GL_CUBEMAP_POSITIVE_Z/GL_CUBEMAP_NEGATIVE_Z etc.
-        //  std::array<glm::vec3, 6> cubemap_directios() const;
     };
 
 }

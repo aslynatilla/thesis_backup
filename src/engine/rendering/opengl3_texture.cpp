@@ -36,7 +36,6 @@ namespace engine{
         for(const auto parameter_pair : parameters){
             glTexParameteri(texture_type, parameter_pair.name, parameter_pair.value);
         }
-        glBindTexture(texture_type, 0);
         bound_type = texture_type;
         width = texture_width;
         height = texture_height;

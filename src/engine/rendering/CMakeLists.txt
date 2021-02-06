@@ -11,6 +11,7 @@ set(renderer_SOURCES 	camera.h camera.cpp
 			opengl3_context.h opengl3_context.cpp
 			opengl3_framebuffer.h opengl3_framebuffer.cpp
 			opengl3_texture.h opengl3_texture.cpp
+			opengl3_cubemap.h opengl3_cubemap.cpp
 			rendering_context.h rendering_context.cpp
 			)
 

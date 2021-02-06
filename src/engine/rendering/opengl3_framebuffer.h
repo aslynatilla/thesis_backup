@@ -19,8 +19,6 @@ namespace engine {
                                      const GLenum texture_type, const unsigned int texture_id,
                                      const int mipmap_level = 0) noexcept;
         //  consider overloading by getting a texture, or refactoring in structs
-
-    private:
         unsigned int id;
     };
 }

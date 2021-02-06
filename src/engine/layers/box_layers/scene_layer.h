@@ -6,6 +6,8 @@
 #include "../../rendering/camera.h"
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
+#include "../../rendering/opengl3_framebuffer.h"
+#include "../../rendering/opengl3_cubemap.h"
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
 #include "../../../utility/file_reader.h"
@@ -24,8 +26,13 @@ namespace engine{
     private:
         Camera view_camera;
         PointLight point_light;
-        std::shared_ptr<Shader> shader;
+        std::shared_ptr<Shader> base_shader;
+        std::shared_ptr<Shader> depth_shader;
         std::vector<SceneObject> scene_objects;
+
+        std::unique_ptr<OpenGL3_FrameBuffer> depth_framebuffer;
+        std::unique_ptr<OpenGL3_Texture> depth_texture;
+        std::unique_ptr<OpenGL3_Cubemap> shadow_cubemap;
     };
 }
 
