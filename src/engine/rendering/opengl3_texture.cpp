@@ -7,7 +7,7 @@ namespace engine{
         parameters.reserve(names.size());
 
         auto i_value = values.begin();
-        for(auto i_name = names.begin(); i_name != names.end() && i_value != values.end(); i_name++){
+        for(auto i_name = names.begin(); i_name != names.end() && i_value != values.end(); i_name++, i_value++){
             parameters.emplace_back(OpenGL3_TextureParameter_Pair{*i_name, *i_value});
         }
     }
@@ -32,7 +32,6 @@ namespace engine{
         glGenTextures(1, &id);
         glBindTexture(texture_type, id);
         glTexImage2D(texture_type, 0, image_format, texture_width, texture_height, 0, data_format, data_type, data);
-
         for(const auto parameter_pair : parameters){
             glTexParameteri(texture_type, parameter_pair.name, parameter_pair.value);
         }

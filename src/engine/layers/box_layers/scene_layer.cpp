@@ -33,6 +33,7 @@ namespace engine {
                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                               static_cast<unsigned int>(viewport_dimensions[2]), static_cast<unsigned int>(viewport_dimensions[3]),
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
             glBindTexture(GL_TEXTURE_2D, 0);
             shadow_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_R32F,
                                                                OpenGL3_TextureParameters(
@@ -41,9 +42,21 @@ namespace engine {
                                                                   {GL_LINEAR, GL_LINEAR,
                                                                    GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                800, 800, GL_RED, GL_FLOAT, nullptr);
-            depth_framebuffer->attach_texture_image_to(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                                       depth_texture->bound_type, depth_texture->id);
-            depth_framebuffer->unbind();
+
+//            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture->id, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, shadow_cubemap->id, 0);
+
+//            depth_framebuffer->attach_texture_image_to(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+//                                                       depth_texture->bound_type, depth_texture->id);
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+//            depth_framebuffer->attach_texture_image_to(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+//                                                       shadow_cubemap->bound_type, shadow_cubemap->id);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
         }
     }
 
@@ -55,15 +68,19 @@ namespace engine {
 
     void SceneLayer::update(float delta_time) {
         Layer::update(delta_time);
-        glCullFace(GL_FRONT);
+        //glCullFace(GL_FRONT);
+
         auto viewport_dimensions = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
         glViewport(0, 0, shadow_cubemap->width, shadow_cubemap->height);
+
         depth_shader->use();
-        depth_shader->set_vec3("light_position", point_light.position);
+        const auto pos = point_light.position;
+        depth_shader->set_vec3("light_position", pos);
+
         glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
-        for (auto i = 0u; i < 6; ++i) {
-            const auto pos = point_light.position;
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, depth_framebuffer->id);
+        for (auto i = 0; i < 6; ++i) {
             const auto point_light_camera = Camera(
                     CameraGeometricDefinition{pos, pos + OpenGL3_Cubemap::directions[i], OpenGL3_Cubemap::ups[i]},
                     90.0f, 1.0f,
@@ -82,8 +99,8 @@ namespace engine {
                 }
             }
         }
+        depth_framebuffer->unbind(GL_DRAW_FRAMEBUFFER);
         glCullFace(GL_BACK);
-        depth_framebuffer->unbind();
         glViewport(0, 0, static_cast<unsigned int>(viewport_dimensions[2]), static_cast<unsigned int>(viewport_dimensions[3]));
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();

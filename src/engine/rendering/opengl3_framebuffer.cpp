@@ -25,9 +25,11 @@ namespace engine{
     void OpenGL3_FrameBuffer::attach_texture_image_to(const GLenum target_binding_mode, const GLenum target_attachment_point,
                                                       const GLenum texture_type, const unsigned int texture_id,
                                                       const int mipmap_level) noexcept{
-        glBindFramebuffer(target_binding_mode, id);
+        //glBindFramebuffer(target_binding_mode, id);
+
         glFramebufferTexture2D(target_binding_mode, target_attachment_point, texture_type, texture_id, mipmap_level);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
+
+        //glDrawBuffer(GL_NONE);
+        //glReadBuffer(GL_NONE);
     }
 }

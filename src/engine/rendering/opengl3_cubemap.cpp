@@ -8,13 +8,15 @@ namespace engine{
         id = 0;
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
-        for(auto i = 0u; i < 6; ++i){
+        for(auto i = 0; i < 6; ++i){
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, image_format, texture_width, texture_height, 0, data_format, data_type, data);
         }
 
         for(const auto parameter_pair : parameters){
             glTexParameteri(GL_TEXTURE_CUBE_MAP, parameter_pair.name, parameter_pair.value);
         }
+
+        //glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
         bound_type = GL_TEXTURE_CUBE_MAP;
         width = texture_width;
         height = texture_height;
