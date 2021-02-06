@@ -49,6 +49,11 @@ install_file_to_bin(resources/shaders shadowmapped.vert)
 install_file_to_bin(resources/shaders base.frag)
 install_file_to_bin(resources/shaders depth.frag)
 install_file_to_bin(resources/shaders shadowmapped.frag)
+
+install_file_to_bin(resources/shaders point_sm.vert)
+install_file_to_bin(resources/shaders point_sm.gs)
+install_file_to_bin(resources/shaders point_sm.frag)
+
 #   Copy cornell box scene to resoruces
 install_file_to_bin(resources cornell_box_multimaterial.obj)
 install_file_to_bin(resources cornell_box.mtl)

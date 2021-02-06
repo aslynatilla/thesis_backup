@@ -27,12 +27,17 @@ namespace engine{
         Camera view_camera;
         PointLight point_light;
         std::shared_ptr<Shader> base_shader;
-        std::shared_ptr<Shader> depth_shader;
+//        std::shared_ptr<Shader> depth_shader;
         std::vector<SceneObject> scene_objects;
 
-        std::unique_ptr<OpenGL3_FrameBuffer> depth_framebuffer;
-        std::unique_ptr<OpenGL3_Texture> depth_texture;
-        std::unique_ptr<OpenGL3_Cubemap> shadow_cubemap;
+//        std::unique_ptr<OpenGL3_FrameBuffer> depth_framebuffer;
+//        std::unique_ptr<OpenGL3_Texture> depth_texture;
+//        std::unique_ptr<OpenGL3_Cubemap> shadow_cubemap;
+
+        unsigned int sm_framebuffer;
+        unsigned int cubemap;
+        unsigned int texture;
+        std::shared_ptr<Shader> gs_depth_shader;
     };
 }
 

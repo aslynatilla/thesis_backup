@@ -37,8 +37,8 @@ namespace engine {
         static constexpr std::array<glm::vec3, 6> ups = std::array<glm::vec3, 6>{
                 glm::vec3{0.0f, -1.0f, 0.0f},
                 glm::vec3{0.0f, -1.0f, 0.0f},
-                glm::vec3{0.0f, 0.0f, -1.0f},
                 glm::vec3{0.0f, 0.0f, 1.0f},
+                glm::vec3{0.0f, 0.0f, -1.0f},
                 glm::vec3{0.0f, -1.0f, 0.0f},
                 glm::vec3{0.0f, -1.0f, 0.0f},
         };

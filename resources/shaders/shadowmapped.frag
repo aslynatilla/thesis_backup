@@ -19,15 +19,24 @@ uniform vec3 camera_position;
 uniform vec3 light_position;
 uniform samplerCube shadow_map;
 
-float compute_shadow(vec3 light_to_fragment, float light_distance)
-{
-    float depth = texture(shadow_map, light_to_fragment).r;
+//float compute_shadow(vec3 light_to_fragment, float light_distance)
+//{
+//    float depth = texture(shadow_map, light_to_fragment).r;
+//
+//    if (light_distance < depth + 0.0001){
+//        return 1.0;
+//    } else {
+//        return 0.0;
+//    }
+//}
 
-    if (light_distance < depth + 0.0001){
-        return 1.0;
-    } else {
-        return 0.5;
-    }
+float compute_shadow(vec3 light_to_fragment, float light_distance){
+    float closest = texture(shadow_map, light_to_fragment).r;
+    closest *= 1000.0;
+    float bias = 0.05;
+    float shadow_factor = light_distance -  bias > closest ? 0.6 : 1.0;
+
+    return shadow_factor;
 }
 
 void main(){
