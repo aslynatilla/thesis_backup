@@ -25,7 +25,7 @@ float compute_shadow(vec3 light_to_fragment, float light_distance)
 {
     float depth = texture(shadow_map, light_to_fragment).r;
     depth *= far_plane;
-    if (light_distance < depth + 0.005){
+    if (light_distance < depth + 0.5){
         return 1.0;
     } else {
         return 0.5;

@@ -12,7 +12,7 @@ namespace engine {
             view_camera = Camera(CameraGeometricDefinition{.position{278.0f, 270.0f, -800.0f},
                                          .look_at_position{278.0f, 273.0f, 0.0f},
                                          .up{0.0f, 1.0f, 0.0f}}, 45.0f, 1.0f,
-                                 CameraPlanes{0.1f, 10000.0f}, CameraMode::Perspective);
+                                 CameraPlanes{0.1f, 2000.0f}, CameraMode::Perspective);
 
             point_light.position = glm::vec3(278.0f, 548.0f, 279.5f);
 
@@ -44,16 +44,17 @@ namespace engine {
                                                                800, 800, GL_RED, GL_FLOAT, nullptr);
 //            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, shadow_cubemap->id, 0);
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, shadow_cubemap->id, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture->id, 0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glReadBuffer(GL_NONE);
+//            glReadBuffer(GL_NONE);
 
-//            glEnable(GL_DEPTH_TEST);
             if(glGetError() != 0 || glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
                 fmt::print("There's something wrong.\n");
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         }
@@ -72,24 +73,23 @@ namespace engine {
         glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
 //        glViewport(0, 0, shadow_cubemap->width, shadow_cubemap->height);
 
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
         depth_shader->use();
         const auto pos = point_light.position;
         depth_shader->set_vec3("light_position", pos);
         glCullFace(GL_BACK);
-//        glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
         for (auto i = 0; i < 6; ++i) {
             const auto point_light_camera = Camera(
                     CameraGeometricDefinition{pos, pos + OpenGL3_Cubemap::directions[i], OpenGL3_Cubemap::ups[i]},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, 10000.0f},
+                    CameraPlanes{0.1f, 2000.0f},
                     CameraMode::Perspective);
             depth_shader->set_mat4("light_view", point_light_camera.get_view_matrix());
             depth_shader->set_mat4("light_projection", point_light_camera.get_projection_matrix());
-            depth_shader->set_float("far_plane", 10000.0f);
+            depth_shader->set_float("far_plane", 2000.0f);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, shadow_cubemap->id, 0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
                     depth_shader->set_mat4("model", drawable.transform);
@@ -102,7 +102,7 @@ namespace engine {
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
         base_shader->use();
-        base_shader->set_float("far_plane", 10000.0f);
+        base_shader->set_float("far_plane", 2000.0f);
         base_shader->set_mat4("view", view_camera.get_view_matrix());
         base_shader->set_mat4("projection", view_camera.get_projection_matrix());
         base_shader->set_vec3("camera_position", view_camera.get_position());
