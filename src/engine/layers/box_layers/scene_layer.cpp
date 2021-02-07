@@ -14,7 +14,7 @@ namespace engine {
                                          .up{0.0f, 1.0f, 0.0f}}, 45.0f, 1.0f,
                                  CameraPlanes{0.1f, 10000.0f}, CameraMode::Perspective);
 
-            point_light.position = glm::vec3(278.0f, 547.0f, 279.5f);
+            point_light.position = glm::vec3(278.0f, 548.0f, 279.5f);
 
             base_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
                                                      "resources/shaders/shadowmapped.frag");
@@ -31,10 +31,10 @@ namespace engine {
                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                       {GL_LINEAR, GL_LINEAR,
                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                              static_cast<unsigned int>(viewport_dimensions[2]), static_cast<unsigned int>(viewport_dimensions[3]),
+                                                              static_cast<unsigned int>(viewport_dimensions[2]),
+                                                              static_cast<unsigned int>(viewport_dimensions[3]),
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-            glBindTexture(GL_TEXTURE_2D, 0);
             shadow_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_R32F,
                                                                OpenGL3_TextureParameters(
                                                                   {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -42,20 +42,18 @@ namespace engine {
                                                                   {GL_LINEAR, GL_LINEAR,
                                                                    GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                800, 800, GL_RED, GL_FLOAT, nullptr);
-
 //            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture->id, 0);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X, shadow_cubemap->id, 0);
-
-//            depth_framebuffer->attach_texture_image_to(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-//                                                       depth_texture->bound_type, depth_texture->id);
-            glDrawBuffer(GL_NONE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, shadow_cubemap->id, 0);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
             glReadBuffer(GL_NONE);
-//            depth_framebuffer->attach_texture_image_to(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-//                                                       shadow_cubemap->bound_type, shadow_cubemap->id);
+
+//            glEnable(GL_DEPTH_TEST);
+            if(glGetError() != 0 || glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+                fmt::print("There's something wrong.\n");
+            }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glEnable(GL_DEPTH_TEST);
+//            glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
         }
     }
@@ -68,18 +66,17 @@ namespace engine {
 
     void SceneLayer::update(float delta_time) {
         Layer::update(delta_time);
-        //glCullFace(GL_FRONT);
 
         auto viewport_dimensions = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
-        glViewport(0, 0, shadow_cubemap->width, shadow_cubemap->height);
+//        glViewport(0, 0, shadow_cubemap->width, shadow_cubemap->height);
 
         depth_shader->use();
         const auto pos = point_light.position;
         depth_shader->set_vec3("light_position", pos);
-
-        glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, depth_framebuffer->id);
+        glCullFace(GL_BACK);
+//        glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+        glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
         for (auto i = 0; i < 6; ++i) {
             const auto point_light_camera = Camera(
                     CameraGeometricDefinition{pos, pos + OpenGL3_Cubemap::directions[i], OpenGL3_Cubemap::ups[i]},
@@ -88,10 +85,10 @@ namespace engine {
                     CameraMode::Perspective);
             depth_shader->set_mat4("light_view", point_light_camera.get_view_matrix());
             depth_shader->set_mat4("light_projection", point_light_camera.get_projection_matrix());
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, depth_framebuffer->id);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, shadow_cubemap->id, 0);
+            depth_shader->set_float("far_plane", 1000.0f);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, shadow_cubemap->id, 0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT);
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
                     depth_shader->set_mat4("model", drawable.transform);
@@ -99,12 +96,12 @@ namespace engine {
                 }
             }
         }
-        depth_framebuffer->unbind(GL_DRAW_FRAMEBUFFER);
-        glCullFace(GL_BACK);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, static_cast<unsigned int>(viewport_dimensions[2]), static_cast<unsigned int>(viewport_dimensions[3]));
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
         base_shader->use();
+        base_shader->set_float("far_plane", 1000.0f);
         base_shader->set_mat4("view", view_camera.get_view_matrix());
         base_shader->set_mat4("projection", view_camera.get_projection_matrix());
         base_shader->set_vec3("camera_position", view_camera.get_position());
