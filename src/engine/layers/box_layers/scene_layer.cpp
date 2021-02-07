@@ -53,8 +53,9 @@ namespace engine {
                 fmt::print("There's something wrong.\n");
             }
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         }
     }
 
@@ -81,11 +82,11 @@ namespace engine {
             const auto point_light_camera = Camera(
                     CameraGeometricDefinition{pos, pos + OpenGL3_Cubemap::directions[i], OpenGL3_Cubemap::ups[i]},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, 1000.0f},
+                    CameraPlanes{0.1f, 10000.0f},
                     CameraMode::Perspective);
             depth_shader->set_mat4("light_view", point_light_camera.get_view_matrix());
             depth_shader->set_mat4("light_projection", point_light_camera.get_projection_matrix());
-            depth_shader->set_float("far_plane", 1000.0f);
+            depth_shader->set_float("far_plane", 10000.0f);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, shadow_cubemap->id, 0);
             glDrawBuffer(GL_COLOR_ATTACHMENT0);
             glClear(GL_COLOR_BUFFER_BIT);
@@ -101,7 +102,7 @@ namespace engine {
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
         base_shader->use();
-        base_shader->set_float("far_plane", 1000.0f);
+        base_shader->set_float("far_plane", 10000.0f);
         base_shader->set_mat4("view", view_camera.get_view_matrix());
         base_shader->set_mat4("projection", view_camera.get_projection_matrix());
         base_shader->set_vec3("camera_position", view_camera.get_position());
