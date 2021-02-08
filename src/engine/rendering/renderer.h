@@ -12,7 +12,7 @@ namespace engine{
     public:
         static void initialize();
 
-        static void clear();
+        static void clear(const int bitmask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         static void set_clear_color(const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
         static void set_clear_color(const float r, const float g, const float b, const float a);
 

@@ -9,8 +9,8 @@ namespace engine {
         glEnable(GL_DEPTH_TEST);
     }
 
-    void OpenGL3_Renderer::clear() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    void OpenGL3_Renderer::clear(const int bitmask) {
+        glClear(bitmask);
     }
 
     void OpenGL3_Renderer::set_clear_color(const glm::vec4& clear_color) {

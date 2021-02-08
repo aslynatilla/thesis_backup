@@ -47,6 +47,5 @@ namespace engine{
     void OpenGL3_Texture::make_active_in_slot(const unsigned int slot) {
         //  slot in [0, GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
         glActiveTexture(GL_TEXTURE0+slot);
-        glBindTexture(bound_type, id);
     }
 }

@@ -7,7 +7,6 @@
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
 #include "../../rendering/opengl3_framebuffer.h"
-#include "../../rendering/opengl3_cubemap.h"
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
 #include "../../../utility/file_reader.h"

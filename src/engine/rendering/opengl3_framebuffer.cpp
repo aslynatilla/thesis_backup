@@ -10,26 +10,35 @@ namespace engine{
         glDeleteFramebuffers(1, &id);
     }
 
-    void OpenGL3_FrameBuffer::bind_as(const GLenum binding_mode) {
-        glBindFramebuffer(binding_mode, id);
+    void OpenGL3_FrameBuffer::bind_as(const GLenum framebuffer_mode) {
+        glBindFramebuffer(framebuffer_mode, id);
     }
 
-    void OpenGL3_FrameBuffer::unbind(const GLenum binding_mode) {
-        glBindFramebuffer(binding_mode, 0);
+    void OpenGL3_FrameBuffer::unbind_from(const GLenum framebuffer_mode) {
+        glBindFramebuffer(framebuffer_mode, 0);
     }
 
-    /// \param target_binding_mode  one of GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER
+    /// \param framebuffer_mode  one of GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER
     /// \param attachment_point     probably GL_COLOR_ATTACHMENTi or GL_DEPTH_ATTACHMENT
     /// \param texture_type         what type of texture is expected in the texture parameter
     ///                             or, for cube map textures, which face is to be attached
-    void OpenGL3_FrameBuffer::attach_texture_image_to(const GLenum target_binding_mode, const GLenum target_attachment_point,
-                                                      const GLenum texture_type, const unsigned int texture_id,
-                                                      const int mipmap_level) noexcept{
-        //glBindFramebuffer(target_binding_mode, id);
+    bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode, const GLenum target_attachment_point,
+                                                          const GLenum texture_type, const unsigned int texture_id,
+                                                          const int mipmap_level) noexcept{
+        glFramebufferTexture2D(framebuffer_mode, target_attachment_point, texture_type, texture_id, mipmap_level);
+        return (glGetError() == 0);
+    }
 
-        glFramebufferTexture2D(target_binding_mode, target_attachment_point, texture_type, texture_id, mipmap_level);
+    bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode,
+                                                          const GLenum target_attachment_point, const OpenGL3_Texture& texture,
+                                                          const int mipmap_level) noexcept {
+        glFramebufferTexture2D(framebuffer_mode, target_attachment_point, texture.bound_type, texture.id, mipmap_level);
+        return (glGetError() == 0);
+    }
 
-        //glDrawBuffer(GL_NONE);
-        //glReadBuffer(GL_NONE);
+    bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode,
+                                                          const GLenum target_attachment_point, const OpenGL3_Cubemap& cubemap) noexcept {
+        glFramebufferTexture(framebuffer_mode, target_attachment_point, cubemap.bound_type, cubemap.id);
+        return (glGetError() == 0);
     }
 }

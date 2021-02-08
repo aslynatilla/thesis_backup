@@ -16,7 +16,6 @@ namespace engine{
             glTexParameteri(GL_TEXTURE_CUBE_MAP, parameter_pair.name, parameter_pair.value);
         }
 
-        //glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
         bound_type = GL_TEXTURE_CUBE_MAP;
         width = texture_width;
         height = texture_height;
@@ -28,7 +27,6 @@ namespace engine{
 
     void OpenGL3_Cubemap::make_active_in_slot(const unsigned int slot) {
         glActiveTexture(GL_TEXTURE0+slot);
-        glBindTexture(bound_type, id);
     }
 }
 
