@@ -25,13 +25,15 @@ namespace engine{
     private:
         Camera view_camera;
         PointLight point_light;
-        std::shared_ptr<Shader> base_shader;
-        std::shared_ptr<Shader> depth_shader;
+        std::shared_ptr<Shader> draw_shader;
+        std::shared_ptr<Shader> rsm_generation_shader;
         std::vector<SceneObject> scene_objects;
 
-        std::unique_ptr<OpenGL3_FrameBuffer> depth_framebuffer;
-        std::unique_ptr<OpenGL3_Texture> depth_texture;
-        std::unique_ptr<OpenGL3_Cubemap> shadow_cubemap;
+        std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
+        std::unique_ptr<OpenGL3_Cubemap> depth_cubemap;
+        std::unique_ptr<OpenGL3_Cubemap> pos_cubemap;
+        std::unique_ptr<OpenGL3_Cubemap> normal_cubemap;
+        std::unique_ptr<OpenGL3_Cubemap> flux_cubemap;
     };
 }
 

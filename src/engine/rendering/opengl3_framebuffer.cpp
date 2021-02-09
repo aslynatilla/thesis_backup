@@ -36,9 +36,9 @@ namespace engine{
         return (glGetError() == 0);
     }
 
-    bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode,
-                                                          const GLenum target_attachment_point, const OpenGL3_Cubemap& cubemap) noexcept {
-        glFramebufferTexture(framebuffer_mode, target_attachment_point, cubemap.bound_type, cubemap.id);
+    bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode, const GLenum target_attachment_point,
+                                                          const OpenGL3_Cubemap& cubemap, const int mipmap_level) noexcept {
+        glFramebufferTexture(framebuffer_mode, target_attachment_point, cubemap.id, mipmap_level);
         return (glGetError() == 0);
     }
 }

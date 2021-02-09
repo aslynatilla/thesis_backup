@@ -16,16 +16,16 @@ namespace engine {
 
             point_light.position = glm::vec3(278.0f, 548.0f, 279.5f);
 
-            base_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
+            draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
                                                      "resources/shaders/shadowmapped.frag");
-            depth_shader = shader::create_shader_from("resources/shaders/depth.vert",
-                                                      "resources/shaders/depth.frag");
+            rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
+                                                      "resources/shaders/rsm.frag");
 
             auto viewport_dimensions = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
 
-            depth_framebuffer = std::make_unique<OpenGL3_FrameBuffer>();
-            depth_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_DEPTH_COMPONENT32,
+            rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+            depth_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_DEPTH_COMPONENT,
                                                               OpenGL3_TextureParameters(
                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -34,8 +34,7 @@ namespace engine {
                                                               static_cast<unsigned int>(viewport_dimensions[2]),
                                                               static_cast<unsigned int>(viewport_dimensions[3]),
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
-            shadow_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_R32F,
+            pos_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                OpenGL3_TextureParameters(
                                                                   {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                    GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
@@ -43,17 +42,43 @@ namespace engine {
                                                                    GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                static_cast<unsigned int>(viewport_dimensions[2]),
                                                                static_cast<unsigned int>(viewport_dimensions[3]),
-                                                               GL_RED, GL_FLOAT, nullptr);
-            glBindFramebuffer(GL_FRAMEBUFFER, depth_framebuffer->id);
-            depth_framebuffer->bind_as(GL_FRAMEBUFFER);
-            depth_framebuffer->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *shadow_cubemap);
-            depth_framebuffer->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            depth_framebuffer->unbind_from();
+                                                               GL_RGB, GL_FLOAT, nullptr);
+            //this is not GL_FLOAT
+            normal_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
+                                                               OpenGL3_TextureParameters(
+                                                                  {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                   GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
+                                                                  {GL_LINEAR, GL_LINEAR,
+                                                                   GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                               static_cast<unsigned int>(viewport_dimensions[2]),
+                                                               static_cast<unsigned int>(viewport_dimensions[3]),
+                                                               GL_RGB, GL_FLOAT, nullptr);
+            flux_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
+                                                               OpenGL3_TextureParameters(
+                                                                  {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                   GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
+                                                                  {GL_LINEAR, GL_LINEAR,
+                                                                   GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                               static_cast<unsigned int>(viewport_dimensions[2]),
+                                                               static_cast<unsigned int>(viewport_dimensions[3]),
+                                                               GL_RGB, GL_FLOAT, nullptr);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo->id);
+            rsm_fbo->bind_as(GL_FRAMEBUFFER);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_cubemap);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *pos_cubemap);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *normal_cubemap);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *flux_cubemap);
+            const auto buffer_enums = std::make_unique<GLenum[]>(3);
+            buffer_enums[0] = GL_COLOR_ATTACHMENT0;
+            buffer_enums[1] = GL_COLOR_ATTACHMENT1;
+            buffer_enums[2] = GL_COLOR_ATTACHMENT2;
+            glDrawBuffers(3, buffer_enums.get());
+            rsm_fbo->unbind_from();
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
+//            glEnable(GL_CULL_FACE);
+//            glCullFace(GL_BACK);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         }
     }
@@ -74,44 +99,56 @@ namespace engine {
 
         const auto& pos = point_light.position;
 
-        depth_framebuffer->bind_as(GL_FRAMEBUFFER);
-        depth_shader->use();
-        depth_shader->set_vec3("light_position", pos);
+        rsm_fbo->bind_as(GL_FRAMEBUFFER);
+        rsm_generation_shader->use();
+        rsm_generation_shader->set_vec3("light_position", pos);
         for (auto i = 0; i < 6; ++i) {
             const auto point_light_camera = Camera(
                     CameraGeometricDefinition{pos, pos + OpenGL3_Cubemap::directions[i], OpenGL3_Cubemap::ups[i]},
                     90.0f, 1.0f,
                     CameraPlanes{0.1f, 2000.0f},
                     CameraMode::Perspective);
-            depth_shader->set_mat4("light_view", point_light_camera.get_view_matrix());
-            depth_shader->set_mat4("light_projection", point_light_camera.get_projection_matrix());
-            depth_shader->set_float("far_plane", 2000.0f);
-            depth_framebuffer->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                                           GL_TEXTURE_CUBE_MAP_POSITIVE_X+i,
-                                                           shadow_cubemap->id, 0);
-            glDrawBuffer(GL_COLOR_ATTACHMENT0);
-            OpenGL3_Renderer::clear();
+            rsm_generation_shader->set_mat4("point_light_view", point_light_camera.get_view_matrix());
+            rsm_generation_shader->set_mat4("point_light_projection", point_light_camera.get_projection_matrix());
+            rsm_generation_shader->set_float("far_plane", 2000.0f);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                                 depth_cubemap->id);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                                 pos_cubemap->id);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
+                                                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                                 normal_cubemap->id);
+            rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
+                                                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                                                 flux_cubemap->id);
+            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glDisable(GL_BLEND);
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
-                    depth_shader->set_mat4("model", drawable.transform);
+                    rsm_generation_shader->set_mat4("model", drawable.transform);
+                    rsm_generation_shader->set_vec4("diffuse_color", drawable.material.diffuse_color);
                     OpenGL3_Renderer::draw(*(drawable.vao));
                 }
             }
         }
-        depth_framebuffer->unbind_from(GL_FRAMEBUFFER);
+        rsm_fbo->unbind_from(GL_FRAMEBUFFER);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
-        base_shader->use();
-        base_shader->set_float("far_plane", 2000.0f);
-        base_shader->set_mat4("view", view_camera.get_view_matrix());
-        base_shader->set_mat4("projection", view_camera.get_projection_matrix());
-        base_shader->set_vec3("camera_position", view_camera.get_position());
-        base_shader->set_vec3("light_position", point_light.position);
-        shadow_cubemap->make_active_in_slot(0);
+        draw_shader->use();
+        draw_shader->set_float("far_plane", 2000.0f);
+        draw_shader->set_mat4("view", view_camera.get_view_matrix());
+        draw_shader->set_mat4("projection", view_camera.get_projection_matrix());
+        draw_shader->set_vec3("camera_position", view_camera.get_position());
+        draw_shader->set_vec3("light_position", point_light.position);
+        depth_cubemap->make_active_in_slot(0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cubemap->id);
+        glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
-                drawable.material.bind_uniforms_to(base_shader);
-                base_shader->set_mat4("model", drawable.transform);
+                drawable.material.bind_uniforms_to(draw_shader);
+                draw_shader->set_mat4("model", drawable.transform);
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
         }
