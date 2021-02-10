@@ -14,8 +14,9 @@ layout (location = 2) out vec3 fragment_flux;
 void main(){
     float light_distance = length(frag_pos.xyz - light_position);
     gl_FragDepth = light_distance / far_plane;
+    float attenuation_factor = 1.0/(1.0 + 0.003 * light_distance + 0.00005 * light_distance * light_distance);
 
     fragment_world_coordinates = frag_pos;
     fragment_normal = frag_normal;
-    fragment_flux = diffuse_color.xyz;
+    fragment_flux = diffuse_color.xyz * attenuation_factor;
 }
