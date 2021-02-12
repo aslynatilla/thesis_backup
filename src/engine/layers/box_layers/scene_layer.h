@@ -10,6 +10,7 @@
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
 #include "../../../utility/file_reader.h"
+#include "../../../utility/random_numbers.h"
 
 #include <glm/glm.hpp>
 
@@ -34,6 +35,11 @@ namespace engine{
         std::unique_ptr<OpenGL3_Cubemap> pos_cubemap;
         std::unique_ptr<OpenGL3_Cubemap> normal_cubemap;
         std::unique_ptr<OpenGL3_Cubemap> flux_cubemap;
+        std::unique_ptr<OpenGL3_Cubemap> offset_mask_cubemap;
+
+        std::unique_ptr<OpenGL3_Texture1D> sample_texture;
+        std::vector<glm::vec3> polar_offsets;
+        unsigned int sample_number;
     };
 }
 

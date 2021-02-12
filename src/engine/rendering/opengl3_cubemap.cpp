@@ -28,5 +28,10 @@ namespace engine{
     void OpenGL3_Cubemap::make_active_in_slot(const unsigned int slot) {
         glActiveTexture(GL_TEXTURE0+slot);
     }
+
+    OpenGL3_Cubemap::OpenGL3_Cubemap(const unsigned int cubemap_id, const unsigned int cubemap_width,
+                                     const unsigned int cubemap_height) :
+                                     id{cubemap_id}, bound_type{GL_TEXTURE_CUBE_MAP},
+                                     width{cubemap_width}, height{cubemap_height}{}
 }
 

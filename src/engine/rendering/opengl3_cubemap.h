@@ -8,6 +8,7 @@
 namespace engine {
     class OpenGL3_Cubemap {
     public:
+        OpenGL3_Cubemap(const unsigned int cubemap_id, const unsigned int cubemap_width, const unsigned int cubemap_height);
         OpenGL3_Cubemap(const GLenum image_format,
                         const OpenGL3_TextureParameters& parameters,
                         const unsigned int texture_width, const unsigned int texture_height,

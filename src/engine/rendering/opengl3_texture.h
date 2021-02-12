@@ -22,17 +22,17 @@ namespace engine{
     };
 
 
-    class OpenGL3_Texture {
+    class OpenGL3_Texture2D {
     public:
-        OpenGL3_Texture(const GLenum texture_type, const GLenum image_format,
-                        const OpenGL3_TextureParameters& parameters,
-                        const unsigned int texture_width, const unsigned int texture_height,
-                        const GLenum data_format, const GLenum data_type, const void* data);
-        ~OpenGL3_Texture();
-        OpenGL3_Texture(const OpenGL3_Texture& other) = delete;
-        OpenGL3_Texture(OpenGL3_Texture&& other) = delete;
-        OpenGL3_Texture& operator=(const OpenGL3_Texture& other) = delete;
-        OpenGL3_Texture& operator=(OpenGL3_Texture&& other) = delete;
+        OpenGL3_Texture2D(const GLenum image_format,
+                          const OpenGL3_TextureParameters& parameters,
+                          const unsigned int texture_width, const unsigned int texture_height,
+                          const GLenum data_format, const GLenum data_type, const void* data);
+        ~OpenGL3_Texture2D();
+        OpenGL3_Texture2D(const OpenGL3_Texture2D& other) = delete;
+        OpenGL3_Texture2D(OpenGL3_Texture2D&& other) = delete;
+        OpenGL3_Texture2D& operator=(const OpenGL3_Texture2D& other) = delete;
+        OpenGL3_Texture2D& operator=(OpenGL3_Texture2D&& other) = delete;
 
         void make_active_in_slot(const unsigned int slot);
 
@@ -40,6 +40,24 @@ namespace engine{
         GLenum bound_type;
         unsigned int width;
         unsigned int height;
+    };
+
+    class OpenGL3_Texture1D {
+    public:
+        OpenGL3_Texture1D(const GLenum image_format, const OpenGL3_TextureParameters& parameters,
+                          const unsigned int texture_width, const GLenum data_format,
+                          const GLenum data_type, const void* data);
+        ~OpenGL3_Texture1D();
+        OpenGL3_Texture1D(const OpenGL3_Texture1D& other) = delete;
+        OpenGL3_Texture1D(OpenGL3_Texture1D&& other) = delete;
+        OpenGL3_Texture1D& operator=(const OpenGL3_Texture1D& other) = delete;
+        OpenGL3_Texture1D& operator=(OpenGL3_Texture1D&& other) = delete;
+
+        void make_active_in_slot(const unsigned int slot);
+
+        unsigned int id;
+        GLenum bound_type;
+        unsigned int width;
     };
 }
 

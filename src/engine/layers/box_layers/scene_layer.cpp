@@ -19,7 +19,7 @@ namespace engine {
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
                                                      "resources/shaders/shadowmapped.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
-                                                      "resources/shaders/rsm.frag");
+                                                               "resources/shaders/rsm.frag");
 
             auto viewport_dimensions = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
@@ -35,33 +35,72 @@ namespace engine {
                                                               static_cast<unsigned int>(viewport_dimensions[3]),
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
             pos_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
-                                                               OpenGL3_TextureParameters(
-                                                                  {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                   GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
-                                                                  {GL_LINEAR, GL_LINEAR,
-                                                                   GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                               static_cast<unsigned int>(viewport_dimensions[2]),
-                                                               static_cast<unsigned int>(viewport_dimensions[3]),
-                                                               GL_RGB, GL_FLOAT, nullptr);
-            //this is not GL_FLOAT
+                                                            OpenGL3_TextureParameters(
+                                                                    {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                     GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T,
+                                                                     GL_TEXTURE_WRAP_R},
+                                                                    {GL_LINEAR, GL_LINEAR,
+                                                                     GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+                                                                     GL_CLAMP_TO_EDGE}),
+                                                            static_cast<unsigned int>(viewport_dimensions[2]),
+                                                            static_cast<unsigned int>(viewport_dimensions[3]),
+                                                            GL_RGB, GL_FLOAT, nullptr);
             normal_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                OpenGL3_TextureParameters(
-                                                                  {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                   GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
-                                                                  {GL_LINEAR, GL_LINEAR,
-                                                                   GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T,
+                                                                        GL_TEXTURE_WRAP_R},
+                                                                       {GL_LINEAR, GL_LINEAR,
+                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+                                                                        GL_CLAMP_TO_EDGE}),
                                                                static_cast<unsigned int>(viewport_dimensions[2]),
                                                                static_cast<unsigned int>(viewport_dimensions[3]),
                                                                GL_RGB, GL_FLOAT, nullptr);
             flux_cubemap = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
-                                                               OpenGL3_TextureParameters(
-                                                                  {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                   GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R},
-                                                                  {GL_LINEAR, GL_LINEAR,
-                                                                   GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                               static_cast<unsigned int>(viewport_dimensions[2]),
-                                                               static_cast<unsigned int>(viewport_dimensions[3]),
-                                                               GL_RGB, GL_FLOAT, nullptr);
+                                                             OpenGL3_TextureParameters(
+                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T,
+                                                                      GL_TEXTURE_WRAP_R},
+                                                                     {GL_LINEAR, GL_LINEAR,
+                                                                      GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE,
+                                                                      GL_CLAMP_TO_EDGE}),
+                                                             static_cast<unsigned int>(viewport_dimensions[2]),
+                                                             static_cast<unsigned int>(viewport_dimensions[3]),
+                                                             GL_RGB, GL_FLOAT, nullptr);
+
+            //  1 => x, 2 => y, 3 => z
+            //  prefix minus (extract with sign) if needs inverting
+            //  subtract 1 to abs() to get the component
+            std::array<glm::vec<2, glm::i32, glm::lowp>, 6> offset_components_per_face{
+                    glm::vec<2, glm::i32, glm::lowp>{-3, -2},
+                    glm::vec<2, glm::i32, glm::lowp>{3, -2},
+                    glm::vec<2, glm::i32, glm::lowp>{1, 3},
+                    glm::vec<2, glm::i32, glm::lowp>{1, -3},
+                    glm::vec<2, glm::i32, glm::lowp>{1, -2},
+                    glm::vec<2, glm::i32, glm::lowp>{-1, -2}
+
+            };
+
+            unsigned int offset_mask_cubemap_id = 0;
+            glGenTextures(1, &offset_mask_cubemap_id);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, offset_mask_cubemap_id);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[0]));
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[1]));
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[2]));
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[3]));
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[4]));
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RG32I, 1, 1, 0, GL_RG_INTEGER, GL_INT, &(offset_components_per_face[5]));
+            [[maybe_unused]] const auto error = glGetError() != 0;
+            offset_mask_cubemap = std::make_unique<OpenGL3_Cubemap>(offset_mask_cubemap_id, 1, 1);
+
+            sample_number = 50;
+            auto polar_offsets = random_num::random_polar_offsets(sample_number);
+            sample_texture = std::make_unique<OpenGL3_Texture1D>(GL_RGB32F, OpenGL3_TextureParameters(
+                    {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_WRAP_S},
+                    {GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE}),
+                                                                 sample_number,
+                                                                 GL_RGB, GL_FLOAT, polar_offsets.data());
+
 
             glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo->id);
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
@@ -144,7 +183,20 @@ namespace engine {
         draw_shader->set_vec3("light_position", point_light.position);
         depth_cubemap->make_active_in_slot(0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cubemap->id);
-        glEnable(GL_BLEND);
+        pos_cubemap->make_active_in_slot(1);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, pos_cubemap->id);
+        normal_cubemap->make_active_in_slot(2);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, normal_cubemap->id);
+        flux_cubemap->make_active_in_slot(3);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, flux_cubemap->id);
+        sample_texture->make_active_in_slot(4);
+        glBindTexture(GL_TEXTURE_1D, sample_texture->id);
+        offset_mask_cubemap->make_active_in_slot(5);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, offset_mask_cubemap->id);
+
+        draw_shader->set_int("samples", sample_number);
+        draw_shader->set_int("max_sample_radius", 20);
+
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
