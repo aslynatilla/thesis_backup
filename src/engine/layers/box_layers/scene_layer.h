@@ -9,6 +9,7 @@
 #include "../../rendering/opengl3_framebuffer.h"
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
+#include "../../scene_management/spotlight.h"
 #include "../../../utility/file_reader.h"
 
 #include <glm/glm.hpp>
@@ -24,16 +25,17 @@ namespace engine{
 
     private:
         Camera view_camera;
-        PointLight point_light;
+        SpotLight scene_light;
+
         std::shared_ptr<Shader> draw_shader;
         std::shared_ptr<Shader> rsm_generation_shader;
         std::vector<SceneObject> scene_objects;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
-        std::unique_ptr<OpenGL3_Cubemap> depth_cubemap;
-        std::unique_ptr<OpenGL3_Cubemap> pos_cubemap;
-        std::unique_ptr<OpenGL3_Cubemap> normal_cubemap;
-        std::unique_ptr<OpenGL3_Cubemap> flux_cubemap;
+        std::unique_ptr<OpenGL3_Texture> depth_texture;
+        std::unique_ptr<OpenGL3_Texture> position_texture;
+        std::unique_ptr<OpenGL3_Texture> normal_texture;
+        std::unique_ptr<OpenGL3_Texture> flux_texture;
     };
 }
 
