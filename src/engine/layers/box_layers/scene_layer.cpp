@@ -34,8 +34,8 @@ namespace engine {
                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                       {GL_LINEAR, GL_LINEAR,
                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                              static_cast<unsigned int>(viewport_dimensions[2]),
-                                                              static_cast<unsigned int>(viewport_dimensions[3]),
+                                                              static_cast<unsigned int>(viewport_dimensions[2])/2,
+                                                              static_cast<unsigned int>(viewport_dimensions[3])/2,
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
             position_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
@@ -43,8 +43,8 @@ namespace engine {
                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                     {GL_LINEAR, GL_LINEAR,
                                                                      GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                                 static_cast<unsigned int>(viewport_dimensions[2]),
-                                                                 static_cast<unsigned int>(viewport_dimensions[3]),
+                                                                 static_cast<unsigned int>(viewport_dimensions[2])/2,
+                                                                 static_cast<unsigned int>(viewport_dimensions[3]/2),
                                                                  GL_RGB, GL_FLOAT, nullptr);
             normal_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                                OpenGL3_TextureParameters(
@@ -52,8 +52,8 @@ namespace engine {
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                        {GL_LINEAR, GL_LINEAR,
                                                                         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                               static_cast<unsigned int>(viewport_dimensions[2]),
-                                                               static_cast<unsigned int>(viewport_dimensions[3]),
+                                                               static_cast<unsigned int>(viewport_dimensions[2]/2),
+                                                               static_cast<unsigned int>(viewport_dimensions[3]/2),
                                                                GL_RGB, GL_FLOAT, nullptr);
             flux_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                              OpenGL3_TextureParameters(
@@ -61,8 +61,8 @@ namespace engine {
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                      {GL_LINEAR, GL_LINEAR,
                                                                       GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                             static_cast<unsigned int>(viewport_dimensions[2]),
-                                                             static_cast<unsigned int>(viewport_dimensions[3]),
+                                                             static_cast<unsigned int>(viewport_dimensions[2]/2),
+                                                             static_cast<unsigned int>(viewport_dimensions[3]/2),
                                                              GL_RGB, GL_FLOAT, nullptr);
 
             samples_number = 200;
@@ -113,6 +113,7 @@ namespace engine {
         rsm_generation_shader->use();
         rsm_generation_shader->set_vec3("scene_light.position", scene_light.position);
 
+        glViewport(0, 0, 400, 400);
         const auto light_camera = Camera(
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
@@ -151,6 +152,7 @@ namespace engine {
         rsm_fbo->unbind_from(GL_FRAMEBUFFER);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
+        glViewport(0, 0, 800, 800);
         draw_shader->use();
         draw_shader->set_mat4("light_view", light_view_matrix);
         draw_shader->set_mat4("light_projection", light_projection_matrix);
@@ -172,6 +174,10 @@ namespace engine {
         draw_shader->set_int("flux_map", 3);
         draw_shader->set_int("sample_array", 4);
 
+        //  TWEAKABLES
+        draw_shader->set_float("indirect_intensity", indirect_intensity);
+        draw_shader->set_float("max_radius", max_radius);
+
         depth_texture->make_active_in_slot(0);
         glBindTexture(GL_TEXTURE_2D, depth_texture->id);
         position_texture->make_active_in_slot(1);
@@ -183,7 +189,7 @@ namespace engine {
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_1D, random_samples_texture);
         draw_shader->set_int("samples_number", samples_number);
-        //glEnable(GL_BLEND);
+//        glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
@@ -194,7 +200,10 @@ namespace engine {
     }
 
     void SceneLayer::on_imgui_render() {
-        Layer::on_imgui_render();
+        ImGui::Begin("Shader controls");
+        ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 0.1f, 1000.0f);
+        ImGui::SliderFloat("Max radius sample", &max_radius, 0.1f, 400.0f);
+        ImGui::End();
     }
 }
 

@@ -13,6 +13,8 @@
 #include "../../../utility/file_reader.h"
 #include "../../../utility/random_numbers.h"
 
+#include <imgui/imgui.h>
+
 #include <glm/glm.hpp>
 
 namespace engine{
@@ -40,6 +42,9 @@ namespace engine{
 
         unsigned int random_samples_texture;
         unsigned int samples_number;
+
+        float indirect_intensity = 1.0f;
+        float max_radius = 40.0f;
     };
 }
 
