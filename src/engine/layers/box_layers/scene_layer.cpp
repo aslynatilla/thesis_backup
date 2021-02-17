@@ -65,6 +65,14 @@ namespace engine {
                                                              static_cast<unsigned int>(viewport_dimensions[3]),
                                                              GL_RGB, GL_FLOAT, nullptr);
 
+            samples_number = 200;
+            const auto samples = random_num::random_polar_offsets(samples_number);
+            glGenTextures(1, &random_samples_texture);
+            glBindTexture(GL_TEXTURE_1D, random_samples_texture);
+            glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, samples_number, 0, GL_RGB, GL_FLOAT, samples.data());
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
             glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo->id);
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
@@ -85,7 +93,9 @@ namespace engine {
         }
     }
 
-    void SceneLayer::on_detach() {}
+    void SceneLayer::on_detach() {
+        glDeleteTextures(1, &random_samples_texture);
+    }
 
     void engine::SceneLayer::on_event(engine::Event& event) {
 //        Handle this later - resize texture when viewport resized?
@@ -156,9 +166,24 @@ namespace engine {
         draw_shader->set_float("scene_light.linear_attenuation", scene_light.linear_attenuation_factor);
         draw_shader->set_float("scene_light.quadratic_attenuation", scene_light.quadratic_attenuation_factor);
 
+        draw_shader->set_int("shadow_map", 0);
+        draw_shader->set_int("position_map", 1);
+        draw_shader->set_int("normal_map", 2);
+        draw_shader->set_int("flux_map", 3);
+        draw_shader->set_int("sample_array", 4);
+
         depth_texture->make_active_in_slot(0);
         glBindTexture(GL_TEXTURE_2D, depth_texture->id);
-        glEnable(GL_BLEND);
+        position_texture->make_active_in_slot(1);
+        glBindTexture(GL_TEXTURE_2D, position_texture->id);
+        normal_texture->make_active_in_slot(2);
+        glBindTexture(GL_TEXTURE_2D, normal_texture->id);
+        flux_texture->make_active_in_slot(3);
+        glBindTexture(GL_TEXTURE_2D, flux_texture->id);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_1D, random_samples_texture);
+        draw_shader->set_int("samples_number", samples_number);
+        //glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
