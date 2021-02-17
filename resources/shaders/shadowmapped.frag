@@ -65,11 +65,11 @@ float compute_shadow(vec4 light_space_fragment_position, float light_distance)
 
 vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
     vec3 frag_light_space_coord = light_frag_pos.xyz / light_frag_pos.w;
-    frag_light_space_coord = frag_light_space_coord * 0.5 + 0.5;
+    frag_light_space_coord = frag_light_space_coord/400.0 * 0.5 + 0.5;
 
     vec3 indirect = vec3(0.0);
     float step = 1.0 / samples_number;
-    for(float i = 0; i <= 1.0; i += step){
+    for(float i = 0.0; i <= 1.0; i += step){
         vec3 random_sample = texture(sample_array, i).rgb;
         ivec2 map_offset = ivec2(random_sample.x * max_radius, random_sample.y * max_radius);
 
@@ -82,7 +82,7 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
                     max(0.0, dot(vpl_norm, vpl_to_frag)) *
                     max(0.0, dot(frag_normalized_normal, -vpl_to_frag)) /
                     pow(length(vpl_to_frag), 4);
-        indirect += result * random_sample.z;
+        indirect = indirect + result * random_sample.z;
     }
     return clamp(indirect, 0.0, 1.0);
 }

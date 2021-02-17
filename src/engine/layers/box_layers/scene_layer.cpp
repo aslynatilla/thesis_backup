@@ -72,6 +72,7 @@ namespace engine {
             glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, samples_number, 0, GL_RGB, GL_FLOAT, samples.data());
             glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
             glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo->id);
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
