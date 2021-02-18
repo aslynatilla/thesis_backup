@@ -64,19 +64,20 @@ float compute_shadow(vec4 light_space_fragment_position, float light_distance)
 }
 
 vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
-    vec3 frag_light_space_coord = light_frag_pos.xyz / light_frag_pos.w;
-    frag_light_space_coord = frag_light_space_coord/400.0 * 0.5 + 0.5;
-
+    vec3 frag_light_space_coord = light_frag_pos.xyw;
     vec3 indirect = vec3(0.0);
-    float step = 1.0 / samples_number;
-    for(float i = 0.0; i <= 1.0; i += step){
-        vec3 random_sample = texture(sample_array, i).rgb;
-        ivec2 map_offset = ivec2(random_sample.x * max_radius, random_sample.y * max_radius);
 
-        vec3 vpl_pos = textureOffset(position_map, frag_light_space_coord.xy, map_offset).rgb;
-        vec3 vpl_norm = textureOffset(normal_map, frag_light_space_coord.xy, map_offset).rgb;
-        vec3 vpl_flux = textureOffset(flux_map, frag_light_space_coord.xy, map_offset).rgb;
+    for(int i = 0; i <= samples_number; i++){
+        vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
 
+        frag_light_space_coord.x += random_sample.x * max_radius * frag_light_space_coord.z;
+        frag_light_space_coord.y += random_sample.y * max_radius * frag_light_space_coord.z;
+
+        vec3 vpl_pos = textureProj(position_map, frag_light_space_coord.xyz).rgb;
+        vec3 vpl_norm = textureProj(normal_map, frag_light_space_coord.xyz).rgb;
+        vec3 vpl_flux = textureProj(flux_map, frag_light_space_coord.xyz).rgb;
+
+        //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
         vec3 vpl_to_frag = frag_pos - vpl_pos;
         vec3 result = vpl_flux *
                     max(0.0, dot(vpl_norm, vpl_to_frag)) *
@@ -117,7 +118,7 @@ void main(){
 
     //  diffuse component
     float d = max(dot(n, l), 0.0);
-    d = d * attenuation_factor * spotlight_intensity;
+    d = d * attenuation_factor * spotlight_intensity * 2.0;
     vec3 diffuse_component = d * diffuse_color.rgb;
 
     //  ambient component
@@ -130,5 +131,5 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = vec4((diffuse_component + specular_component + indirect_component) * shadow_factor + ambient_component, 1.0);
+    FragColor = vec4((diffuse_component + specular_component) * shadow_factor + indirect_component + ambient_component, 1.0);
 }

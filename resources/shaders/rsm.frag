@@ -26,7 +26,10 @@ layout (location = 2) out vec3 fragment_flux;
 void main(){
     float light_distance = length(frag_pos.xyz - scene_light.position);
     gl_FragDepth = light_distance / far_plane;
-    float attenuation_factor = 1.0/(1.0 + 0.003 * light_distance + 0.00005 * light_distance * light_distance);
+
+    //  Should be here for a spotlight, and multiplied by the flux
+    //  float attenuation_factor = 1.0/(1.0 + 0.003 * light_distance + 0.00005 * light_distance * light_distance);
+    float attenuation_factor = 1.0;
 
     fragment_world_coordinates = frag_pos;
     fragment_normal = frag_normal;

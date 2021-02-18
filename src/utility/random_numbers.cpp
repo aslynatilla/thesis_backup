@@ -19,8 +19,8 @@ namespace random_num{
         result.reserve(number_of_offsets);
         constexpr float two_pi = 2.0f * 3.1415926f;
         for(auto i = 0u; i < number_of_offsets; ++i){
-            const float& xi_one = random_couples_of_floats[2*i];
-            const float& xi_two = random_couples_of_floats[2*i+1];
+            const float xi_one = random_couples_of_floats[2*i];
+            const float xi_two = random_couples_of_floats[2*i+1];
             result.emplace_back(glm::vec3( xi_one * std::sin(two_pi * xi_two),
                                            xi_one * std::cos(two_pi * xi_two),
                                            xi_one * xi_one));

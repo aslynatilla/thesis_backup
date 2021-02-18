@@ -27,6 +27,10 @@ namespace engine {
             auto viewport_dimensions = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
 
+            std::array<unsigned int, 2> texture_dimension =
+                    {static_cast<unsigned int>(viewport_dimensions[2]),
+                     static_cast<unsigned int>(viewport_dimensions[3])    };
+
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_DEPTH_COMPONENT,
                                                               OpenGL3_TextureParameters(
@@ -34,8 +38,8 @@ namespace engine {
                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                       {GL_LINEAR, GL_LINEAR,
                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                              static_cast<unsigned int>(viewport_dimensions[2])/2,
-                                                              static_cast<unsigned int>(viewport_dimensions[3])/2,
+                                                              texture_dimension[0],
+                                                              texture_dimension[1],
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
             position_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
@@ -43,8 +47,8 @@ namespace engine {
                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                     {GL_LINEAR, GL_LINEAR,
                                                                      GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                                 static_cast<unsigned int>(viewport_dimensions[2])/2,
-                                                                 static_cast<unsigned int>(viewport_dimensions[3]/2),
+                                                                 texture_dimension[0],
+                                                                 texture_dimension[1],
                                                                  GL_RGB, GL_FLOAT, nullptr);
             normal_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                                OpenGL3_TextureParameters(
@@ -52,8 +56,8 @@ namespace engine {
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                        {GL_LINEAR, GL_LINEAR,
                                                                         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                               static_cast<unsigned int>(viewport_dimensions[2]/2),
-                                                               static_cast<unsigned int>(viewport_dimensions[3]/2),
+                                                               texture_dimension[0],
+                                                               texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
             flux_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
                                                              OpenGL3_TextureParameters(
@@ -61,8 +65,8 @@ namespace engine {
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                      {GL_LINEAR, GL_LINEAR,
                                                                       GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                             static_cast<unsigned int>(viewport_dimensions[2]/2),
-                                                             static_cast<unsigned int>(viewport_dimensions[3]/2),
+                                                             texture_dimension[0],
+                                                             texture_dimension[1],
                                                              GL_RGB, GL_FLOAT, nullptr);
 
             samples_number = 200;
@@ -114,7 +118,7 @@ namespace engine {
         rsm_generation_shader->use();
         rsm_generation_shader->set_vec3("scene_light.position", scene_light.position);
 
-        glViewport(0, 0, 400, 400);
+        glViewport(0, 0, 800, 800);
         const auto light_camera = Camera(
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
@@ -190,7 +194,7 @@ namespace engine {
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_1D, random_samples_texture);
         draw_shader->set_int("samples_number", samples_number);
-//        glEnable(GL_BLEND);
+        glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
@@ -202,8 +206,8 @@ namespace engine {
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
-        ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 0.1f, 1000.0f);
-        ImGui::SliderFloat("Max radius sample", &max_radius, 0.1f, 400.0f);
+        ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
+        ImGui::SliderFloat("Max radius sample", &max_radius, 1.0f, 400.0f);
         ImGui::End();
     }
 }

@@ -44,7 +44,7 @@ namespace engine{
         unsigned int samples_number;
 
         float indirect_intensity = 1.0f;
-        float max_radius = 40.0f;
+        float max_radius = 1.0f;
     };
 }
 
