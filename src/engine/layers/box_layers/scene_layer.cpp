@@ -59,7 +59,7 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
+            flux_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB8,
                                                              OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -116,7 +116,7 @@ namespace engine {
 
         rsm_fbo->bind_as(GL_FRAMEBUFFER);
         rsm_generation_shader->use();
-        rsm_generation_shader->set_vec3("scene_light.position", scene_light.position);
+        rsm_generation_shader->set_vec3("scene_light_position", scene_light.position);
 
         glViewport(0, 0, 800, 800);
         const auto light_camera = Camera(
@@ -207,7 +207,7 @@ namespace engine {
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
         ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
-        ImGui::SliderFloat("Max radius sample", &max_radius, 1.0f, 400.0f);
+        ImGui::SliderFloat("Max radius sample", &max_radius, 1.0f, 800.0f);
         ImGui::End();
     }
 }

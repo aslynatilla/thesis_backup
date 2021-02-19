@@ -5,18 +5,7 @@ in vec3 frag_normal;
 
 uniform vec4 diffuse_color;
 
-struct Light{
-    vec3 position;
-    vec3 direction;
-    float cutoff_angle;
-    float outer_cutoff_angle;
-
-    float constant_attenuation;
-    float linear_attenuation;
-    float quadratic_attenuation;
-};
-
-uniform Light scene_light;
+uniform vec3 scene_light_position;
 uniform float far_plane;
 
 layout (location = 0) out vec3 fragment_world_coordinates;
@@ -24,7 +13,7 @@ layout (location = 1) out vec3 fragment_normal;
 layout (location = 2) out vec3 fragment_flux;
 
 void main(){
-    float light_distance = length(frag_pos.xyz - scene_light.position);
+    float light_distance = length(frag_pos.xyz - scene_light_position);
     gl_FragDepth = light_distance / far_plane;
 
     //  Should be here for a spotlight, and multiplied by the flux
