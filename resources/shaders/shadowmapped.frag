@@ -46,6 +46,7 @@ uniform float far_plane;
 
 uniform float max_radius;
 uniform float indirect_intensity;
+uniform float light_intensity;
 
 
 float compute_shadow(vec4 light_space_fragment_position, float light_distance)
@@ -70,12 +71,13 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
     for(int i = 0; i <= samples_number; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
 
-        frag_light_space_coord.x += random_sample.x * max_radius * frag_light_space_coord.z;
-        frag_light_space_coord.y += random_sample.y * max_radius * frag_light_space_coord.z;
+        vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius * frag_light_space_coord.z,
+                                    frag_light_space_coord.y + random_sample.y * max_radius * frag_light_space_coord.z,
+                                    frag_light_space_coord.z);
 
-        vec3 vpl_pos = textureProj(position_map, frag_light_space_coord.xyz).rgb;
-        vec3 vpl_norm = textureProj(normal_map, frag_light_space_coord.xyz).rgb;
-        vec3 vpl_flux = textureProj(flux_map, frag_light_space_coord.xyz).rgb;
+        vec3 vpl_pos = textureProj(position_map, sampling_coords.xyz).rgb;
+        vec3 vpl_norm = textureProj(normal_map, sampling_coords.xyz).rgb;
+        vec3 vpl_flux = textureProj(flux_map, sampling_coords.xyz).rgb;
 
         //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
         vec3 vpl_to_frag = frag_pos - vpl_pos;
@@ -118,8 +120,8 @@ void main(){
 
     //  diffuse component
     float d = max(dot(n, l), 0.0);
-    d = d * attenuation_factor * spotlight_intensity * 2.0;
-    vec3 diffuse_component = d * diffuse_color.rgb;
+    d = d * attenuation_factor * spotlight_intensity;
+    vec3 diffuse_component = d * diffuse_color.rgb * light_intensity;
 
     //  ambient component
     vec3 ambient_component = ambient_color.xyz * ambient_color.w;

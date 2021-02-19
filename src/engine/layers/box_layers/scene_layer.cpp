@@ -27,9 +27,9 @@ namespace engine {
             auto viewport_dimensions = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
 
-            std::array<unsigned int, 2> texture_dimension =
-                    {static_cast<unsigned int>(viewport_dimensions[2]),
-                     static_cast<unsigned int>(viewport_dimensions[3])    };
+            texture_dimension =
+                    {static_cast<unsigned int>(viewport_dimensions[2]/2),
+                     static_cast<unsigned int>(viewport_dimensions[3])/2};
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_DEPTH_COMPONENT,
@@ -69,7 +69,7 @@ namespace engine {
                                                              texture_dimension[1],
                                                              GL_RGB, GL_FLOAT, nullptr);
 
-            samples_number = 200;
+            samples_number = 400;
             const auto samples = random_num::random_polar_offsets(samples_number);
             glGenTextures(1, &random_samples_texture);
             glBindTexture(GL_TEXTURE_1D, random_samples_texture);
@@ -116,9 +116,16 @@ namespace engine {
 
         rsm_fbo->bind_as(GL_FRAMEBUFFER);
         rsm_generation_shader->use();
-        rsm_generation_shader->set_vec3("scene_light_position", scene_light.position);
+        rsm_generation_shader->set_vec3("scene_light.position", scene_light.position);
+        rsm_generation_shader->set_vec3("scene_light.direction", scene_light.direction);
+        rsm_generation_shader->set_float("scene_light.cutoff_angle", scene_light.cosine_cutoff_angle);
+        rsm_generation_shader->set_float("scene_light.outer_cutoff_angle", scene_light.cosine_outer_cutoff_angle);
+        rsm_generation_shader->set_float("scene_light.constant_attenuation", scene_light.constant_attenuation_factor);
+        rsm_generation_shader->set_float("scene_light.linear_attenuation", scene_light.linear_attenuation_factor);
+        rsm_generation_shader->set_float("scene_light.quadratic_attenuation", scene_light.quadratic_attenuation_factor);
+        rsm_generation_shader->set_float("light_intensity", light_intensity);
 
-        glViewport(0, 0, 800, 800);
+        glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
         const auto light_camera = Camera(
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
@@ -180,6 +187,7 @@ namespace engine {
         draw_shader->set_int("sample_array", 4);
 
         //  TWEAKABLES
+        draw_shader->set_float("light_intensity", light_intensity);
         draw_shader->set_float("indirect_intensity", indirect_intensity);
         draw_shader->set_float("max_radius", max_radius);
 
@@ -194,7 +202,7 @@ namespace engine {
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_1D, random_samples_texture);
         draw_shader->set_int("samples_number", samples_number);
-        glEnable(GL_BLEND);
+        //glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
@@ -206,8 +214,9 @@ namespace engine {
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
+        ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 5.0f);
         ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
-        ImGui::SliderFloat("Max radius sample", &max_radius, 1.0f, 800.0f);
+        ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
         ImGui::End();
     }
 }

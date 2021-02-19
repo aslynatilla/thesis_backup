@@ -43,8 +43,11 @@ namespace engine{
         unsigned int random_samples_texture;
         unsigned int samples_number;
 
+        float light_intensity = 1.0;
         float indirect_intensity = 1.0f;
-        float max_radius = 1.0f;
+        float max_radius = 40.0f;
+
+        std::array<unsigned int, 2> texture_dimension;
     };
 }
 
