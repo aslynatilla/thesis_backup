@@ -24,12 +24,16 @@ namespace engine {
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
                                                       "resources/shaders/rsm.frag");
 
-            auto viewport_dimensions = std::make_unique<float[]>(4);
-            glGetFloatv(GL_VIEWPORT, viewport_dimensions.get());
+            auto viewport_float_dimension = std::make_unique<float[]>(4);
+            glGetFloatv(GL_VIEWPORT, viewport_float_dimension.get());
+            viewport_dimension[0] = static_cast<unsigned int>(viewport_float_dimension[0]);
+            viewport_dimension[1] = static_cast<unsigned int>(viewport_float_dimension[1]);
+            viewport_dimension[2] = static_cast<unsigned int>(viewport_float_dimension[2]);
+            viewport_dimension[3] = static_cast<unsigned int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<unsigned int>(viewport_dimensions[2]/2),
-                     static_cast<unsigned int>(viewport_dimensions[3])/2};
+                    {static_cast<unsigned int>(viewport_dimension[2]/2),
+                     static_cast<unsigned int>(viewport_dimension[3])/2};
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_DEPTH_COMPONENT,
@@ -164,7 +168,7 @@ namespace engine {
         rsm_fbo->unbind_from(GL_FRAMEBUFFER);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
-        glViewport(0, 0, 800, 800);
+        glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
         draw_shader->use();
         draw_shader->set_mat4("light_view", light_view_matrix);
         draw_shader->set_mat4("light_projection", light_projection_matrix);

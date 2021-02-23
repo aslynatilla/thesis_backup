@@ -47,6 +47,7 @@ namespace engine{
         float indirect_intensity = 1.0f;
         float max_radius = 40.0f;
 
+        std::array<unsigned int, 4> viewport_dimension;
         std::array<unsigned int, 2> texture_dimension;
     };
 }
