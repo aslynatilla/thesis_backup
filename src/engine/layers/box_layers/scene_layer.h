@@ -11,6 +11,9 @@
 #include "../../scene_management/point_light.h"
 #include "../../scene_management/spotlight.h"
 #include "../../../utility/file_reader.h"
+#include "../../../utility/random_numbers.h"
+
+#include <imgui/imgui.h>
 
 #include <glm/glm.hpp>
 
@@ -36,6 +39,15 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture> position_texture;
         std::unique_ptr<OpenGL3_Texture> normal_texture;
         std::unique_ptr<OpenGL3_Texture> flux_texture;
+
+        unsigned int random_samples_texture;
+        unsigned int samples_number;
+
+        float light_intensity = 1.0;
+        float indirect_intensity = 1.0f;
+        float max_radius = 40.0f;
+
+        std::array<unsigned int, 2> texture_dimension;
     };
 }
 
