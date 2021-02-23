@@ -30,7 +30,7 @@ namespace engine{
     }
 
     bool OpenGL3_FrameBuffer::texture_to_attachment_point(const GLenum framebuffer_mode,
-                                                          const GLenum target_attachment_point, const OpenGL3_Texture& texture,
+                                                          const GLenum target_attachment_point, const OpenGL3_Texture2D& texture,
                                                           const int mipmap_level) noexcept {
         glFramebufferTexture2D(framebuffer_mode, target_attachment_point, texture.bound_type, texture.id, mipmap_level);
         return (glGetError() == 0);

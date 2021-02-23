@@ -35,12 +35,12 @@ namespace engine{
         std::vector<SceneObject> scene_objects;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
-        std::unique_ptr<OpenGL3_Texture> depth_texture;
-        std::unique_ptr<OpenGL3_Texture> position_texture;
-        std::unique_ptr<OpenGL3_Texture> normal_texture;
-        std::unique_ptr<OpenGL3_Texture> flux_texture;
+        std::unique_ptr<OpenGL3_Texture2D> depth_texture;
+        std::unique_ptr<OpenGL3_Texture2D> position_texture;
+        std::unique_ptr<OpenGL3_Texture2D> normal_texture;
+        std::unique_ptr<OpenGL3_Texture2D> flux_texture;
+        std::unique_ptr<OpenGL3_Texture1D> samples_texture;
 
-        unsigned int random_samples_texture;
         unsigned int samples_number;
 
         float light_intensity = 1.0;

@@ -20,7 +20,7 @@ namespace engine {
                                          const GLenum texture_type, const unsigned int texture_id,
                                          const int mipmap_level = 0) noexcept;
         bool texture_to_attachment_point(const GLenum framebuffer_mode, const GLenum target_attachment_point,
-                                         const OpenGL3_Texture& texture, const int mipmap_level = 0) noexcept;
+                                         const OpenGL3_Texture2D& texture, const int mipmap_level = 0) noexcept;
         bool texture_to_attachment_point(const GLenum framebuffer_mode, const GLenum target_attachment_point,
                                          const OpenGL3_Cubemap& cubemap, const int mipmap_level = 0) noexcept;
         unsigned int id;

@@ -36,53 +36,54 @@ namespace engine {
                      static_cast<unsigned int>(viewport_dimension[3])/2};
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-            depth_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_DEPTH_COMPONENT,
-                                                              OpenGL3_TextureParameters(
+            depth_texture = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
+                                                                OpenGL3_TextureParameters(
                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                       {GL_LINEAR, GL_LINEAR,
                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                              texture_dimension[0],
-                                                              texture_dimension[1],
-                                                              GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-            position_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
-                                                                 OpenGL3_TextureParameters(
+                                                                texture_dimension[0],
+                                                                texture_dimension[1],
+                                                                GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            position_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
+                                                                   OpenGL3_TextureParameters(
                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                     {GL_LINEAR, GL_LINEAR,
                                                                      GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                                 texture_dimension[0],
-                                                                 texture_dimension[1],
-                                                                 GL_RGB, GL_FLOAT, nullptr);
-            normal_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB32F,
-                                                               OpenGL3_TextureParameters(
+                                                                   texture_dimension[0],
+                                                                   texture_dimension[1],
+                                                                   GL_RGB, GL_FLOAT, nullptr);
+            normal_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
+                                                                 OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                        {GL_LINEAR, GL_LINEAR,
                                                                         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                               texture_dimension[0],
-                                                               texture_dimension[1],
-                                                               GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Texture>(GL_TEXTURE_2D, GL_RGB8,
-                                                             OpenGL3_TextureParameters(
+                                                                 texture_dimension[0],
+                                                                 texture_dimension[1],
+                                                                 GL_RGB, GL_FLOAT, nullptr);
+            flux_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB8,
+                                                               OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                      {GL_LINEAR, GL_LINEAR,
                                                                       GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
-                                                             texture_dimension[0],
-                                                             texture_dimension[1],
-                                                             GL_RGB, GL_FLOAT, nullptr);
+                                                               texture_dimension[0],
+                                                               texture_dimension[1],
+                                                               GL_RGB, GL_FLOAT, nullptr);
 
             samples_number = 400;
             const auto samples = random_num::random_polar_offsets(samples_number);
-            glGenTextures(1, &random_samples_texture);
-            glBindTexture(GL_TEXTURE_1D, random_samples_texture);
-            glTexImage1D(GL_TEXTURE_1D, 0, GL_RGB32F, samples_number, 0, GL_RGB, GL_FLOAT, samples.data());
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, rsm_fbo->id);
+            samples_texture = std::make_unique<OpenGL3_Texture1D>(GL_RGB32F,
+                                                                  OpenGL3_TextureParameters(
+                                                                          {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                           GL_TEXTURE_WRAP_S},
+                                                                          {GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE}),
+                                                                  samples_number,
+                                                                  GL_RGB, GL_FLOAT, samples.data());
+
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *position_texture);
@@ -102,9 +103,7 @@ namespace engine {
         }
     }
 
-    void SceneLayer::on_detach() {
-        glDeleteTextures(1, &random_samples_texture);
-    }
+    void SceneLayer::on_detach() {}
 
     void engine::SceneLayer::on_event(engine::Event& event) {
 //        Handle this later - resize texture when viewport resized?
@@ -203,8 +202,8 @@ namespace engine {
         glBindTexture(GL_TEXTURE_2D, normal_texture->id);
         flux_texture->make_active_in_slot(3);
         glBindTexture(GL_TEXTURE_2D, flux_texture->id);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_1D, random_samples_texture);
+        samples_texture->make_active_in_slot(4);
+        glBindTexture(GL_TEXTURE_1D, samples_texture->id);
         draw_shader->set_int("samples_number", samples_number);
         //glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
