@@ -17,5 +17,6 @@ void main(){
 	frag_pos = vec3(model * vec4(pos, 1.0));
 	gl_Position = projection * view * vec4(frag_pos, 1.0);
 	light_frag_pos = light_projection * light_view * vec4(frag_pos, 1.0);
-	normal = mat3(transpose(inverse(model))) * norm;
+	//  Transpose Inverse Model matrix should be computed out of the shader
+	normal = normalize(mat3(transpose(inverse(model))) * norm);
 }

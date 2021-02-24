@@ -13,6 +13,6 @@ out vec3 frag_normal;
 void main()
 {
     frag_pos = vec3(model * vec4(position, 1.0));
-    frag_normal = mat3(transpose(inverse(model))) * normal;
+    frag_normal = normalize(mat3(transpose(inverse(model))) * normal);
     gl_Position = light_projection * light_view * vec4(frag_pos, 1.0);
 }

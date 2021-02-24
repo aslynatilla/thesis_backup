@@ -16,7 +16,7 @@ namespace engine {
 
             scene_light = SpotLight(glm::vec3(278.0f, 548.0f, 279.5f),
                                     glm::vec3(0.0f, -1.0f, 0.0f),
-                                    70.0f, 80.0f,
+                                    50.0f, 80.0f,
                                     1.0f, 0.004f, 0.00009f);
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
@@ -76,6 +76,8 @@ namespace engine {
             samples_number = 400;
             const auto samples = random_num::random_polar_offsets(samples_number);
 
+            //  TODO: consider using BufferTexture for this
+            //  see: https://www.khronos.org/opengl/wiki/Buffer_Texture
             samples_texture = std::make_unique<OpenGL3_Texture1D>(GL_RGB32F,
                                                                   OpenGL3_TextureParameters(
                                                                           {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -84,11 +86,13 @@ namespace engine {
                                                                   samples_number,
                                                                   GL_RGB, GL_FLOAT, samples.data());
 
+            //  Reflective Shadow Map Framebuffer setup
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *position_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *normal_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *flux_texture);
+            //  Note: you need to specify which attachments the shader will be able to write to
             const auto buffer_enums = std::make_unique<GLenum[]>(3);
             buffer_enums[0] = GL_COLOR_ATTACHMENT0;
             buffer_enums[1] = GL_COLOR_ATTACHMENT1;
@@ -107,6 +111,7 @@ namespace engine {
 
     void engine::SceneLayer::on_event(engine::Event& event) {
 //        Handle this later - resize texture when viewport resized?
+//        TODO: implement a way to resize the texture
 //        EventHandler handler(event);
 //        handler.handle<WindowResizedEvent>([this](auto&& ... args) -> decltype(auto) {
 //            return on_window_resized(std::forward<decltype(args)>(args)...);
@@ -142,18 +147,7 @@ namespace engine {
         rsm_generation_shader->set_mat4("light_view", light_view_matrix);
         rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
         rsm_generation_shader->set_float("far_plane", 2000.0f);
-        rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                             GL_TEXTURE_2D,
-                                             depth_texture->id);
-        rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                             GL_TEXTURE_2D,
-                                             position_texture->id);
-        rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
-                                             GL_TEXTURE_2D,
-                                             normal_texture->id);
-        rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
-                                             GL_TEXTURE_2D,
-                                             flux_texture->id);
+
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glDisable(GL_BLEND);
         if (!scene_objects.empty()) {
@@ -189,7 +183,7 @@ namespace engine {
         draw_shader->set_int("flux_map", 3);
         draw_shader->set_int("sample_array", 4);
 
-        //  TWEAKABLES
+        //  Tweakable values
         draw_shader->set_float("light_intensity", light_intensity);
         draw_shader->set_float("indirect_intensity", indirect_intensity);
         draw_shader->set_float("max_radius", max_radius);

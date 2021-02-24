@@ -49,14 +49,19 @@ uniform float indirect_intensity;
 uniform float light_intensity;
 
 
-float compute_shadow(vec4 light_space_fragment_position, float light_distance)
+float compute_shadow(float light_distance)
 {
-    vec3 fragment_light_space_coordinates = light_space_fragment_position.xyz / light_space_fragment_position.w;
+    //  Compute fragment position in light space
+    vec3 fragment_light_space_coordinates = light_frag_pos.xyz / light_frag_pos.w;
+    //  Move it in the unit square [0, 1] x [0, 1]
     fragment_light_space_coordinates = fragment_light_space_coordinates * 0.5 + 0.5;
+
+    //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
+    // of the fragment from the light
     float depth = texture(shadow_map, fragment_light_space_coordinates.xy).r;
     depth *= far_plane;
 
-    //  if inside the view frustum and depth in the shadowmap is higher
+    //  TODO: 0.05 is a magic number; it should be set as a uniform value
     if (light_distance < depth + 0.05){
         return 1.0;
     } else {
@@ -66,6 +71,7 @@ float compute_shadow(vec4 light_space_fragment_position, float light_distance)
 
 vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
     vec3 frag_light_space_coord = light_frag_pos.xyw;
+    frag_light_space_coord.xy = frag_light_space_coord.xy * 0.5 + 0.5;
     vec3 indirect = vec3(0.0);
 
     for(int i = 0; i <= samples_number; i++){
@@ -81,10 +87,11 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
 
         //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
         vec3 vpl_to_frag = frag_pos - vpl_pos;
+        float distance_to_vpl = length(vpl_to_frag);
         vec3 result = vpl_flux *
                     max(0.0, dot(vpl_norm, vpl_to_frag)) *
                     max(0.0, dot(frag_normalized_normal, -vpl_to_frag)) /
-                    pow(length(vpl_to_frag), 4);
+                    pow(distance_to_vpl, 4.0);
         indirect = indirect + result * random_sample.z;
     }
     return clamp(indirect, 0.0, 1.0);
@@ -113,7 +120,7 @@ void main(){
 
 
     //  shadow factor
-    float shadow_factor = compute_shadow(light_frag_pos, distance_from_light);
+    float shadow_factor = compute_shadow(distance_from_light);
 
     //  indirect lighting
     vec3 indirect_component = compute_indirect_illumination(n) * indirect_intensity;
