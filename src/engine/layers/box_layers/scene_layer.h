@@ -27,6 +27,10 @@ namespace engine{
         void on_imgui_render() final;
 
     private:
+        bool set_light_in_shader(const SpotLight& light, std::shared_ptr<Shader>& shader);
+        void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
+        void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
+
         Camera view_camera;
         SpotLight scene_light;
 

@@ -101,6 +101,8 @@ namespace engine {
             rsm_fbo->unbind_from();
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+
 //            glEnable(GL_CULL_FACE);
 //            glCullFace(GL_BACK);
 //            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -122,18 +124,6 @@ namespace engine {
     void SceneLayer::update(float delta_time) {
         Layer::update(delta_time);
 
-        rsm_fbo->bind_as(GL_FRAMEBUFFER);
-        rsm_generation_shader->use();
-        rsm_generation_shader->set_vec3("scene_light.position", scene_light.position);
-        rsm_generation_shader->set_vec3("scene_light.direction", scene_light.direction);
-        rsm_generation_shader->set_float("scene_light.cutoff_angle", scene_light.cosine_cutoff_angle);
-        rsm_generation_shader->set_float("scene_light.outer_cutoff_angle", scene_light.cosine_outer_cutoff_angle);
-        rsm_generation_shader->set_float("scene_light.constant_attenuation", scene_light.constant_attenuation_factor);
-        rsm_generation_shader->set_float("scene_light.linear_attenuation", scene_light.linear_attenuation_factor);
-        rsm_generation_shader->set_float("scene_light.quadratic_attenuation", scene_light.quadratic_attenuation_factor);
-        rsm_generation_shader->set_float("light_intensity", light_intensity);
-
-        glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
         const auto light_camera = Camera(
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
@@ -144,12 +134,19 @@ namespace engine {
 
         const auto light_view_matrix = light_camera.get_view_matrix();
         const auto light_projection_matrix = light_camera.get_projection_matrix();
+
+        rsm_fbo->bind_as(GL_FRAMEBUFFER);
+        glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //  RSM Shader uniforms
+        rsm_generation_shader->use();
+        rsm_generation_shader->set_float("light_intensity", light_intensity);
         rsm_generation_shader->set_mat4("light_view", light_view_matrix);
         rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
         rsm_generation_shader->set_float("far_plane", 2000.0f);
+        set_light_in_shader(scene_light, rsm_generation_shader);
 
-        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glDisable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 rsm_generation_shader->set_mat4("model", drawable.transform);
@@ -159,9 +156,11 @@ namespace engine {
         }
 
         rsm_fbo->unbind_from(GL_FRAMEBUFFER);
+        glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
-        glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
+
+        //  Shader uniforms
         draw_shader->use();
         draw_shader->set_mat4("light_view", light_view_matrix);
         draw_shader->set_mat4("light_projection", light_projection_matrix);
@@ -169,37 +168,26 @@ namespace engine {
         draw_shader->set_mat4("view", view_camera.get_view_matrix());
         draw_shader->set_mat4("projection", view_camera.get_projection_matrix());
         draw_shader->set_vec3("camera_position", view_camera.get_position());
-        draw_shader->set_vec3("scene_light.position", scene_light.position);
-        draw_shader->set_vec3("scene_light.direction", scene_light.direction);
-        draw_shader->set_float("scene_light.cutoff_angle", scene_light.cosine_cutoff_angle);
-        draw_shader->set_float("scene_light.outer_cutoff_angle", scene_light.cosine_outer_cutoff_angle);
-        draw_shader->set_float("scene_light.constant_attenuation", scene_light.constant_attenuation_factor);
-        draw_shader->set_float("scene_light.linear_attenuation", scene_light.linear_attenuation_factor);
-        draw_shader->set_float("scene_light.quadratic_attenuation", scene_light.quadratic_attenuation_factor);
+        set_light_in_shader(scene_light, draw_shader);
 
+        //  Texture location binding
         draw_shader->set_int("shadow_map", 0);
         draw_shader->set_int("position_map", 1);
         draw_shader->set_int("normal_map", 2);
         draw_shader->set_int("flux_map", 3);
         draw_shader->set_int("sample_array", 4);
+        draw_shader->set_int("samples_number", samples_number);
+        bind_texture_in_slot(0, depth_texture.get());
+        bind_texture_in_slot(1, position_texture.get());
+        bind_texture_in_slot(2, normal_texture.get());
+        bind_texture_in_slot(3, flux_texture.get());
+        bind_texture_in_slot(4, samples_texture.get());
 
         //  Tweakable values
         draw_shader->set_float("light_intensity", light_intensity);
         draw_shader->set_float("indirect_intensity", indirect_intensity);
         draw_shader->set_float("max_radius", max_radius);
 
-        depth_texture->make_active_in_slot(0);
-        glBindTexture(GL_TEXTURE_2D, depth_texture->id);
-        position_texture->make_active_in_slot(1);
-        glBindTexture(GL_TEXTURE_2D, position_texture->id);
-        normal_texture->make_active_in_slot(2);
-        glBindTexture(GL_TEXTURE_2D, normal_texture->id);
-        flux_texture->make_active_in_slot(3);
-        glBindTexture(GL_TEXTURE_2D, flux_texture->id);
-        samples_texture->make_active_in_slot(4);
-        glBindTexture(GL_TEXTURE_1D, samples_texture->id);
-        draw_shader->set_int("samples_number", samples_number);
-        //glEnable(GL_BLEND);
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(draw_shader);
@@ -211,10 +199,31 @@ namespace engine {
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
-        ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 5.0f);
+        ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
         ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
         ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
         ImGui::End();
+    }
+
+    bool SceneLayer::set_light_in_shader(const SpotLight& light, std::shared_ptr<Shader>& shader) {
+        shader->set_vec3("scene_light.position", light.position);
+        shader->set_vec3("scene_light.direction", light.direction);
+        shader->set_float("scene_light.cutoff_angle", light.cosine_cutoff_angle);
+        shader->set_float("scene_light.outer_cutoff_angle", light.cosine_outer_cutoff_angle);
+        shader->set_float("scene_light.constant_attenuation", light.constant_attenuation_factor);
+        shader->set_float("scene_light.linear_attenuation", light.linear_attenuation_factor);
+        shader->set_float("scene_light.quadratic_attenuation", light.quadratic_attenuation_factor);
+        return glGetError() != 0;
+    }
+
+    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
+    }
+
+    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
     }
 }
 
