@@ -168,6 +168,10 @@ namespace engine {
 
         draw_indirect_light ? draw_scene(draw_shader, light_view_matrix, light_projection_matrix)
                             : draw_scene(no_indirect_shader, light_view_matrix, light_projection_matrix);
+
+        if(draw_indirect_light){
+            draw_shader->set_bool("only_indirect_component", only_indirect_component);
+        }
     }
 
     void SceneLayer::on_imgui_render() {
@@ -176,6 +180,8 @@ namespace engine {
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
             ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
+            //ImGui::SliderFloat("Max radius sample", &max_radius, 0.2f, 1.0f, "%.3f");
+            ImGui::Checkbox("Visualize only indirect lighting", &only_indirect_component);
         }
         ImGui::End();
     }

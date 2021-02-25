@@ -47,6 +47,7 @@ uniform float far_plane;
 uniform float max_radius;
 uniform float indirect_intensity;
 uniform float light_intensity;
+uniform bool only_indirect_component;
 
 
 float compute_shadow(float light_distance)
@@ -140,5 +141,6 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = vec4((diffuse_component + specular_component) * shadow_factor + indirect_component + ambient_component, 1.0);
+    FragColor = !only_indirect_component ? vec4((diffuse_component + specular_component) * shadow_factor + indirect_component + ambient_component, 1.0)
+                                         : vec4(indirect_component, 1.0);
 }
