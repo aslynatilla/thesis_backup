@@ -21,8 +21,10 @@ namespace engine {
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
                                                      "resources/shaders/shadowmapped.frag");
+            no_indirect_shader = shader::create_shader_from("resources/shaders/shadowmapped_no_indirect.vert",
+                                                            "resources/shaders/shadowmapped_no_indirect.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
-                                                      "resources/shaders/rsm.frag");
+                                                               "resources/shaders/rsm.frag");
 
             auto viewport_float_dimension = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_float_dimension.get());
@@ -32,43 +34,44 @@ namespace engine {
             viewport_dimension[3] = static_cast<unsigned int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<unsigned int>(viewport_dimension[2]/2),
-                     static_cast<unsigned int>(viewport_dimension[3])/2};
+                    {static_cast<unsigned int>(viewport_dimension[2] / 2),
+                     static_cast<unsigned int>(viewport_dimension[3]) / 2};
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
                                                                 OpenGL3_TextureParameters(
-                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                      {GL_LINEAR, GL_LINEAR,
-                                                                       GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                        {GL_LINEAR, GL_LINEAR,
+                                                                         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                 texture_dimension[0],
                                                                 texture_dimension[1],
                                                                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
             position_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
                                                                    OpenGL3_TextureParameters(
-                                                                    {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                     GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                    {GL_LINEAR, GL_LINEAR,
-                                                                     GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                           {GL_TEXTURE_MIN_FILTER,
+                                                                            GL_TEXTURE_MAG_FILTER,
+                                                                            GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                           {GL_LINEAR, GL_LINEAR,
+                                                                            GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                    texture_dimension[0],
                                                                    texture_dimension[1],
                                                                    GL_RGB, GL_FLOAT, nullptr);
             normal_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
-                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                       {GL_LINEAR, GL_LINEAR,
-                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                         {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                          GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                         {GL_LINEAR, GL_LINEAR,
+                                                                          GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                  texture_dimension[0],
                                                                  texture_dimension[1],
                                                                  GL_RGB, GL_FLOAT, nullptr);
             flux_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB8,
                                                                OpenGL3_TextureParameters(
-                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                     {GL_LINEAR, GL_LINEAR,
-                                                                      GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                       {GL_LINEAR, GL_LINEAR,
+                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
@@ -114,10 +117,13 @@ namespace engine {
     void engine::SceneLayer::on_event(engine::Event& event) {
 //        Handle this later - resize texture when viewport resized?
 //        TODO: implement a way to resize the texture
-//        EventHandler handler(event);
+        EventHandler handler(event);
 //        handler.handle<WindowResizedEvent>([this](auto&& ... args) -> decltype(auto) {
 //            return on_window_resized(std::forward<decltype(args)>(args)...);
 //        });
+        handler.handle<KeyPressedEvent>([this](auto&& ...args) -> decltype(auto) {
+            return on_key_pressed(std::forward<decltype(args)>(args)...);
+        });
         event.handled = false;
     }
 
@@ -160,48 +166,17 @@ namespace engine {
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
 
-        //  Shader uniforms
-        draw_shader->use();
-        draw_shader->set_mat4("light_view", light_view_matrix);
-        draw_shader->set_mat4("light_projection", light_projection_matrix);
-        draw_shader->set_float("far_plane", 2000.0f);
-        draw_shader->set_mat4("view", view_camera.get_view_matrix());
-        draw_shader->set_mat4("projection", view_camera.get_projection_matrix());
-        draw_shader->set_vec3("camera_position", view_camera.get_position());
-        set_light_in_shader(scene_light, draw_shader);
-
-        //  Texture location binding
-        draw_shader->set_int("shadow_map", 0);
-        draw_shader->set_int("position_map", 1);
-        draw_shader->set_int("normal_map", 2);
-        draw_shader->set_int("flux_map", 3);
-        draw_shader->set_int("sample_array", 4);
-        draw_shader->set_int("samples_number", samples_number);
-        bind_texture_in_slot(0, depth_texture.get());
-        bind_texture_in_slot(1, position_texture.get());
-        bind_texture_in_slot(2, normal_texture.get());
-        bind_texture_in_slot(3, flux_texture.get());
-        bind_texture_in_slot(4, samples_texture.get());
-
-        //  Tweakable values
-        draw_shader->set_float("light_intensity", light_intensity);
-        draw_shader->set_float("indirect_intensity", indirect_intensity);
-        draw_shader->set_float("max_radius", max_radius);
-
-        if (!scene_objects.empty()) {
-            for (const auto& drawable : scene_objects) {
-                drawable.material.bind_uniforms_to(draw_shader);
-                draw_shader->set_mat4("model", drawable.transform);
-                OpenGL3_Renderer::draw(*(drawable.vao));
-            }
-        }
+        draw_indirect_light ? draw_scene(draw_shader, light_view_matrix, light_projection_matrix)
+                            : draw_scene(no_indirect_shader, light_view_matrix, light_projection_matrix);
     }
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
-        ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
-        ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
+        if (draw_indirect_light) {
+            ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
+            ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
+        }
         ImGui::End();
     }
 
@@ -224,6 +199,53 @@ namespace engine {
     void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
         texture->make_active_in_slot(slot_number);
         glBindTexture(texture->bound_type, texture->id);
+    }
+
+    bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
+        if (event.get_keycode() == GLFW_KEY_F1) {
+            draw_indirect_light = !draw_indirect_light;
+        }
+        return false;
+    }
+
+    void SceneLayer::draw_scene(std::shared_ptr<Shader>& shader,
+                                const glm::mat4& light_view_matrix, const glm::mat4& light_projection_matrix) {
+
+        //  Shader uniforms
+        shader->use();
+        shader->set_mat4("light_view", light_view_matrix);
+        shader->set_mat4("light_projection", light_projection_matrix);
+        shader->set_float("far_plane", 2000.0f);
+        shader->set_mat4("view", view_camera.get_view_matrix());
+        shader->set_mat4("projection", view_camera.get_projection_matrix());
+        shader->set_vec3("camera_position", view_camera.get_position());
+        set_light_in_shader(scene_light, shader);
+
+        //  Texture location binding
+        shader->set_int("shadow_map", 0);
+        shader->set_int("position_map", 1);
+        shader->set_int("normal_map", 2);
+        shader->set_int("flux_map", 3);
+        shader->set_int("sample_array", 4);
+        shader->set_int("samples_number", samples_number);
+        bind_texture_in_slot(0, depth_texture.get());
+        bind_texture_in_slot(1, position_texture.get());
+        bind_texture_in_slot(2, normal_texture.get());
+        bind_texture_in_slot(3, flux_texture.get());
+        bind_texture_in_slot(4, samples_texture.get());
+
+        //  Tweakable values
+        shader->set_float("light_intensity", light_intensity);
+        shader->set_float("indirect_intensity", indirect_intensity);
+        shader->set_float("max_radius", max_radius);
+
+        if (!scene_objects.empty()) {
+            for (const auto& drawable : scene_objects) {
+                drawable.material.bind_uniforms_to(shader);
+                shader->set_mat4("model", drawable.transform);
+                OpenGL3_Renderer::draw(*(drawable.vao));
+            }
+        }
     }
 }
 

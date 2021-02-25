@@ -3,6 +3,8 @@
 
 #include "../layer.h"
 
+#include "../../events/window_events.h"
+#include "../../events/keyboard_events.h"
 #include "../../rendering/camera.h"
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
@@ -13,6 +15,7 @@
 #include "../../../utility/file_reader.h"
 #include "../../../utility/random_numbers.h"
 
+#include <GLFW/glfw3.h>
 #include <imgui/imgui.h>
 
 #include <glm/glm.hpp>
@@ -27,14 +30,19 @@ namespace engine{
         void on_imgui_render() final;
 
     private:
+        bool on_key_pressed(KeyPressedEvent event);
         bool set_light_in_shader(const SpotLight& light, std::shared_ptr<Shader>& shader);
+        void draw_scene(std::shared_ptr<Shader>& shader,
+                        const glm::mat4& light_view_matrix, const glm::mat4& light_projection_matrix);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
 
         Camera view_camera;
         SpotLight scene_light;
 
+        bool draw_indirect_light = true;
         std::shared_ptr<Shader> draw_shader;
+        std::shared_ptr<Shader> no_indirect_shader;
         std::shared_ptr<Shader> rsm_generation_shader;
         std::vector<SceneObject> scene_objects;
 
