@@ -5,6 +5,7 @@ in vec4 light_frag_pos;
 in vec3 normal;
 
 out vec4 FragColor;
+out vec4 Debug;
 
 uniform float opacity;
 uniform float shininess;
@@ -72,12 +73,15 @@ float compute_shadow(float light_distance)
 
 vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
     vec3 frag_light_space_coord = light_frag_pos.xyw;
+    Debug = light_frag_pos.xyzw;
+    return vec3(light_frag_pos.xy/light_frag_pos.w, 0);
     frag_light_space_coord.xy = frag_light_space_coord.xy * 0.5 + 0.5;
+    //^  verify this is [0,1]
     vec3 indirect = vec3(0.0);
 
     for(int i = 0; i <= samples_number; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
-
+/*
         vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius * frag_light_space_coord.z,
                                     frag_light_space_coord.y + random_sample.y * max_radius * frag_light_space_coord.z,
                                     frag_light_space_coord.z);
@@ -85,6 +89,17 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
         vec3 vpl_pos = textureProj(position_map, sampling_coords.xyz).rgb;
         vec3 vpl_norm = textureProj(normal_map, sampling_coords.xyz).rgb;
         vec3 vpl_flux = textureProj(flux_map, sampling_coords.xyz).rgb;
+*/
+
+        vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius,
+                                    frag_light_space_coord.y + random_sample.y * max_radius,
+                                    frag_light_space_coord.z);
+
+        return vec3(sampling_coords.xy, 0.0);
+
+        vec3 vpl_pos = texture(position_map, sampling_coords.xy).rgb;
+        vec3 vpl_norm = texture(normal_map, sampling_coords.xy).rgb;
+        vec3 vpl_flux = texture(flux_map, sampling_coords.xy).rgb;
 
         //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
         vec3 vpl_to_frag = frag_pos - vpl_pos;
@@ -141,6 +156,5 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = !only_indirect_component ? vec4((diffuse_component + specular_component) * shadow_factor + indirect_component + ambient_component, 1.0)
-                                         : vec4(indirect_component, 1.0);
+    FragColor = vec4(indirect_component, 1.0);
 }

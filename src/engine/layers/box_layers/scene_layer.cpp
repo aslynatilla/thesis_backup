@@ -38,6 +38,7 @@ namespace engine {
                      static_cast<unsigned int>(viewport_dimension[3]) / 2};
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+            debug_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
                                                                 OpenGL3_TextureParameters(
                                                                         {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -76,6 +77,16 @@ namespace engine {
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
 
+            debug_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGBA32F,
+                                                               OpenGL3_TextureParameters(
+                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                       {GL_NEAREST, GL_NEAREST,
+                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                               viewport_dimension[2],
+                                                               viewport_dimension[3],
+                                                               GL_RGBA, GL_FLOAT, nullptr);
+
             samples_number = 400;
             const auto samples = random_num::random_polar_offsets(samples_number);
 
@@ -102,6 +113,10 @@ namespace engine {
             buffer_enums[2] = GL_COLOR_ATTACHMENT2;
             glDrawBuffers(3, buffer_enums.get());
             rsm_fbo->unbind_from();
+            debug_fbo->bind_as(GL_FRAMEBUFFER);
+            debug_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *debug_texture);
+            glDrawBuffers(2, buffer_enums.get());
+            debug_fbo->unbind_from();
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
@@ -162,23 +177,33 @@ namespace engine {
         }
 
         rsm_fbo->unbind_from(GL_FRAMEBUFFER);
+        debug_fbo->bind_as(GL_FRAMEBUFFER);
         glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
 
+        if(draw_indirect_light){
+            draw_shader->set_bool("only_indirect_component", only_indirect_component);
+        }
         draw_indirect_light ? draw_scene(draw_shader, light_view_matrix, light_projection_matrix)
                             : draw_scene(no_indirect_shader, light_view_matrix, light_projection_matrix);
+
+        debug_fbo->unbind_from(GL_FRAMEBUFFER);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear();
 
         if(draw_indirect_light){
             draw_shader->set_bool("only_indirect_component", only_indirect_component);
         }
+        draw_indirect_light ? draw_scene(draw_shader, light_view_matrix, light_projection_matrix)
+                            : draw_scene(no_indirect_shader, light_view_matrix, light_projection_matrix);
     }
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
         if (draw_indirect_light) {
-            ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 10000.0f);
+            ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
             //ImGui::SliderFloat("Max radius sample", &max_radius, 0.2f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &only_indirect_component);
