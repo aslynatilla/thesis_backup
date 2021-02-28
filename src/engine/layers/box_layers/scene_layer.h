@@ -40,27 +40,27 @@ namespace engine{
         Camera view_camera;
         SpotLight scene_light;
 
-        bool draw_indirect_light = true;
         std::shared_ptr<Shader> draw_shader;
         std::shared_ptr<Shader> no_indirect_shader;
         std::shared_ptr<Shader> rsm_generation_shader;
+
         std::vector<SceneObject> scene_objects;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
-        std::unique_ptr<OpenGL3_FrameBuffer> debug_fbo;
         std::unique_ptr<OpenGL3_Texture2D> depth_texture;
         std::unique_ptr<OpenGL3_Texture2D> position_texture;
         std::unique_ptr<OpenGL3_Texture2D> normal_texture;
         std::unique_ptr<OpenGL3_Texture2D> flux_texture;
-        std::unique_ptr<OpenGL3_Texture2D> debug_texture;
         std::unique_ptr<OpenGL3_Texture1D> samples_texture;
 
         unsigned int samples_number;
 
-        float light_intensity = 1.0;
-        float indirect_intensity = 1.0f;
-        float max_radius = 0.1f;
-        bool only_indirect_component = false;
+        float light_intensity = 2.4f;
+        float indirect_intensity = 25.0f;
+        float max_radius = 0.24f;
+        bool hide_direct_component = false;
+        bool draw_indirect_light = true;
+
 
         std::array<unsigned int, 4> viewport_dimension;
         std::array<unsigned int, 2> texture_dimension;

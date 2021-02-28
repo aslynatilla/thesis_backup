@@ -5,7 +5,6 @@ in vec4 light_frag_pos;
 in vec3 normal;
 
 out vec4 FragColor;
-out vec4 Debug;
 
 uniform float opacity;
 uniform float shininess;
@@ -48,8 +47,8 @@ uniform float far_plane;
 uniform float max_radius;
 uniform float indirect_intensity;
 uniform float light_intensity;
-uniform bool only_indirect_component;
 
+uniform bool hide_direct_component;
 
 float compute_shadow(float light_distance)
 {
@@ -64,7 +63,7 @@ float compute_shadow(float light_distance)
     depth *= far_plane;
 
     //  TODO: 0.05 is a magic number; it should be set as a uniform value
-    if (light_distance < depth + 0.09){
+    if (light_distance < depth + 0.11){
         return 1.0;
     } else {
         return 0.4;
@@ -95,7 +94,6 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * random_sample.z;
     }
-    Debug = vec4(clamp(indirect, 0.0, 1.0), 1.0);
     return clamp(indirect, 0.0, 1.0);
 }
 
@@ -142,5 +140,6 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+    FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
+                                        :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
 }
