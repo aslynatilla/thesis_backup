@@ -64,7 +64,7 @@ float compute_shadow(float light_distance)
     depth *= far_plane;
 
     //  TODO: 0.05 is a magic number; it should be set as a uniform value
-    if (light_distance < depth + 0.05){
+    if (light_distance < depth + 0.09){
         return 1.0;
     } else {
         return 0.4;
@@ -73,29 +73,14 @@ float compute_shadow(float light_distance)
 
 vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
     vec3 frag_light_space_coord = light_frag_pos.xyw;
-    Debug = light_frag_pos.xyzw;
-    return vec3(light_frag_pos.xy/light_frag_pos.w, 0);
-    frag_light_space_coord.xy = frag_light_space_coord.xy * 0.5 + 0.5;
-    //^  verify this is [0,1]
+    frag_light_space_coord.xy = frag_light_space_coord.xy/frag_light_space_coord.z * 0.5 + 0.5;
     vec3 indirect = vec3(0.0);
 
     for(int i = 0; i <= samples_number; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
-/*
-        vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius * frag_light_space_coord.z,
-                                    frag_light_space_coord.y + random_sample.y * max_radius * frag_light_space_coord.z,
-                                    frag_light_space_coord.z);
-
-        vec3 vpl_pos = textureProj(position_map, sampling_coords.xyz).rgb;
-        vec3 vpl_norm = textureProj(normal_map, sampling_coords.xyz).rgb;
-        vec3 vpl_flux = textureProj(flux_map, sampling_coords.xyz).rgb;
-*/
-
         vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius,
                                     frag_light_space_coord.y + random_sample.y * max_radius,
                                     frag_light_space_coord.z);
-
-        return vec3(sampling_coords.xy, 0.0);
 
         vec3 vpl_pos = texture(position_map, sampling_coords.xy).rgb;
         vec3 vpl_norm = texture(normal_map, sampling_coords.xy).rgb;
@@ -110,6 +95,7 @@ vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * random_sample.z;
     }
+    Debug = vec4(clamp(indirect, 0.0, 1.0), 1.0);
     return clamp(indirect, 0.0, 1.0);
 }
 
@@ -156,5 +142,5 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = vec4(indirect_component, 1.0);
+    FragColor = vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
 }

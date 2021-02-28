@@ -59,7 +59,7 @@ namespace engine{
 
         float light_intensity = 1.0;
         float indirect_intensity = 1.0f;
-        float max_radius = 40.0f;
+        float max_radius = 0.1f;
         bool only_indirect_component = false;
 
         std::array<unsigned int, 4> viewport_dimension;

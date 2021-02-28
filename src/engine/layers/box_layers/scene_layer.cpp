@@ -54,29 +54,32 @@ namespace engine {
                                                                             GL_TEXTURE_MAG_FILTER,
                                                                             GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                            {GL_LINEAR, GL_LINEAR,
-                                                                            GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
                                                                    texture_dimension[0],
                                                                    texture_dimension[1],
                                                                    GL_RGB, GL_FLOAT, nullptr);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
+
             normal_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
                                                                          {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                           GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                          {GL_LINEAR, GL_LINEAR,
-                                                                          GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                          GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
                                                                  texture_dimension[0],
                                                                  texture_dimension[1],
                                                                  GL_RGB, GL_FLOAT, nullptr);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
             flux_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB8,
                                                                OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                        {GL_LINEAR, GL_LINEAR,
-                                                                        GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                        GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
             debug_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGBA32F,
                                                                OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -204,8 +207,8 @@ namespace engine {
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
-            //ImGui::SliderFloat("Max radius sample", &max_radius, 0.2f, 1.0f, "%.3f");
+            //ImGui::SliderFloat("Max radius sample", &max_radius, 10.0f, static_cast<float>(texture_dimension[0]));
+            ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &only_indirect_component);
         }
         ImGui::End();
