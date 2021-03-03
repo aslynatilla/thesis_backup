@@ -33,10 +33,6 @@ struct Light{
 uniform Light scene_light;
 
 uniform sampler2D shadow_map;
-uniform sampler2D position_map;
-uniform sampler2D normal_map;
-uniform sampler2D flux_map;
-uniform sampler1D sample_array;
 
 uniform int samples_number;
 
@@ -48,7 +44,6 @@ uniform float max_radius;
 uniform float indirect_intensity;
 uniform float light_intensity;
 
-uniform bool hide_direct_component;
 
 float compute_shadow(float light_distance)
 {
@@ -63,38 +58,11 @@ float compute_shadow(float light_distance)
     depth *= far_plane;
 
     //  TODO: 0.05 is a magic number; it should be set as a uniform value
-    if (light_distance < depth + 0.11){
+    if (light_distance < depth + 0.05){
         return 1.0;
     } else {
         return 0.4;
     }
-}
-
-vec3 compute_indirect_illumination(vec3 frag_normalized_normal){
-    vec3 frag_light_space_coord = light_frag_pos.xyw;
-    frag_light_space_coord.xy = frag_light_space_coord.xy/frag_light_space_coord.z * 0.5 + 0.5;
-    vec3 indirect = vec3(0.0);
-
-    for(int i = 0; i <= samples_number; i++){
-        vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
-        vec3 sampling_coords = vec3(frag_light_space_coord.x + random_sample.x * max_radius,
-                                    frag_light_space_coord.y + random_sample.y * max_radius,
-                                    frag_light_space_coord.z);
-
-        vec3 vpl_pos = texture(position_map, sampling_coords.xy).rgb;
-        vec3 vpl_norm = texture(normal_map, sampling_coords.xy).rgb;
-        vec3 vpl_flux = texture(flux_map, sampling_coords.xy).rgb;
-
-        //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
-        vec3 vpl_to_frag = frag_pos - vpl_pos;
-        float distance_to_vpl = length(vpl_to_frag);
-        vec3 result = vpl_flux *
-                    max(0.0, dot(vpl_norm, vpl_to_frag)) *
-                    max(0.0, dot(frag_normalized_normal, -vpl_to_frag)) /
-                    pow(distance_to_vpl, 4.0);
-        indirect = indirect + result * random_sample.z;
-    }
-    return clamp(indirect, 0.0, 1.0);
 }
 
 void main(){
@@ -122,9 +90,6 @@ void main(){
     //  shadow factor
     float shadow_factor = compute_shadow(distance_from_light);
 
-    //  indirect lighting
-    vec3 indirect_component = compute_indirect_illumination(n) * indirect_intensity;
-
     //  diffuse component
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor * spotlight_intensity;
@@ -140,6 +105,5 @@ void main(){
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
 
-    FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
-                                        :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+    FragColor = vec4((diffuse_component + specular_component) * shadow_factor + ambient_component, 1.0);
 }
