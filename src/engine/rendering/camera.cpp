@@ -4,22 +4,22 @@ namespace engine {
 
     Camera::Camera() :
             definition({.position{0.0f, 0.0f, -10.0f},
-                        .look_at_position{0.0f, 0.0f, 0.0f},
-                        .up{0.0f, 1.0f, 0.0f}}),
+                               .look_at_position{0.0f, 0.0f, 0.0f},
+                               .up{0.0f, 1.0f, 0.0f}}),
             FOV_in_degrees(45.0f),
             aspect_ratio(1.0f),
             view_planes({.near_plane = 0.1f,
-                         .far_plane = 100.0f}),
+                                .far_plane = 100.0f}),
             projection_mode(CameraMode::Orthographic) {}
 
 
     Camera::Camera(const CameraGeometricDefinition& def, float fov, float aspect,
                    CameraPlanes planes, CameraMode mode) :
-                   definition(def),
-                   FOV_in_degrees(fov),
-                   aspect_ratio(aspect),
-                   view_planes(planes),
-                   projection_mode(mode) {}
+            definition(def),
+            FOV_in_degrees(fov),
+            aspect_ratio(aspect),
+            view_planes(planes),
+            projection_mode(mode) {}
 
 
     glm::vec3 Camera::get_position() const {
@@ -27,11 +27,12 @@ namespace engine {
     }
 
     glm::vec3 Camera::get_direction() const {
-        return definition.look_at_position - definition.position;
+        return glm::normalize(definition.look_at_position - definition.position);
     }
 
     glm::mat4 Camera::get_view_matrix() const {
-        return glm::lookAt(definition.position, definition.look_at_position, definition.up);
+        const auto new_look_at_position = definition.position + get_direction();
+        return glm::lookAt(definition.position, new_look_at_position, definition.up);
     }
 
     glm::mat4 Camera::get_projection_matrix() const {
@@ -41,7 +42,7 @@ namespace engine {
         } else { // projection_mode == CameraMode::Orthographic
             const float half_length = view_planes.far_plane / 2.0f;
             return glm::ortho(-aspect_ratio * half_length, aspect_ratio * half_length,
-                              - half_length,  half_length,
+                              -half_length, half_length,
                               view_planes.near_plane, view_planes.far_plane);
         }
     }
@@ -51,7 +52,7 @@ namespace engine {
         definition.look_at_position = glm::vec3(0.0f, height, 0.0f);
         definition.up = glm::vec3(0.0f, -1.0f, 0.0f);
 
-        if(projection_mode == CameraMode::Orthographic){
+        if (projection_mode == CameraMode::Orthographic) {
             view_planes.near_plane = 0.1f;
             view_planes.far_plane = distance * 2.0f;
         }
@@ -92,5 +93,18 @@ namespace engine {
     bool Camera::on_window_resized(WindowResizedEvent& event) {
         aspect_ratio = static_cast<float>(event.get_target_width()) / static_cast<float>(event.get_target_height());
         return false;
+    }
+
+    void Camera::translate(const glm::vec3& translation) {
+        if (translation.x != 0) {
+            const auto forward = get_direction();
+            const auto up = definition.up;
+            definition.position += glm::cross(up, forward) * translation.x;
+            definition.look_at_position += glm::cross(up, forward) * translation.x;
+        }
+        if (translation.y != 0) {
+            definition.position += definition.up * translation.y;
+            definition.look_at_position += definition.up * translation.y;
+        }
     }
 }

@@ -36,6 +36,8 @@ namespace engine{
         void rotate_around_horizontal_axis(const float angle_in_degrees);
         void roll(const float angle_in_degrees);
 
+        void translate(const glm::vec3& translation);
+
         glm::vec3 get_position() const;
         glm::vec3 get_direction() const;
         glm::mat4 get_view_matrix() const;
