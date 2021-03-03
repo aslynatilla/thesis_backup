@@ -36,6 +36,9 @@ namespace engine{
         void rotate_around_horizontal_axis(const float angle_in_degrees);
         void roll(const float angle_in_degrees);
 
+        void translate(const glm::vec3& translation);
+        void rotate(const glm::quat& rotation);
+
         glm::vec3 get_position() const;
         glm::vec3 get_direction() const;
         glm::mat4 get_view_matrix() const;
@@ -51,6 +54,7 @@ namespace engine{
         CameraPlanes view_planes;
         CameraMode projection_mode;
 
+        glm::quat orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         bool on_window_resized(WindowResizedEvent& event);
     };
 }

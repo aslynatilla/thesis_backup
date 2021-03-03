@@ -110,8 +110,8 @@ namespace engine {
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
 
-//            glEnable(GL_CULL_FACE);
-//            glCullFace(GL_BACK);
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
 //            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         }
     }
@@ -213,8 +213,18 @@ namespace engine {
     }
 
     bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
+        const float speed = 5.0f;
+        const glm::quat fixed_rotation = glm::rotation(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(view_camera.get_direction()));
         if (event.get_keycode() == GLFW_KEY_F1) {
             draw_indirect_light = !draw_indirect_light;
+        } else if (event.get_keycode() == GLFW_KEY_D){
+            view_camera.translate(glm::rotate(fixed_rotation, glm::vec3(-speed, 0.0f, 0.0f)));
+        } else if (event.get_keycode() == GLFW_KEY_A){
+            view_camera.translate(glm::rotate(fixed_rotation, glm::vec3(speed, 0.0f, 0.0f)));
+        } else if (event.get_keycode() == GLFW_KEY_Q){
+            view_camera.translate(glm::rotate(fixed_rotation, glm::vec3(0.0f, speed, 0.0f)));
+        } else if (event.get_keycode() == GLFW_KEY_E){
+            view_camera.translate(glm::rotate(fixed_rotation, glm::vec3(0.0f, -speed, 0.0f)));
         }
         return false;
     }

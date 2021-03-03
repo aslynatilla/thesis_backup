@@ -27,11 +27,14 @@ namespace engine {
     }
 
     glm::vec3 Camera::get_direction() const {
-        return definition.look_at_position - definition.position;
+        const auto not_rotated_direction = definition.look_at_position - definition.position;
+        return glm::rotate(orientation, not_rotated_direction);
     }
 
     glm::mat4 Camera::get_view_matrix() const {
-        return glm::lookAt(definition.position, definition.look_at_position, definition.up);
+        const auto not_rotated_direction = definition.look_at_position - definition.position;
+        const auto new_look_at_position = definition.position + glm::rotate(orientation, not_rotated_direction);
+        return glm::lookAt(definition.position, new_look_at_position, glm::rotate(orientation, definition.up));
     }
 
     glm::mat4 Camera::get_projection_matrix() const {
@@ -92,5 +95,14 @@ namespace engine {
     bool Camera::on_window_resized(WindowResizedEvent& event) {
         aspect_ratio = static_cast<float>(event.get_target_width()) / static_cast<float>(event.get_target_height());
         return false;
+    }
+
+    void Camera::translate(const glm::vec3& translation) {
+        definition.position += translation;
+        definition.look_at_position += translation;
+    }
+
+    void Camera::rotate(const glm::quat& rotation) {
+        orientation = rotation * orientation;
     }
 }
