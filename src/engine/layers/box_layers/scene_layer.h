@@ -6,7 +6,7 @@
 #include "../../events/window_events.h"
 #include "../../events/keyboard_events.h"
 #include "../../events/mouse_events.h"
-#include "../../rendering/camera.h"
+#include "../../rendering/fly_camera.h"
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
 #include "../../rendering/opengl3_framebuffer.h"
@@ -41,7 +41,7 @@ namespace engine{
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
 
-        Camera view_camera;
+        FlyCamera view_camera;
         bool moving_camera = false;
 
         SpotLight scene_light;

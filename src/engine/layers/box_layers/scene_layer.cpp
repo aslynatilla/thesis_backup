@@ -9,10 +9,15 @@ namespace engine {
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
 
-            view_camera = Camera(CameraGeometricDefinition{.position{278.0f, 270.0f, -800.0f},
-                                         .look_at_position{278.0f, 270.0f, 0.0f},
-                                         .up{0.0f, 1.0f, 0.0f}}, 45.0f, 1.0f,
-                                 CameraPlanes{0.1f, 2000.0f}, CameraMode::Perspective);
+            view_camera = FlyCamera(glm::vec3{278.0f, 270.0f, -800.0f},
+                                    glm::radians(0.0f),
+                                    glm::radians(0.0f),
+                                    CameraProjectionParameters{
+                                            .aspect_ratio = 1.0f,
+                                            .field_of_view = 45.0f,
+                                            .planes = CameraPlanes{0.1f, 2000.0f}
+                                    },
+                                    CameraMode::Perspective);
 
             scene_light = SpotLight(glm::vec3(278.0f, 548.0f, 279.5f),
                                     glm::vec3(0.0f, -1.0f, 0.0f),
@@ -119,12 +124,14 @@ namespace engine {
     void SceneLayer::on_detach() {}
 
     void engine::SceneLayer::on_event(engine::Event& event) {
+        EventHandler handler(event);
+
 //        Handle this later - resize texture when viewport resized?
 //        TODO: implement a way to resize the texture
-        EventHandler handler(event);
 //        handler.handle<WindowResizedEvent>([this](auto&& ... args) -> decltype(auto) {
 //            return on_window_resized(std::forward<decltype(args)>(args)...);
 //        });
+
         handler.handle<KeyPressedEvent>([this](auto&& ...args) -> decltype(auto) {
             return on_key_pressed(std::forward<decltype(args)>(args)...);
         });
@@ -141,6 +148,7 @@ namespace engine {
     }
 
     void SceneLayer::update(float delta_time) {
+        view_camera.update();
         timestep = delta_time;
 
         const auto light_camera = Camera(
@@ -179,7 +187,7 @@ namespace engine {
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear();
 
-        if(draw_indirect_light){
+        if (draw_indirect_light) {
             draw_shader->use();
             draw_shader->set_bool("hide_direct_component", hide_direct_component);
         }
@@ -193,10 +201,17 @@ namespace engine {
         ImGui::Begin("Shader controls");
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
         if (draw_indirect_light) {
-            ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
+                               ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
+
+        ImGui::Spacing();
+        ImGui::Text("forward %.3f %.3f %.3f", view_camera.state.forward.x, view_camera.state.forward.y, view_camera.state.forward.z);
+        ImGui::Text("up %.3f %.3f %.3f", view_camera.state.up.x, view_camera.state.up.y, view_camera.state.up.z);
+        ImGui::Text("right %.3f %.3f %.3f", view_camera.state.right.x, view_camera.state.right.y, view_camera.state.right.z);
+        ImGui::Text("angles (x, y) %.3f %.3f", view_camera.state.angle_around_x, view_camera.state.angle_around_y);
         ImGui::End();
     }
 
@@ -226,24 +241,30 @@ namespace engine {
         if (event.get_keycode() == GLFW_KEY_F1) {
             draw_indirect_light = !draw_indirect_light;
         }
-        if (event.get_keycode() == GLFW_KEY_D){
-            view_camera.translate(glm::vec3(-speed, 0.0f, 0.0f));
+
+        glm::vec3 translation_vector(0.0f);
+        if (event.get_keycode() == GLFW_KEY_D) {
+            translation_vector += glm::vec3(-speed, 0.0f, 0.0f);
         }
-        if (event.get_keycode() == GLFW_KEY_A){
-            view_camera.translate(glm::vec3(speed, 0.0f, 0.0f));
+        if (event.get_keycode() == GLFW_KEY_A) {
+            translation_vector += glm::vec3(speed, 0.0f, 0.0f);
         }
-        if (event.get_keycode() == GLFW_KEY_W){
-            view_camera.translate(glm::vec3(0.0f, 0.0f, speed));
+        if (event.get_keycode() == GLFW_KEY_W) {
+            translation_vector += glm::vec3(0.0f, 0.0f, speed);
         }
-        if (event.get_keycode() == GLFW_KEY_S){
-            view_camera.translate(glm::vec3(0.0f, 0.0f, -speed));
+        if (event.get_keycode() == GLFW_KEY_S) {
+            translation_vector += glm::vec3(0.0f, 0.0f, -speed);
         }
-        if (event.get_keycode() == GLFW_KEY_Q){
-            view_camera.translate(glm::vec3(0.0f, speed, 0.0f));
+        if (event.get_keycode() == GLFW_KEY_Q) {
+            translation_vector += glm::vec3(0.0f, speed, 0.0f);
         }
-        if (event.get_keycode() == GLFW_KEY_E){
-            view_camera.translate(glm::vec3(0.0f, -speed, 0.0f));
+        if (event.get_keycode() == GLFW_KEY_E) {
+            translation_vector += glm::vec3(0.0f, -speed, 0.0f);
         }
+        if (event.get_keycode() == GLFW_KEY_KP_ADD) {
+            view_camera.rotate_vertically(glm::radians(1.0f));
+        }
+        view_camera.translate(translation_vector);
         return false;
     }
 
@@ -255,9 +276,9 @@ namespace engine {
         shader->set_mat4("light_view", light_view_matrix);
         shader->set_mat4("light_projection", light_projection_matrix);
         shader->set_float("far_plane", 2000.0f);
-        shader->set_mat4("view", view_camera.get_view_matrix());
-        shader->set_mat4("projection", view_camera.get_projection_matrix());
-        shader->set_vec3("camera_position", view_camera.get_position());
+        shader->set_mat4("view", view_camera.view_matrix());
+        shader->set_mat4("projection", view_camera.projection_matrix());
+        shader->set_vec3("camera_position", view_camera.position());
         set_light_in_shader(scene_light, shader);
 
         //  Texture location binding
@@ -288,12 +309,12 @@ namespace engine {
     }
 
     bool SceneLayer::on_mouse_moved(MouseMovedEvent event) {
-        const auto speed = 0.1f * timestep;
+        const auto speed = 0.5f * timestep;
         const auto x = event.x();
         const auto y = event.y();
-        if(moving_camera){
-            view_camera.local_rotate_x(-(x - previous_mouse_position.x) * speed);
-            view_camera.local_rotate_y((y - previous_mouse_position.y) * speed);
+        if (moving_camera) {
+            view_camera.rotate_horizontally((x - previous_mouse_position.x) * speed);
+            view_camera.rotate_vertically(-(y - previous_mouse_position.y) * speed);
         }
         previous_mouse_position.x = x;
         previous_mouse_position.y = y;
@@ -301,14 +322,14 @@ namespace engine {
     }
 
     bool SceneLayer::on_mouse_button_pressed(MouseButtonPressedEvent event) {
-        if(event.get_button() == 1){
+        if (event.get_button() == 1) {
             moving_camera = true;
         }
         return false;
     }
 
     bool SceneLayer::on_mouse_button_released(MouseButtonReleasedEvent event) {
-        if(event.get_button() == 1){
+        if (event.get_button() == 1) {
             moving_camera = false;
         }
         return false;

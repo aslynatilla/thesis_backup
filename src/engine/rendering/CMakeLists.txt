@@ -1,4 +1,5 @@
 set(renderer_SOURCES 	camera.h camera.cpp
+			fly_camera.h fly_camera.cpp
 			window.h window.cpp
 			renderer.h renderer.cpp
 			shader.h shader.cpp
