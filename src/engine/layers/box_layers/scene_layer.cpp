@@ -10,7 +10,7 @@ namespace engine {
                                                             ai_postprocess_flags);
 
             view_camera = Camera(CameraGeometricDefinition{.position{278.0f, 270.0f, -800.0f},
-                                         .look_at_position{278.0f, 273.0f, 0.0f},
+                                         .look_at_position{278.0f, 270.0f, 0.0f},
                                          .up{0.0f, 1.0f, 0.0f}}, 45.0f, 1.0f,
                                  CameraPlanes{0.1f, 2000.0f}, CameraMode::Perspective);
 
@@ -128,6 +128,15 @@ namespace engine {
         handler.handle<KeyPressedEvent>([this](auto&& ...args) -> decltype(auto) {
             return on_key_pressed(std::forward<decltype(args)>(args)...);
         });
+        handler.handle<MouseMovedEvent>([this](auto&& ...args) -> decltype(auto) {
+            return on_mouse_moved(std::forward<decltype(args)>(args)...);
+        });
+        handler.handle<MouseButtonPressedEvent>([this](auto&& ...args) -> decltype(auto) {
+            return on_mouse_button_pressed(std::forward<decltype(args)>(args)...);
+        });
+        handler.handle<MouseButtonReleasedEvent>([this](auto&& ...args) -> decltype(auto) {
+            return on_mouse_button_released(std::forward<decltype(args)>(args)...);
+        });
         event.handled = false;
     }
 
@@ -213,7 +222,7 @@ namespace engine {
     }
 
     bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
-        const float speed = 100.0f * timestep;
+        const float speed = 150.0f * timestep;
         if (event.get_keycode() == GLFW_KEY_F1) {
             draw_indirect_light = !draw_indirect_light;
         }
@@ -222,6 +231,12 @@ namespace engine {
         }
         if (event.get_keycode() == GLFW_KEY_A){
             view_camera.translate(glm::vec3(speed, 0.0f, 0.0f));
+        }
+        if (event.get_keycode() == GLFW_KEY_W){
+            view_camera.translate(glm::vec3(0.0f, 0.0f, speed));
+        }
+        if (event.get_keycode() == GLFW_KEY_S){
+            view_camera.translate(glm::vec3(0.0f, 0.0f, -speed));
         }
         if (event.get_keycode() == GLFW_KEY_Q){
             view_camera.translate(glm::vec3(0.0f, speed, 0.0f));
@@ -270,6 +285,33 @@ namespace engine {
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
         }
+    }
+
+    bool SceneLayer::on_mouse_moved(MouseMovedEvent event) {
+        const auto speed = 0.1f * timestep;
+        const auto x = event.x();
+        const auto y = event.y();
+        if(moving_camera){
+            view_camera.local_rotate_x(-(x - previous_mouse_position.x) * speed);
+            view_camera.local_rotate_y((y - previous_mouse_position.y) * speed);
+        }
+        previous_mouse_position.x = x;
+        previous_mouse_position.y = y;
+        return false;
+    }
+
+    bool SceneLayer::on_mouse_button_pressed(MouseButtonPressedEvent event) {
+        if(event.get_button() == 1){
+            moving_camera = true;
+        }
+        return false;
+    }
+
+    bool SceneLayer::on_mouse_button_released(MouseButtonReleasedEvent event) {
+        if(event.get_button() == 1){
+            moving_camera = false;
+        }
+        return false;
     }
 }
 

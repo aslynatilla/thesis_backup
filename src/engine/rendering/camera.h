@@ -37,6 +37,8 @@ namespace engine{
         void roll(const float angle_in_degrees);
 
         void translate(const glm::vec3& translation);
+        void local_rotate_x(const float rotation_speed);
+        void local_rotate_y(const float rotation_speed);
 
         glm::vec3 get_position() const;
         glm::vec3 get_direction() const;

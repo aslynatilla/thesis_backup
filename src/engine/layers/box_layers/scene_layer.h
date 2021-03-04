@@ -5,6 +5,7 @@
 
 #include "../../events/window_events.h"
 #include "../../events/keyboard_events.h"
+#include "../../events/mouse_events.h"
 #include "../../rendering/camera.h"
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
@@ -31,6 +32,9 @@ namespace engine{
 
     private:
         bool on_key_pressed(KeyPressedEvent event);
+        bool on_mouse_moved(MouseMovedEvent event);
+        bool on_mouse_button_pressed(MouseButtonPressedEvent event);
+        bool on_mouse_button_released(MouseButtonReleasedEvent event);
         bool set_light_in_shader(const SpotLight& light, std::shared_ptr<Shader>& shader);
         void draw_scene(std::shared_ptr<Shader>& shader,
                         const glm::mat4& light_view_matrix, const glm::mat4& light_projection_matrix);
@@ -38,6 +42,8 @@ namespace engine{
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
 
         Camera view_camera;
+        bool moving_camera = false;
+
         SpotLight scene_light;
 
         std::shared_ptr<Shader> draw_shader;
@@ -65,6 +71,9 @@ namespace engine{
         std::array<unsigned int, 2> texture_dimension;
 
         float timestep;
+        glm::vec2 previous_mouse_position;
+
+        float debug_value;
     };
 }
 
