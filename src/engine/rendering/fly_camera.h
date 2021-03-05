@@ -43,6 +43,7 @@ namespace engine{
         bool on_window_resized(WindowResizedEvent& event);
 
         constexpr static float TWO_PI_VALUE = 2.0f * glm::pi<float>();
+        float field_of_view_threshold;
     };
 }
 

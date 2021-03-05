@@ -4,7 +4,7 @@ namespace engine {
     FlyCamera::FlyCamera(const glm::vec3 position, const float horizontal_rotation_in_radians,
                          const float vertical_rotation_in_radians,
                          const engine::CameraProjectionParameters& params, const engine::CameraMode mode)
-            : state(), projection_params(params), projection_mode(mode) {
+            : state(), projection_params(params), projection_mode(mode), field_of_view_threshold{glm::radians(params.field_of_view - 1.0f)} {
         state.position = position;
         state.angle_around_y = horizontal_rotation_in_radians;
         state.angle_around_x = vertical_rotation_in_radians;
@@ -25,7 +25,8 @@ namespace engine {
     }
 
     void FlyCamera::rotate_vertically(const float angle_in_radians) {
-        state.angle_around_x = std::fmod(state.angle_around_x + angle_in_radians, TWO_PI_VALUE);
+        state.angle_around_x = std::clamp(state.angle_around_x + angle_in_radians,
+                                          -field_of_view_threshold, field_of_view_threshold);
     }
 
     void FlyCamera::rotate_horizontally(const float angle_in_radians) {
@@ -44,12 +45,14 @@ namespace engine {
         float cos_V = glm::cos(state.angle_around_x);
         float sin_V = glm::sin(state.angle_around_x);
 
-//        state.forward = glm::vec3(cos_V * cos_H, sin_V, cos_V * sin_H);
-//        state.up = glm::vec3(-sin_V * cos_H, cos_V, -sin_V * sin_H);
-//        state.right = glm::cross(state.up, state.forward);
+//          Reference this in case you want the rotation of the local z-axis
+//        to start from the x-axis clockwise
+//          state.forward = glm::vec3(cos_V * cos_H, sin_V, cos_V * sin_H);
+//          state.up = glm::vec3(-sin_V * cos_H, cos_V, -sin_V * sin_H);
+//          state.right = glm::cross(state.up, state.forward);
 
-        state.forward = glm::vec3(cos_V * cos_H, sin_V, cos_V * sin_H);
-        state.up = glm::vec3(-sin_V * cos_H, cos_V, -sin_V * sin_H);
+        state.forward = glm::vec3(cos_V * sin_H, sin_V, cos_V * cos_H);
+        state.up = glm::vec3(sin_V * sin_H, cos_V, sin_V * cos_H);
         state.right = glm::cross(state.up, state.forward);
     }
 

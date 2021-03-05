@@ -206,12 +206,6 @@ namespace engine {
             ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
-
-        ImGui::Spacing();
-        ImGui::Text("forward %.3f %.3f %.3f", view_camera.state.forward.x, view_camera.state.forward.y, view_camera.state.forward.z);
-        ImGui::Text("up %.3f %.3f %.3f", view_camera.state.up.x, view_camera.state.up.y, view_camera.state.up.z);
-        ImGui::Text("right %.3f %.3f %.3f", view_camera.state.right.x, view_camera.state.right.y, view_camera.state.right.z);
-        ImGui::Text("angles (x, y) %.3f %.3f", view_camera.state.angle_around_x, view_camera.state.angle_around_y);
         ImGui::End();
     }
 
@@ -234,38 +228,6 @@ namespace engine {
     void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
         texture->make_active_in_slot(slot_number);
         glBindTexture(texture->bound_type, texture->id);
-    }
-
-    bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
-        const float speed = 150.0f * timestep;
-        if (event.get_keycode() == GLFW_KEY_F1) {
-            draw_indirect_light = !draw_indirect_light;
-        }
-
-        glm::vec3 translation_vector(0.0f);
-        if (event.get_keycode() == GLFW_KEY_D) {
-            translation_vector += glm::vec3(-speed, 0.0f, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_A) {
-            translation_vector += glm::vec3(speed, 0.0f, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_W) {
-            translation_vector += glm::vec3(0.0f, 0.0f, speed);
-        }
-        if (event.get_keycode() == GLFW_KEY_S) {
-            translation_vector += glm::vec3(0.0f, 0.0f, -speed);
-        }
-        if (event.get_keycode() == GLFW_KEY_Q) {
-            translation_vector += glm::vec3(0.0f, speed, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_E) {
-            translation_vector += glm::vec3(0.0f, -speed, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_KP_ADD) {
-            view_camera.rotate_vertically(glm::radians(1.0f));
-        }
-        view_camera.translate(translation_vector);
-        return false;
     }
 
     void SceneLayer::draw_scene(std::shared_ptr<Shader>& shader,
@@ -308,12 +270,41 @@ namespace engine {
         }
     }
 
+    bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
+        const float speed = 150.0f * timestep;
+        if (event.get_keycode() == GLFW_KEY_F1) {
+            draw_indirect_light = !draw_indirect_light;
+        }
+
+        glm::vec3 translation_vector(0.0f);
+        if (event.get_keycode() == GLFW_KEY_D) {
+            translation_vector += glm::vec3(-speed, 0.0f, 0.0f);
+        }
+        if (event.get_keycode() == GLFW_KEY_A) {
+            translation_vector += glm::vec3(speed, 0.0f, 0.0f);
+        }
+        if (event.get_keycode() == GLFW_KEY_W) {
+            translation_vector += glm::vec3(0.0f, 0.0f, speed);
+        }
+        if (event.get_keycode() == GLFW_KEY_S) {
+            translation_vector += glm::vec3(0.0f, 0.0f, -speed);
+        }
+        if (event.get_keycode() == GLFW_KEY_Q) {
+            translation_vector += glm::vec3(0.0f, speed, 0.0f);
+        }
+        if (event.get_keycode() == GLFW_KEY_E) {
+            translation_vector += glm::vec3(0.0f, -speed, 0.0f);
+        }
+        view_camera.translate(translation_vector);
+        return false;
+    }
+
     bool SceneLayer::on_mouse_moved(MouseMovedEvent event) {
         const auto speed = 0.5f * timestep;
         const auto x = event.x();
         const auto y = event.y();
         if (moving_camera) {
-            view_camera.rotate_horizontally((x - previous_mouse_position.x) * speed);
+            view_camera.rotate_horizontally(-(x - previous_mouse_position.x) * speed);
             view_camera.rotate_vertically(-(y - previous_mouse_position.y) * speed);
         }
         previous_mouse_position.x = x;
