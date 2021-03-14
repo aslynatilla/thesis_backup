@@ -7,6 +7,8 @@ namespace engine{
                          const float constant_att, const float linear_att, const float quadratic_att) noexcept :
                          position(light_position),
                          direction(light_direction),
+                         raw_cutoff_angle(cutoff_angle_in_degrees),
+                         raw_outer_cutoff_angle(outer_cutoff_angle_in_degrees),
                          cosine_cutoff_angle(glm::cos(glm::radians(cutoff_angle_in_degrees))),
                          cosine_outer_cutoff_angle(glm::cos(glm::radians(outer_cutoff_angle_in_degrees))),
                          constant_attenuation_factor(constant_att),

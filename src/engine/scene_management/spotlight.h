@@ -14,6 +14,9 @@ namespace engine{
                            const float constant_att, const float linear_att, const float quadratic_att) noexcept;
         glm::vec3 position;
         glm::vec3 direction;
+
+        float raw_cutoff_angle;
+        float raw_outer_cutoff_angle;
         float cosine_cutoff_angle;
         float cosine_outer_cutoff_angle;
         float constant_attenuation_factor;

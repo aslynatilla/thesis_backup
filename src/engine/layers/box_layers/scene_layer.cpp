@@ -52,6 +52,8 @@ namespace engine {
                                                                 texture_dimension[0],
                                                                 texture_dimension[1],
                                                                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            //    Clamping to border allows "not producing" a shadow
+            //  in the case sampling outside of the texture happens
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)));
 
             position_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
