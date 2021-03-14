@@ -21,6 +21,7 @@ namespace engine{
 
         std::unique_ptr<VertexArray> vao;
         glm::mat4 transform;
+        glm::mat4 transpose_inverse_transform;
         Material material;
     };
 }

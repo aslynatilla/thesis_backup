@@ -48,10 +48,12 @@ namespace engine {
                                                                         {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                          GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                         {GL_LINEAR, GL_LINEAR,
-                                                                         GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE}),
+                                                                         GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
                                                                 texture_dimension[0],
                                                                 texture_dimension[1],
                                                                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)));
+
             position_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
                                                                    OpenGL3_TextureParameters(
                                                                            {GL_TEXTURE_MIN_FILTER,
@@ -155,7 +157,7 @@ namespace engine {
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
                                           glm::vec3(0.0f, 0.0f, -1.0f)},
-                                            50.0f, 1.0f,
+                                            90.0f, 1.0f,
 //                                          90.0f, 1.0f,
                 CameraPlanes{0.1f, 2000.0f},
                 CameraMode::Perspective);
@@ -177,7 +179,8 @@ namespace engine {
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
-                rsm_generation_shader->set_mat4("model", drawable.transform);
+                const auto& model_matrix = drawable.transform;
+                rsm_generation_shader->set_mat4("model", model_matrix);
                 rsm_generation_shader->set_vec4("diffuse_color", drawable.material.diffuse_color);
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
@@ -265,7 +268,10 @@ namespace engine {
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 drawable.material.bind_uniforms_to(shader);
-                shader->set_mat4("model", drawable.transform);
+                const auto& model_matrix = drawable.transform;
+                const auto& transpose_inverse_matrix = drawable.transpose_inverse_transform;
+                shader->set_mat4("model", model_matrix);
+                shader->set_mat4("transpose_inverse_model", transpose_inverse_matrix);
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
         }

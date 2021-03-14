@@ -52,5 +52,5 @@ void main(){
     //  ...so the following line should not be right. Therefore we delete "attenuation_factor"...
     //  fragment_flux = diffuse_color.xyz * attenuation_factor * spotlight_intensity * light_intensity;
 
-    fragment_flux = diffuse_color.xyz * spotlight_intensity * light_intensity;
+    fragment_flux = diffuse_color.xyz * spotlight_intensity;
 }

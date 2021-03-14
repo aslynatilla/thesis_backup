@@ -4,6 +4,7 @@ namespace engine{
     SceneObject::SceneObject() :
         vao{std::make_unique<VertexArray>()},
         transform{glm::identity<glm::mat4>()},
+        transpose_inverse_transform{glm::identity<glm::mat4>()},
         material{}
         {}
 
@@ -14,5 +15,7 @@ namespace engine{
                               m.b1, m.b2, m.b3, m.b4,
                               m.c1, m.c2, m.c3, m.c4,
                               m.d1, m.d2, m.d3, m.d4);
+
+        transpose_inverse_transform = glm::transpose(glm::inverse(transform));
     }
 }
