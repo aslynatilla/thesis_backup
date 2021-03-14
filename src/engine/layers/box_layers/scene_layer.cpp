@@ -21,7 +21,7 @@ namespace engine {
 
             scene_light = SpotLight(glm::vec3(278.0f, 548.0f, 279.5f),
                                     glm::vec3(0.0f, -1.0f, 0.0f),
-                                    50.0f, 80.0f,
+                                    30.0f, 60.0f,
                                     1.0f, 0.004f, 0.00009f);
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
@@ -158,7 +158,6 @@ namespace engine {
                                           scene_light.position + scene_light.direction,
                                           glm::vec3(0.0f, 0.0f, -1.0f)},
                                             90.0f, 1.0f,
-//                                          90.0f, 1.0f,
                 CameraPlanes{0.1f, 2000.0f},
                 CameraMode::Perspective);
 
