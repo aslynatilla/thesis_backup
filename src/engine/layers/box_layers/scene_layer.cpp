@@ -265,6 +265,7 @@ namespace engine {
         shader->set_float("light_intensity", light_intensity);
         shader->set_float("indirect_intensity", indirect_intensity);
         shader->set_float("max_radius", max_radius);
+        shader->set_float("shadow_threshold", shadow_threshold);
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {

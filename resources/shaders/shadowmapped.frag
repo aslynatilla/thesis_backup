@@ -43,6 +43,7 @@ uniform int samples_number;
 uniform float far_plane;
 
 // TWEAKABLES
+uniform float shadow_threshold;
 
 uniform float max_radius;
 uniform float indirect_intensity;
@@ -62,8 +63,7 @@ float compute_shadow(float light_distance)
     float depth = texture(shadow_map, fragment_light_space_coordinates.xy).r;
     depth *= far_plane;
 
-    //  TODO: 0.05 is a magic number; it should be set as a uniform value
-    if (light_distance < depth + 0.11){
+    if (light_distance < depth + shadow_threshold){
         return 1.0;
     } else {
         return 0.4;
