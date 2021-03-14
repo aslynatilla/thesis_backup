@@ -155,7 +155,8 @@ namespace engine {
                 CameraGeometricDefinition{scene_light.position,
                                           scene_light.position + scene_light.direction,
                                           glm::vec3(0.0f, 0.0f, -1.0f)},
-                90.0f, 1.0f,
+                                            50.0f, 1.0f,
+//                                          90.0f, 1.0f,
                 CameraPlanes{0.1f, 2000.0f},
                 CameraMode::Perspective);
 

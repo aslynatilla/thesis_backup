@@ -5,7 +5,6 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <optional>
 #include <string>
 
 namespace engine{
