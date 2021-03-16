@@ -3,7 +3,20 @@
 BoxApp::BoxApp() : Application("Cornell Box App"){
     using namespace engine;
 
-    layers.push_layer(std::make_unique<SceneLayer>());
+    std::shared_ptr first_person_camera = std::make_shared<FlyCamera>(
+            glm::vec3{278.0f, 277.0f, -800.0f},
+            glm::radians(0.0f),
+            glm::radians(0.0f),
+            CameraProjectionParameters{
+                .aspect_ratio = 1.0f,
+                .field_of_view = 45.0f,
+                .planes = CameraPlanes{0.1f, 2000.0f}
+            },
+            CameraMode::Perspective);
+    std::weak_ptr ptr_to_camera(first_person_camera);
+
+    layers.push_layer(std::make_unique<CameraLayer>(std::move(first_person_camera)));
+    layers.push_layer(std::make_unique<SceneLayer>(std::move(ptr_to_camera)));
 
     const auto glfw_window_pointer = dynamic_cast<GLFW_Window_Impl*>(main_window.get());
     auto imgui_layer = std::make_unique<ImGuiLayer>(glfw_window_pointer);

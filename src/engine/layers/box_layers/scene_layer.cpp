@@ -1,6 +1,11 @@
 #include "scene_layer.h"
 
 namespace engine {
+
+    SceneLayer::SceneLayer(std::weak_ptr<FlyCamera> application_camera)
+    : view_camera(std::move(application_camera))
+    {}
+
     void SceneLayer::on_attach() {
         {
             constexpr unsigned int ai_postprocess_flags = aiProcess_GenNormals |
@@ -8,16 +13,6 @@ namespace engine {
                                                           aiProcess_ValidateDataStructure;
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
-
-            view_camera = FlyCamera(glm::vec3{278.0f, 270.0f, -800.0f},
-                                    glm::radians(0.0f),
-                                    glm::radians(0.0f),
-                                    CameraProjectionParameters{
-                                            .aspect_ratio = 1.0f,
-                                            .field_of_view = 45.0f,
-                                            .planes = CameraPlanes{0.1f, 2000.0f}
-                                    },
-                                    CameraMode::Perspective);
 
             scene_light = SpotLight(glm::vec3(278.0f, 548.0f, 279.5f),
                                     glm::vec3(0.0f, -1.0f, 0.0f),
@@ -139,67 +134,60 @@ namespace engine {
         handler.handle<KeyPressedEvent>([this](auto&& ...args) -> decltype(auto) {
             return on_key_pressed(std::forward<decltype(args)>(args)...);
         });
-        handler.handle<MouseMovedEvent>([this](auto&& ...args) -> decltype(auto) {
-            return on_mouse_moved(std::forward<decltype(args)>(args)...);
-        });
-        handler.handle<MouseButtonPressedEvent>([this](auto&& ...args) -> decltype(auto) {
-            return on_mouse_button_pressed(std::forward<decltype(args)>(args)...);
-        });
-        handler.handle<MouseButtonReleasedEvent>([this](auto&& ...args) -> decltype(auto) {
-            return on_mouse_button_released(std::forward<decltype(args)>(args)...);
-        });
         event.handled = false;
     }
 
     void SceneLayer::update(float delta_time) {
-        view_camera.update();
         timestep = delta_time;
+        if(auto existing_camera = view_camera.lock()){
+            const auto light_camera = Camera(
+                    CameraGeometricDefinition{scene_light.position,
+                                              scene_light.position + scene_light.direction,
+                                              glm::vec3(0.0f, 0.0f, -1.0f)},
+                    90.0f, 1.0f,
+                    CameraPlanes{0.1f, 2000.0f},
+                    CameraMode::Perspective);
 
-        const auto light_camera = Camera(
-                CameraGeometricDefinition{scene_light.position,
-                                          scene_light.position + scene_light.direction,
-                                          glm::vec3(0.0f, 0.0f, -1.0f)},
-                                            90.0f, 1.0f,
-                CameraPlanes{0.1f, 2000.0f},
-                CameraMode::Perspective);
+            const auto light_view_matrix = light_camera.get_view_matrix();
+            const auto light_projection_matrix = light_camera.get_projection_matrix();
 
-        const auto light_view_matrix = light_camera.get_view_matrix();
-        const auto light_projection_matrix = light_camera.get_projection_matrix();
+            rsm_fbo->bind_as(GL_FRAMEBUFFER);
+            glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
+            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        rsm_fbo->bind_as(GL_FRAMEBUFFER);
-        glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
-        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            //  RSM Shader uniforms
+            rsm_generation_shader->use();
+            rsm_generation_shader->set_float("light_intensity", light_intensity);
+            rsm_generation_shader->set_mat4("light_view", light_view_matrix);
+            rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
+            rsm_generation_shader->set_float("far_plane", 2000.0f);
+            set_light_in_shader(scene_light, rsm_generation_shader);
 
-        //  RSM Shader uniforms
-        rsm_generation_shader->use();
-        rsm_generation_shader->set_float("light_intensity", light_intensity);
-        rsm_generation_shader->set_mat4("light_view", light_view_matrix);
-        rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
-        rsm_generation_shader->set_float("far_plane", 2000.0f);
-        set_light_in_shader(scene_light, rsm_generation_shader);
-
-        if (!scene_objects.empty()) {
-            for (const auto& drawable : scene_objects) {
-                const auto& model_matrix = drawable.transform;
-                rsm_generation_shader->set_mat4("model", model_matrix);
-                rsm_generation_shader->set_vec4("diffuse_color", drawable.material.diffuse_color);
-                OpenGL3_Renderer::draw(*(drawable.vao));
+            if (!scene_objects.empty()) {
+                for (const auto& drawable : scene_objects) {
+                    const auto& model_matrix = drawable.transform;
+                    rsm_generation_shader->set_mat4("model", model_matrix);
+                    rsm_generation_shader->set_vec4("diffuse_color", drawable.material.diffuse_color);
+                    OpenGL3_Renderer::draw(*(drawable.vao));
+                }
             }
+
+            rsm_fbo->unbind_from(GL_FRAMEBUFFER);
+            glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
+            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+            OpenGL3_Renderer::clear();
+
+            if (draw_indirect_light) {
+                draw_shader->use();
+                draw_shader->set_bool("hide_direct_component", hide_direct_component);
+            }
+
+            draw_indirect_light ? draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
+                                             draw_shader)
+                                : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
+                                             no_indirect_shader);
+
         }
-
-        rsm_fbo->unbind_from(GL_FRAMEBUFFER);
-        glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
-        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-        OpenGL3_Renderer::clear();
-
-        if (draw_indirect_light) {
-            draw_shader->use();
-            draw_shader->set_bool("hide_direct_component", hide_direct_component);
-        }
-
-        draw_indirect_light ? draw_scene(draw_shader, light_view_matrix, light_projection_matrix)
-                            : draw_scene(no_indirect_shader, light_view_matrix, light_projection_matrix);
-
     }
 
     void SceneLayer::on_imgui_render() {
@@ -235,17 +223,19 @@ namespace engine {
         glBindTexture(texture->bound_type, texture->id);
     }
 
-    void SceneLayer::draw_scene(std::shared_ptr<Shader>& shader,
-                                const glm::mat4& light_view_matrix, const glm::mat4& light_projection_matrix) {
+    void SceneLayer::draw_scene(const std::shared_ptr<FlyCamera>& view_camera,
+                                const glm::mat4& light_view_matrix,
+                                const glm::mat4& light_projection_matrix,
+                                std::shared_ptr<Shader>& shader) {
 
         //  Shader uniforms
         shader->use();
         shader->set_mat4("light_view", light_view_matrix);
         shader->set_mat4("light_projection", light_projection_matrix);
         shader->set_float("far_plane", 2000.0f);
-        shader->set_mat4("view", view_camera.view_matrix());
-        shader->set_mat4("projection", view_camera.projection_matrix());
-        shader->set_vec3("camera_position", view_camera.position());
+        shader->set_mat4("view", view_camera->view_matrix());
+        shader->set_mat4("projection", view_camera->projection_matrix());
+        shader->set_vec3("camera_position", view_camera->position());
         set_light_in_shader(scene_light, shader);
 
         //  Texture location binding
@@ -280,57 +270,8 @@ namespace engine {
     }
 
     bool SceneLayer::on_key_pressed(KeyPressedEvent event) {
-        const float speed = 150.0f * timestep;
         if (event.get_keycode() == GLFW_KEY_F1) {
             draw_indirect_light = !draw_indirect_light;
-        }
-
-        glm::vec3 translation_vector(0.0f);
-        if (event.get_keycode() == GLFW_KEY_D) {
-            translation_vector += glm::vec3(-speed, 0.0f, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_A) {
-            translation_vector += glm::vec3(speed, 0.0f, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_W) {
-            translation_vector += glm::vec3(0.0f, 0.0f, speed);
-        }
-        if (event.get_keycode() == GLFW_KEY_S) {
-            translation_vector += glm::vec3(0.0f, 0.0f, -speed);
-        }
-        if (event.get_keycode() == GLFW_KEY_Q) {
-            translation_vector += glm::vec3(0.0f, speed, 0.0f);
-        }
-        if (event.get_keycode() == GLFW_KEY_E) {
-            translation_vector += glm::vec3(0.0f, -speed, 0.0f);
-        }
-        view_camera.translate(translation_vector);
-        return false;
-    }
-
-    bool SceneLayer::on_mouse_moved(MouseMovedEvent event) {
-        const auto speed = 0.5f * timestep;
-        const auto x = event.x();
-        const auto y = event.y();
-        if (moving_camera) {
-            view_camera.rotate_horizontally(-(x - previous_mouse_position.x) * speed);
-            view_camera.rotate_vertically(-(y - previous_mouse_position.y) * speed);
-        }
-        previous_mouse_position.x = x;
-        previous_mouse_position.y = y;
-        return false;
-    }
-
-    bool SceneLayer::on_mouse_button_pressed(MouseButtonPressedEvent event) {
-        if (event.get_button() == 1) {
-            moving_camera = true;
-        }
-        return false;
-    }
-
-    bool SceneLayer::on_mouse_button_released(MouseButtonReleasedEvent event) {
-        if (event.get_button() == 1) {
-            moving_camera = false;
         }
         return false;
     }

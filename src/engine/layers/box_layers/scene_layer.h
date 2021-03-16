@@ -24,6 +24,14 @@
 namespace engine{
     class SceneLayer : public Layer{
     public:
+        SceneLayer(std::weak_ptr<FlyCamera> application_camera);
+
+        SceneLayer() = delete;
+        SceneLayer(const SceneLayer& other) = delete;
+        SceneLayer(SceneLayer&& other) = delete;
+        SceneLayer& operator=(const SceneLayer& other) = delete;
+        SceneLayer& operator=(SceneLayer&& other) = delete;
+
         void on_attach() final;
         void on_detach() final ;
         void on_event(Event& event) final;
@@ -32,16 +40,14 @@ namespace engine{
 
     private:
         bool on_key_pressed(KeyPressedEvent event);
-        bool on_mouse_moved(MouseMovedEvent event);
-        bool on_mouse_button_pressed(MouseButtonPressedEvent event);
-        bool on_mouse_button_released(MouseButtonReleasedEvent event);
         bool set_light_in_shader(const SpotLight& light, std::shared_ptr<Shader>& shader);
-        void draw_scene(std::shared_ptr<Shader>& shader,
-                        const glm::mat4& light_view_matrix, const glm::mat4& light_projection_matrix);
+        void draw_scene(const std::shared_ptr<FlyCamera>& view_camera, const glm::mat4& light_view_matrix,
+                        const glm::mat4& light_projection_matrix, std::shared_ptr<Shader>& shader);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
 
-        FlyCamera view_camera;
+        std::weak_ptr<FlyCamera> view_camera;
+
         bool moving_camera = false;
 
         SpotLight scene_light;
@@ -73,8 +79,6 @@ namespace engine{
 
         float timestep;
         glm::vec2 previous_mouse_position;
-
-        float debug_value;
     };
 }
 
