@@ -57,6 +57,8 @@ install_file_to_bin(resources cornell_box.mtl)
 
 install_file_to_bin(resources/shaders rsm.vert)
 install_file_to_bin(resources/shaders rsm.frag)
+install_file_to_bin(resources/shaders wireframe.vert)
+install_file_to_bin(resources/shaders wireframe.frag)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)

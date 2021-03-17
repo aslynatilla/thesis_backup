@@ -25,6 +25,8 @@ namespace engine {
                                                             "resources/shaders/shadowmapped_no_indirect.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
                                                                "resources/shaders/rsm.frag");
+            wireframe_shader = shader::create_shader_from("resources/shaders/wireframe.vert",
+                                                          "resources/shaders/wireframe.frag");
 
             auto viewport_float_dimension = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_float_dimension.get());
@@ -117,6 +119,25 @@ namespace engine {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
 //            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+
+            const auto path_to_IES_data = files::make_path_absolute("resources/ies/TEST.IES");
+            document = parser.parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
+            ies::adapter::IES_Mesh photometric_solid(document);
+
+            const auto vertices = photometric_solid.get_vertices();
+
+            largest_position_component = std::max_element(std::begin(vertices), std::end(vertices)).operator*();
+
+            auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
+                                                      vertices.data());
+            vbo->set_buffer_layout(VertexBufferLayout({
+                                                              VertexBufferElement(ShaderDataType::Float3,
+                                                                                  "position"),
+                                                              VertexBufferElement(ShaderDataType::Float3,
+                                                                                  "normal")}));
+            ies_light_vao.set_vbo(std::move(vbo));
+            ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
         }
     }
 
@@ -187,6 +208,23 @@ namespace engine {
                                 : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
                                              no_indirect_shader);
 
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            wireframe_shader->use();
+            wireframe_shader->set_mat4("view", existing_camera->view_matrix());
+            wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
+
+            glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
+            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_camera.get_position());
+            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
+
+            glm::mat4 ies_light_inverse_transpose = glm::transpose(glm::inverse(ies_light_model_matrix));
+            wireframe_shader->set_mat4("model", ies_light_model_matrix);
+            wireframe_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transpose);
+            wireframe_shader->set_vec4("wireframe_color", glm::vec4(0.2f, 1.0f, 1.0f, 1.0f));
+            OpenGL3_Renderer::draw(ies_light_vao);
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
 
@@ -199,6 +237,7 @@ namespace engine {
             ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
+        ImGui::SliderFloat("Scaling dimension", &scale_modifier, 0.001f, 1.0f, "%.5f", ImGuiSliderFlags_Logarithmic);
         ImGui::End();
     }
 

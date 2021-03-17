@@ -16,6 +16,9 @@
 #include "../../../utility/file_reader.h"
 #include "../../../utility/random_numbers.h"
 
+#include "../../../ies/ies_default_parser.h"
+#include "../../../ies/adapter/ies_mesh.h"
+
 #include <GLFW/glfw3.h>
 #include <imgui/imgui.h>
 
@@ -55,6 +58,7 @@ namespace engine{
         std::shared_ptr<Shader> draw_shader;
         std::shared_ptr<Shader> no_indirect_shader;
         std::shared_ptr<Shader> rsm_generation_shader;
+        std::shared_ptr<Shader> wireframe_shader;
 
         std::vector<SceneObject> scene_objects;
 
@@ -79,6 +83,13 @@ namespace engine{
 
         float timestep;
         glm::vec2 previous_mouse_position;
+
+        ies::IES_Default_Parser parser;
+        ies::IES_Document document;
+        VertexArray ies_light_vao;
+
+        float largest_position_component;
+        float scale_modifier = 0.005f;
     };
 }
 
