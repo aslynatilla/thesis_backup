@@ -44,21 +44,25 @@ endfunction()
 install_file_to_bin(resources/ies TEST.IES)
 #   Copy shaders
 install_file_to_bin(resources/shaders base.vert)
-install_file_to_bin(resources/shaders depth.vert)
-install_file_to_bin(resources/shaders shadowmapped.vert)
-install_file_to_bin(resources/shaders shadowmapped_no_indirect.vert)
 install_file_to_bin(resources/shaders base.frag)
+install_file_to_bin(resources/shaders depth.vert)
 install_file_to_bin(resources/shaders depth.frag)
+install_file_to_bin(resources/shaders shadowmapped.vert)
 install_file_to_bin(resources/shaders shadowmapped.frag)
+install_file_to_bin(resources/shaders shadowmapped_no_indirect.vert)
 install_file_to_bin(resources/shaders shadowmapped_no_indirect.frag)
-#   Copy cornell box scene to resoruces
-install_file_to_bin(resources cornell_box_multimaterial.obj)
-install_file_to_bin(resources cornell_box.mtl)
-
 install_file_to_bin(resources/shaders rsm.vert)
 install_file_to_bin(resources/shaders rsm.frag)
 install_file_to_bin(resources/shaders wireframe.vert)
 install_file_to_bin(resources/shaders wireframe.frag)
+install_file_to_bin(resources/shaders depth_mask.vert)
+install_file_to_bin(resources/shaders depth_mask.frag)
+
+#   Copy cornell box scene to resoruces
+install_file_to_bin(resources cornell_box_multimaterial.obj)
+install_file_to_bin(resources cornell_box.mtl)
+
+
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)

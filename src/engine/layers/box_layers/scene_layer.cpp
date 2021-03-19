@@ -26,8 +26,8 @@ namespace engine {
                                                                "resources/shaders/rsm.frag");
             wireframe_shader = shader::create_shader_from("resources/shaders/wireframe.vert",
                                                           "resources/shaders/wireframe.frag");
-            depthmask_shader = shader::create_shader_from("resources/shaders/depth.vert",
-                                                          "resources/shaders/depth.frag");
+            depthmask_shader = shader::create_shader_from("resources/shaders/depth_mask.vert",
+                                                          "resources/shaders/depth_mask.frag");
 
             auto viewport_float_dimension = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_float_dimension.get());
@@ -88,7 +88,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
-            ies_light_mask = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
+            ies_light_mask = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
                                                                          {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                           GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -96,7 +96,7 @@ namespace engine {
                                                                           GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
                                                                  texture_dimension[0],
                                                                  texture_dimension[1],
-                                                                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+                                                                 GL_RGB, GL_FLOAT, nullptr);
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
 
@@ -127,7 +127,9 @@ namespace engine {
             glDrawBuffers(3, buffer_enums.get());
             rsm_fbo->unbind_from();
             mask_fbo->bind_as(GL_FRAMEBUFFER);
-            mask_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *ies_light_mask);
+            mask_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
+            mask_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *ies_light_mask);
+            glDrawBuffers(1, buffer_enums.get());
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
 
             glEnable(GL_DEPTH_TEST);
@@ -246,7 +248,6 @@ namespace engine {
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             mask_fbo->bind_as(GL_FRAMEBUFFER);
-            glCullFace(GL_BACK);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             depthmask_shader->use();
@@ -254,6 +255,8 @@ namespace engine {
             depthmask_shader->set_mat4("light_projection", light_projection_matrix);
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
             depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
+            depthmask_shader->set_vec3("light_position", light_camera.get_position());
+            depthmask_shader->set_float("far_plane", 2000.0f);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
