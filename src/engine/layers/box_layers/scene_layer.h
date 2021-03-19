@@ -59,15 +59,18 @@ namespace engine{
         std::shared_ptr<Shader> no_indirect_shader;
         std::shared_ptr<Shader> rsm_generation_shader;
         std::shared_ptr<Shader> wireframe_shader;
+        std::shared_ptr<Shader> depthmask_shader;
 
         std::vector<SceneObject> scene_objects;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
+        std::unique_ptr<OpenGL3_FrameBuffer> mask_fbo;
         std::unique_ptr<OpenGL3_Texture2D> depth_texture;
         std::unique_ptr<OpenGL3_Texture2D> position_texture;
         std::unique_ptr<OpenGL3_Texture2D> normal_texture;
         std::unique_ptr<OpenGL3_Texture2D> flux_texture;
         std::unique_ptr<OpenGL3_Texture1D> samples_texture;
+        std::unique_ptr<OpenGL3_Texture2D> ies_light_mask;
 
         unsigned int samples_number;
 
