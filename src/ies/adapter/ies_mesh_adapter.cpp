@@ -122,14 +122,14 @@ namespace ies::adapter {
         unsigned int considered_triangles = 0;
 
         if (top_vertex && top_right_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *top_vertex, *top_right_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *top_right_vertex, *top_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
             }
         }
         if (top_vertex && left_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *left_vertex, *top_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *top_vertex, *left_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
@@ -137,14 +137,14 @@ namespace ies::adapter {
         }
 
         if (bottom_vertex && bottom_left_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *bottom_vertex, *bottom_left_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *bottom_left_vertex, *bottom_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
             }
         }
         if (bottom_vertex && right_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *right_vertex, *bottom_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *bottom_vertex, *right_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;

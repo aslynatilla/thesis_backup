@@ -228,7 +228,7 @@ namespace engine {
                                 : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
                                              no_indirect_shader);
 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             wireframe_shader->use();
             wireframe_shader->set_mat4("view", existing_camera->view_matrix());
             wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
