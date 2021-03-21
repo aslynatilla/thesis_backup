@@ -150,7 +150,10 @@ namespace ies::adapter {
                 normal += n;
             }
         }
-        normal /= considered_triangles;
+
+        if(considered_triangles != 0){
+            normal /= considered_triangles;
+        }
         return normal;
     }
 
