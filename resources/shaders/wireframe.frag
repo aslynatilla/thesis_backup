@@ -8,6 +8,5 @@ uniform vec4 wireframe_color;
 out vec4 FragColor;
 
 void main(){
-    //  FragColor = wireframe_color;
-    FragColor = vec4(frag_normal, 1.0);
+    FragColor = wireframe_color;
 }

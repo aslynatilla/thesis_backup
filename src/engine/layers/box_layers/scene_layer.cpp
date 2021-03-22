@@ -228,7 +228,7 @@ namespace engine {
                                 : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
                                              no_indirect_shader);
 
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             wireframe_shader->use();
             wireframe_shader->set_mat4("view", existing_camera->view_matrix());
             wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
@@ -250,6 +250,7 @@ namespace engine {
             mask_fbo->bind_as(GL_FRAMEBUFFER);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glCullFace(GL_FRONT);
             depthmask_shader->use();
             depthmask_shader->set_mat4("light_view", light_view_matrix);
             depthmask_shader->set_mat4("light_projection", light_projection_matrix);
