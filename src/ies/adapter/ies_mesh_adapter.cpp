@@ -58,7 +58,7 @@ namespace ies::adapter {
         for (auto row = 0u; row < rows - 1; ++row) {
             for (auto column = 0u; column < columns - 1; ++column) {
                 auto t1 = top_left_quad_triangle(row, column, columns);
-                auto t2 = bottom_right_quad_triangle(row, column + 1, columns);
+                auto t2 = bottom_right_quad_triangle(row, column, columns);
                 indices.insert(std::end(indices), std::begin(t1), std::end(t1));
                 indices.insert(std::end(indices), std::begin(t2), std::end(t2));
             }
@@ -71,18 +71,18 @@ namespace ies::adapter {
     std::array<unsigned int, 3>
     top_left_quad_triangle(const unsigned int row, const unsigned int col, const unsigned int columns) {
         const auto passed_in_vertex = row * columns + col;
-        const auto vertex_below = (row + 1) * columns + col;
-        const auto vertex_on_the_right = row * columns + (col + 1);
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_on_the_right, vertex_below};
+        const auto vertex_above_on_the_right = (row + 1) * columns + (col + 1);
+        const auto vertex_above = (row + 1) * columns + col;
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_above_on_the_right, vertex_above};
     }
 
     // Note vertices are taken counter-clockwise
     std::array<unsigned int, 3>
     bottom_right_quad_triangle(const unsigned int row, const unsigned int col, const unsigned int columns) {
         const auto passed_in_vertex = row * columns + col;
-        const auto vertex_below_on_the_left = (row + 1) * columns + (col - 1);
-        const auto vertex_below = (row + 1) * columns + col;
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below, vertex_below_on_the_left};
+        const auto vertex_on_the_right = row * columns + (col + 1);
+        const auto vertex_above_on_the_right = (row + 1) * columns + (col + 1);
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_on_the_right, vertex_above_on_the_right};
     }
 
     std::optional<glm::vec3> is_valid_grid_position(const unsigned int row, const unsigned int col,
