@@ -58,7 +58,7 @@ namespace ies::adapter {
         for (auto row = 0u; row < rows - 1; ++row) {
             for (auto column = 0u; column < columns - 1; ++column) {
                 auto t1 = top_left_quad_triangle(row, column, columns);
-                auto t2 = bottom_right_quad_triangle(row, column + 1, columns);
+                auto t2 = bottom_right_quad_triangle(row, column, columns);
                 indices.insert(std::end(indices), std::begin(t1), std::end(t1));
                 indices.insert(std::end(indices), std::begin(t2), std::end(t2));
             }
@@ -71,18 +71,18 @@ namespace ies::adapter {
     std::array<unsigned int, 3>
     top_left_quad_triangle(const unsigned int row, const unsigned int col, const unsigned int columns) {
         const auto passed_in_vertex = row * columns + col;
-        const auto vertex_below = (row + 1) * columns + col;
-        const auto vertex_on_the_right = row * columns + (col + 1);
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below, vertex_on_the_right};
+        const auto vertex_above_on_the_right = (row + 1) * columns + (col + 1);
+        const auto vertex_above = (row + 1) * columns + col;
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_above_on_the_right, vertex_above};
     }
 
     // Note vertices are taken counter-clockwise
     std::array<unsigned int, 3>
     bottom_right_quad_triangle(const unsigned int row, const unsigned int col, const unsigned int columns) {
         const auto passed_in_vertex = row * columns + col;
-        const auto vertex_below_on_the_left = (row + 1) * columns + (col - 1);
-        const auto vertex_below = (row + 1) * columns + col;
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below_on_the_left, vertex_below};
+        const auto vertex_on_the_right = row * columns + (col + 1);
+        const auto vertex_above_on_the_right = (row + 1) * columns + (col + 1);
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_on_the_right, vertex_above_on_the_right};
     }
 
     std::optional<glm::vec3> is_valid_grid_position(const unsigned int row, const unsigned int col,
@@ -112,45 +112,65 @@ namespace ies::adapter {
         constexpr glm::vec3 null_vector(0.0f);
         const std::optional passed_in_vertex = is_valid_grid_position(row, col, point_grid);
         const std::optional top_right_vertex = is_valid_grid_position(row + 1, col + 1, point_grid);
-        const std::optional right_vertex = is_valid_grid_position(row + 1, col, point_grid);
-        const std::optional bottom_vertex = is_valid_grid_position(row, col - 1, point_grid);
+        const std::optional right_vertex = is_valid_grid_position(row, col + 1, point_grid);
+        const std::optional bottom_vertex = is_valid_grid_position(row - 1, col, point_grid);
         const std::optional bottom_left_vertex = is_valid_grid_position(row - 1, col - 1, point_grid);
-        const std::optional left_vertex = is_valid_grid_position(row - 1, col, point_grid);
-        const std::optional top_vertex = is_valid_grid_position(row, col + 1, point_grid);
+        const std::optional left_vertex = is_valid_grid_position(row, col - 1, point_grid);
+        const std::optional top_vertex = is_valid_grid_position(row + 1, col, point_grid);
 
         glm::vec3 normal = null_vector;
         unsigned int considered_triangles = 0;
 
         if (top_vertex && top_right_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *top_vertex, *top_right_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *top_right_vertex, *top_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
             }
         }
+
         if (top_vertex && left_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *left_vertex, *top_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *top_vertex, *left_vertex);
             if (n != null_vector) {
+                ++considered_triangles;
+                normal += n;
+            }
+        }
+
+        if(left_vertex && bottom_left_vertex){
+            const auto n = triangle_normal(*passed_in_vertex, *left_vertex, *bottom_left_vertex);
+            if(n != null_vector){
                 ++considered_triangles;
                 normal += n;
             }
         }
 
         if (bottom_vertex && bottom_left_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *bottom_vertex, *bottom_left_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *bottom_left_vertex, *bottom_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
             }
         }
         if (bottom_vertex && right_vertex) {
-            const auto n = triangle_normal(*passed_in_vertex, *right_vertex, *bottom_vertex);
+            const auto n = triangle_normal(*passed_in_vertex, *bottom_vertex, *right_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
                 normal += n;
             }
         }
-        normal /= considered_triangles;
+
+        if(right_vertex && top_right_vertex){
+            const auto n = triangle_normal(*passed_in_vertex, *right_vertex, *top_right_vertex);
+            if(n != null_vector){
+                ++considered_triangles;
+                normal += n;
+            }
+        }
+
+        if(considered_triangles != 0){
+            normal /= considered_triangles;
+        }
         return normal;
     }
 
