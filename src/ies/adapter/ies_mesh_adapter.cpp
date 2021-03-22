@@ -73,7 +73,7 @@ namespace ies::adapter {
         const auto passed_in_vertex = row * columns + col;
         const auto vertex_below = (row + 1) * columns + col;
         const auto vertex_on_the_right = row * columns + (col + 1);
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below, vertex_on_the_right};
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_on_the_right, vertex_below};
     }
 
     // Note vertices are taken counter-clockwise
@@ -82,7 +82,7 @@ namespace ies::adapter {
         const auto passed_in_vertex = row * columns + col;
         const auto vertex_below_on_the_left = (row + 1) * columns + (col - 1);
         const auto vertex_below = (row + 1) * columns + col;
-        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below_on_the_left, vertex_below};
+        return std::array<unsigned int, 3>{passed_in_vertex, vertex_below, vertex_below_on_the_left};
     }
 
     std::optional<glm::vec3> is_valid_grid_position(const unsigned int row, const unsigned int col,
@@ -125,7 +125,7 @@ namespace ies::adapter {
             const auto n = triangle_normal(*passed_in_vertex, *top_right_vertex, *top_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
 
@@ -133,7 +133,7 @@ namespace ies::adapter {
             const auto n = triangle_normal(*passed_in_vertex, *top_vertex, *left_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
 
@@ -141,7 +141,7 @@ namespace ies::adapter {
             const auto n = triangle_normal(*passed_in_vertex, *left_vertex, *bottom_left_vertex);
             if(n != null_vector){
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
 
@@ -149,14 +149,14 @@ namespace ies::adapter {
             const auto n = triangle_normal(*passed_in_vertex, *bottom_left_vertex, *bottom_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
         if (bottom_vertex && right_vertex) {
             const auto n = triangle_normal(*passed_in_vertex, *bottom_vertex, *right_vertex);
             if (n != null_vector) {
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
 
@@ -164,7 +164,7 @@ namespace ies::adapter {
             const auto n = triangle_normal(*passed_in_vertex, *right_vertex, *top_right_vertex);
             if(n != null_vector){
                 ++considered_triangles;
-                normal += n;
+                normal -= n;
             }
         }
 
