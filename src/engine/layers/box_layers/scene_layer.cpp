@@ -229,6 +229,9 @@ namespace engine {
             rsm_generation_shader->set_float("far_plane", 2000.0f);
             set_light_in_shader(scene_light, rsm_generation_shader);
 
+            rsm_generation_shader->set_int("ies_masking", 0);
+            bind_texture_in_slot(0, ies_light_mask.get());
+
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
                     const auto& model_matrix = drawable.transform;

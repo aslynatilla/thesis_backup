@@ -1,7 +1,9 @@
 #version 330 core
 
-in vec3 frag_pos;
+in vec4 frag_pos;
 in vec3 frag_normal;
+in vec4 light_space_frag_pos;
+
 
 uniform vec4 diffuse_color;
 
@@ -19,6 +21,8 @@ struct Light{
 uniform Light scene_light;
 uniform float far_plane;
 uniform float light_intensity;
+
+uniform sampler2D ies_masking;
 
 layout (location = 0) out vec3 fragment_world_coordinates;
 layout (location = 1) out vec3 fragment_normal;
@@ -40,7 +44,7 @@ void main(){
                                         / epsilon,
                                         0.0, 1.0);
 
-    fragment_world_coordinates = frag_pos;
+    fragment_world_coordinates = frag_pos.xyz;
     fragment_normal = frag_normal;
 
     //  Dachsbacher says:
@@ -52,5 +56,8 @@ void main(){
     //  ...so the following line should not be right. Therefore we delete "attenuation_factor"...
     //  fragment_flux = diffuse_color.xyz * attenuation_factor * spotlight_intensity * light_intensity;
 
-    fragment_flux = diffuse_color.xyz * spotlight_intensity;
+    vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
+    float mask_component = texture(ies_masking, sampling_coords).r;
+
+    fragment_flux = diffuse_color.xyz * spotlight_intensity * mask_component;
 }
