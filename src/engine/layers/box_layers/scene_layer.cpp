@@ -192,6 +192,31 @@ namespace engine {
             const auto light_view_matrix = light_camera.get_view_matrix();
             const auto light_projection_matrix = light_camera.get_projection_matrix();
 
+            glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
+            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_camera.get_position());
+            ies_light_model_matrix = glm::translate(ies_light_model_matrix, glm::vec3(0.0f, -100.0f, 0.0f));
+            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(180.0f),
+                                                 glm::vec3(0.0f, 0.0f, 1.0f));
+            ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
+
+            glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            mask_fbo->bind_as(GL_FRAMEBUFFER);
+            glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
+            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glCullFace(GL_FRONT);
+            depthmask_shader->use();
+            depthmask_shader->set_mat4("light_view", light_view_matrix);
+            depthmask_shader->set_mat4("light_projection", light_projection_matrix);
+            depthmask_shader->set_mat4("model", ies_light_model_matrix);
+            depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
+            depthmask_shader->set_vec3("light_position", light_camera.get_position());
+            depthmask_shader->set_float("far_plane", 2000.0f);
+            OpenGL3_Renderer::draw(ies_light_vao);
+            mask_fbo->unbind_from(GL_FRAMEBUFFER);
+            glCullFace(GL_BACK);
+
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -228,39 +253,16 @@ namespace engine {
                                 : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
                                              no_indirect_shader);
 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            wireframe_shader->use();
-            wireframe_shader->set_mat4("view", existing_camera->view_matrix());
-            wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
-
-            glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_camera.get_position());
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, glm::vec3(0.0f, -100.0f, 0.0f));
-            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(180.0f),
-                                                 glm::vec3(0.0f, 0.0f, 1.0f));
-            ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
-
-            glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
-            wireframe_shader->set_mat4("model", ies_light_model_matrix);
-            wireframe_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
-            wireframe_shader->set_vec4("wireframe_color", glm::vec4(0.2f, 1.0f, 1.0f, 1.0f));
-            OpenGL3_Renderer::draw(ies_light_vao);
-
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            mask_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glCullFace(GL_FRONT);
-            depthmask_shader->use();
-            depthmask_shader->set_mat4("light_view", light_view_matrix);
-            depthmask_shader->set_mat4("light_projection", light_projection_matrix);
-            depthmask_shader->set_mat4("model", ies_light_model_matrix);
-            depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
-            depthmask_shader->set_vec3("light_position", light_camera.get_position());
-            depthmask_shader->set_float("far_plane", 2000.0f);
-            OpenGL3_Renderer::draw(ies_light_vao);
-            mask_fbo->unbind_from(GL_FRAMEBUFFER);
-            glCullFace(GL_BACK);
+            if (ies_light_wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                wireframe_shader->use();
+                wireframe_shader->set_mat4("view", existing_camera->view_matrix());
+                wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
+                wireframe_shader->set_mat4("model", ies_light_model_matrix);
+                wireframe_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
+                wireframe_shader->set_vec4("wireframe_color", glm::vec4(0.2f, 1.0f, 1.0f, 1.0f));
+                OpenGL3_Renderer::draw(ies_light_vao);
+            }
         }
     }
 
@@ -273,8 +275,12 @@ namespace engine {
             ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
-        ImGui::SliderFloat("Scaling dimension", &scale_modifier, 0.001f, 1.0f, "%.5f", ImGuiSliderFlags_Logarithmic);
-        ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
+        ImGui::Checkbox("Visualize IES light wireframe", &ies_light_wireframe);
+        if (ies_light_wireframe) {
+            ImGui::SliderFloat("Scaling dimension", &scale_modifier, 0.001f, 1.0f, "%.5f",
+                               ImGuiSliderFlags_Logarithmic);
+            ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
+        }
         ImGui::End();
     }
 

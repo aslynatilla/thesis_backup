@@ -80,6 +80,7 @@ namespace engine{
         float shadow_threshold = 0.11f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
+        bool ies_light_wireframe = false;
 
         std::array<unsigned int, 4> viewport_dimension;
         std::array<unsigned int, 2> texture_dimension;
