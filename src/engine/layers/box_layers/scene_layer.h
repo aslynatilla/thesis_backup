@@ -81,6 +81,8 @@ namespace engine{
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = false;
+        glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 1.0f);
+        bool ies_masking = false;
 
         std::array<unsigned int, 4> viewport_dimension;
         std::array<unsigned int, 2> texture_dimension;

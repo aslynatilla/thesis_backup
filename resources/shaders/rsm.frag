@@ -23,6 +23,7 @@ uniform float far_plane;
 uniform float light_intensity;
 
 uniform sampler2D ies_masking;
+uniform bool is_masking;
 
 layout (location = 0) out vec3 fragment_world_coordinates;
 layout (location = 1) out vec3 fragment_normal;
@@ -59,5 +60,6 @@ void main(){
     vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
     float mask_component = texture(ies_masking, sampling_coords).r;
 
-    fragment_flux = diffuse_color.xyz * spotlight_intensity * mask_component;
+    vec3 computed_flux = diffuse_color.xyz * spotlight_intensity;
+    fragment_flux = is_masking ? computed_flux * mask_component : computed_flux;
 }

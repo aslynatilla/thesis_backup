@@ -230,6 +230,7 @@ namespace engine {
             set_light_in_shader(scene_light, rsm_generation_shader);
 
             rsm_generation_shader->set_int("ies_masking", 0);
+            rsm_generation_shader->set_bool("is_masking", ies_masking);
             bind_texture_in_slot(0, ies_light_mask.get());
 
             if (!scene_objects.empty()) {
@@ -263,7 +264,7 @@ namespace engine {
                 wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
                 wireframe_shader->set_mat4("model", ies_light_model_matrix);
                 wireframe_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
-                wireframe_shader->set_vec4("wireframe_color", glm::vec4(0.2f, 1.0f, 1.0f, 1.0f));
+                wireframe_shader->set_vec4("wireframe_color", wireframe_color);
                 OpenGL3_Renderer::draw(ies_light_vao);
             }
         }
@@ -282,8 +283,10 @@ namespace engine {
         if (ies_light_wireframe) {
             ImGui::SliderFloat("Scaling dimension", &scale_modifier, 0.001f, 1.0f, "%.5f",
                                ImGuiSliderFlags_Logarithmic);
+            ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
             ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
         }
+        ImGui::Checkbox("Use IES light to mask emission", &ies_masking);
         ImGui::End();
     }
 
