@@ -275,6 +275,9 @@ namespace engine {
 
     void SceneLayer::on_imgui_render() {
         ImGui::Begin("Shader controls");
+        ImGui::Text("Spotlight transform");
+        ImGui::DragFloat3("Light position", glm::value_ptr(scene_light.position), 1.0f, -1000.0f, 1000.0f, "%.3f");
+        ImGui::DragFloat3("Light direction", glm::value_ptr(scene_light.direction), 0.1f, -1.0f, 1.0f, "%.3f");
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
@@ -284,12 +287,12 @@ namespace engine {
         }
         ImGui::Checkbox("Visualize IES light wireframe", &ies_light_wireframe);
         if (ies_light_wireframe) {
-            ImGui::SliderFloat("Scaling dimension", &scale_modifier, 0.001f, 1.0f, "%.5f",
+            ImGui::SliderFloat("Wireframe scaling", &scale_modifier, 0.001f, 1.0f, "%.5f",
                                ImGuiSliderFlags_Logarithmic);
-            ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
             ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
+            ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
         }
-        ImGui::Checkbox("Use IES light to mask emission", &ies_masking);
+        ImGui::Checkbox("Use IES light wireframe to mask light emission", &ies_masking);
         ImGui::End();
     }
 
