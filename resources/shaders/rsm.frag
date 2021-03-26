@@ -25,9 +25,9 @@ uniform float light_intensity;
 uniform sampler2D ies_masking;
 uniform bool is_masking;
 
-layout (location = 0) out vec3 fragment_world_coordinates;
-layout (location = 1) out vec3 fragment_normal;
-layout (location = 2) out vec3 fragment_flux;
+layout (location = 0) out vec4 fragment_world_coordinates;
+layout (location = 1) out vec4 fragment_normal;
+layout (location = 2) out vec4 fragment_flux;
 
 void main(){
     vec3 light_to_fragment = frag_pos.xyz - scene_light.position;
@@ -45,8 +45,8 @@ void main(){
                                         / epsilon,
                                         0.0, 1.0);
 
-    fragment_world_coordinates = frag_pos.xyz;
-    fragment_normal = frag_normal;
+    fragment_world_coordinates = vec4(frag_pos.xyz, 1.0);
+    fragment_normal = vec4(frag_normal, 1.0);
 
     //  Dachsbacher says:
     //       For a uniform spotlight, this flux decreases with the cosine to
@@ -60,6 +60,6 @@ void main(){
     vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
     float mask_component = texture(ies_masking, sampling_coords).r;
 
-    vec3 computed_flux = diffuse_color.xyz * spotlight_intensity;
+    vec4 computed_flux = vec4(diffuse_color.xyz * spotlight_intensity, 1.0);
     fragment_flux = is_masking ? computed_flux * mask_component : computed_flux;
 }
