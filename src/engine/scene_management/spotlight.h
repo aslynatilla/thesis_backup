@@ -4,24 +4,46 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace engine{
+namespace engine {
+    struct SpotlightParameters {
+        SpotlightParameters() = default;
+        SpotlightParameters(const float cutoff_angle_degrees, const float outer_cutoff_angle_degrees);
 
-    class SpotLight{
-    public:
-        SpotLight() = default;
-        explicit SpotLight(const glm::vec3 light_position, const glm::vec3 light_direction,
-                           const float cutoff_angle_in_degrees, const float outer_cutoff_angle_in_degrees,
-                           const float constant_att, const float linear_att, const float quadratic_att) noexcept;
-        glm::vec3 position;
-        glm::vec3 direction;
+        float cutoff_angle;
+        float outer_cutoff_angle;
 
-        float raw_cutoff_angle;
-        float raw_outer_cutoff_angle;
         float cosine_cutoff_angle;
         float cosine_outer_cutoff_angle;
-        float constant_attenuation_factor;
-        float linear_attenuation_factor;
-        float quadratic_attenuation_factor;
+    };
+
+    struct LightAttenuationParameters {
+        float constant;
+        float linear;
+        float quadratic;
+    };
+
+    class Spotlight {
+    public:
+        Spotlight() = default;
+        explicit Spotlight(const glm::vec4 start_position,
+                           const SpotlightParameters spot_descr,
+                           const LightAttenuationParameters attenuation_descr) noexcept;
+
+        glm::vec4 get_position() const;
+        glm::vec3 get_rotation_in_degrees() const;
+        glm::vec4 get_forward() const;
+        glm::vec3 get_position_as_vec3() const;
+        glm::vec3 get_looked_at_point() const;
+
+        void translate_to(const glm::vec4 new_position);
+        void rotate(const glm::vec3 new_rotation_in_degrees);
+
+        SpotlightParameters spot_params;
+        LightAttenuationParameters attenuation;
+    private:
+        glm::vec4 position;
+        glm::mat4 orientation;
+        glm::vec3 rotation_in_degrees;
     };
 
 }
