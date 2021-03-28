@@ -25,7 +25,7 @@ namespace engine {
     }
 
     glm::vec4 Spotlight::get_forward() const {
-        return orientation * glm::vec4(0.0f, 0.0f, 1.0f, 0.0);
+        return glm::mat4_cast(orientation) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0);
     }
 
     glm::vec3 Spotlight::get_position_as_vec3() const {
@@ -36,15 +36,28 @@ namespace engine {
         return glm::vec3(position) + glm::vec3(get_forward());
     }
 
+    glm::fquat Spotlight::get_orientation() const {
+        return orientation;
+    }
+
     void Spotlight::translate_to(const glm::vec4 new_position) {
         position = new_position;
     }
 
-    void Spotlight::rotate(const glm::vec3 new_rotation_in_degrees) {
+    void Spotlight::set_rotation(const glm::vec3 new_rotation_in_degrees) {
+        const auto old_angles = glm::radians(rotation_in_degrees);
+        const auto new_angles = glm::radians(new_rotation_in_degrees);
         rotation_in_degrees = new_rotation_in_degrees;
-        const auto angles = glm::radians(new_rotation_in_degrees);
-        orientation = glm::rotate(glm::identity<glm::mat4>(), angles.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        orientation = glm::rotate(orientation, angles.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        orientation = glm::rotate(orientation, angles.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        const auto inverse_rotation_X = glm::angleAxis(-old_angles.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        const auto inverse_rotation_Y = glm::angleAxis(-old_angles.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        const auto inverse_rotation_Z = glm::angleAxis(-old_angles.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        const auto rotation_X = glm::angleAxis(new_angles.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        const auto rotation_Y = glm::angleAxis(new_angles.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        const auto rotation_Z = glm::angleAxis(new_angles.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        orientation = orientation * inverse_rotation_Z * inverse_rotation_Y * inverse_rotation_X;
+        orientation = orientation * rotation_X * rotation_Y * rotation_Z;
+        orientation = glm::normalize(orientation);
     }
 }

@@ -34,15 +34,16 @@ namespace engine {
         glm::vec4 get_forward() const;
         glm::vec3 get_position_as_vec3() const;
         glm::vec3 get_looked_at_point() const;
+        glm::fquat get_orientation() const;
 
         void translate_to(const glm::vec4 new_position);
-        void rotate(const glm::vec3 new_rotation_in_degrees);
+        void set_rotation(const glm::vec3 new_rotation_in_degrees);
 
         SpotlightParameters spot_params;
         LightAttenuationParameters attenuation;
     private:
         glm::vec4 position;
-        glm::mat4 orientation;
+        glm::fquat orientation;
         glm::vec3 rotation_in_degrees;
     };
 

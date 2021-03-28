@@ -16,7 +16,7 @@ namespace engine {
             scene_light = Spotlight(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
                                     SpotlightParameters{30.0f, 60.0f},
                                     LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
-            scene_light.rotate(glm::vec3(90.0f, 0.0f, 0.0f));
+            scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
                                                      "resources/shaders/shadowmapped.frag");
@@ -196,9 +196,8 @@ namespace engine {
 
             glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
             ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_camera.get_position());
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, glm::vec3(0.0f, -100.0f, 0.0f));
-            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(180.0f),
-                                                 glm::vec3(0.0f, 0.0f, 1.0f));
+            ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
+            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
 
             glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
@@ -282,7 +281,7 @@ namespace engine {
             scene_light.translate_to(glm::vec4(light_position, 1.0f));
         }
         if(ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, -180.0f, 180.0f, "%.3f")){
-            scene_light.rotate(light_angles);
+            scene_light.set_rotation(light_angles);
         }
 
         ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);

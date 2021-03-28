@@ -72,7 +72,7 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture1D> samples_texture;
         std::unique_ptr<OpenGL3_Texture2D> ies_light_mask;
 
-        unsigned int samples_number;
+        int samples_number;
 
         float light_intensity = 2.5f;
         float indirect_intensity = 30.0f;
