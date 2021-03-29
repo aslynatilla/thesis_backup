@@ -56,8 +56,8 @@ namespace engine {
         const auto rotation_Y = glm::angleAxis(new_angles.y, glm::vec3(0.0f, 1.0f, 0.0f));
         const auto rotation_Z = glm::angleAxis(new_angles.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-        orientation = orientation * inverse_rotation_Z * inverse_rotation_Y * inverse_rotation_X;
-        orientation = orientation * rotation_X * rotation_Y * rotation_Z;
+        orientation = inverse_rotation_X * inverse_rotation_Y * inverse_rotation_Z * orientation;
+        orientation = rotation_Z * rotation_Y * rotation_X * orientation;
         orientation = glm::normalize(orientation);
     }
 }

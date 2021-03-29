@@ -280,7 +280,7 @@ namespace engine {
         if(ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 1.0f, -1000.0f, 1000.0f, "%.3f")){
             scene_light.translate_to(glm::vec4(light_position, 1.0f));
         }
-        if(ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, -180.0f, 180.0f, "%.3f")){
+        if(ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")){
             scene_light.set_rotation(light_angles);
         }
 
