@@ -61,5 +61,5 @@ void main(){
     float mask_component = texture(ies_masking, sampling_coords).r;
 
     vec4 computed_flux = vec4(diffuse_color.xyz * spotlight_intensity, 1.0);
-    fragment_flux = is_masking ? computed_flux * mask_component : computed_flux;
+    fragment_flux = is_masking ? vec4(computed_flux.xyz * mask_component, 1.0) : computed_flux;
 }

@@ -25,7 +25,11 @@ namespace engine {
     }
 
     glm::vec4 Spotlight::get_forward() const {
-        return glm::mat4_cast(orientation) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0);
+        return glm::mat4_cast(orientation) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+    }
+
+    glm::vec4 Spotlight::get_up() const{
+        return glm::mat4_cast(orientation) * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     }
 
     glm::vec3 Spotlight::get_position_as_vec3() const {

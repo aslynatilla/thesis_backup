@@ -14,7 +14,7 @@ namespace engine {
                                                             ai_postprocess_flags);
 
             scene_light = Spotlight(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
-                                    SpotlightParameters{30.0f, 60.0f},
+                                    SpotlightParameters{30.0f, 45.0f},
                                     LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
@@ -183,10 +183,12 @@ namespace engine {
     void SceneLayer::update(float delta_time) {
         timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
+            const auto light_position = scene_light.get_position_as_vec3();
+
             const auto light_camera = Camera(
-                    CameraGeometricDefinition{scene_light.get_position_as_vec3(),
+                    CameraGeometricDefinition{light_position,
                                               scene_light.get_looked_at_point(),
-                                              glm::vec3(0.0f, 0.0f, -1.0f)},
+                                              scene_light.get_up()},
                     90.0f, 1.0f,
                     CameraPlanes{0.1f, 2000.0f},
                     CameraMode::Perspective);
@@ -195,7 +197,7 @@ namespace engine {
             const auto light_projection_matrix = light_camera.get_projection_matrix();
 
             glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_camera.get_position());
+            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
             ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
             ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
@@ -212,7 +214,7 @@ namespace engine {
             depthmask_shader->set_mat4("light_projection", light_projection_matrix);
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
             depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
-            depthmask_shader->set_vec3("light_position", light_camera.get_position());
+            depthmask_shader->set_vec3("light_position", light_position);
             depthmask_shader->set_float("far_plane", 2000.0f);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);

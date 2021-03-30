@@ -32,6 +32,7 @@ namespace engine {
         glm::vec4 get_position() const;
         glm::vec3 get_rotation_in_degrees() const;
         glm::vec4 get_forward() const;
+        glm::vec4 get_up() const;
         glm::vec3 get_position_as_vec3() const;
         glm::vec3 get_looked_at_point() const;
         glm::fquat get_orientation() const;
