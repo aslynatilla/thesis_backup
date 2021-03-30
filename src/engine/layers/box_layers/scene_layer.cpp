@@ -149,7 +149,21 @@ namespace engine {
 
             const auto vertices = photometric_solid.get_vertices();
 
-            largest_position_component = std::max_element(std::begin(vertices), std::end(vertices)).operator*();
+            auto farthest_vertex_distance = [](const std::vector<float>& vs) -> float{
+                float result = 0.0f;
+                for(auto i = 0u; i < vs.size()/3; ++i){
+                    const glm::vec3 p(vs[3 * i + 0],
+                                vs[3 * i + 1],
+                                vs[3 * i + 2]);
+                    const auto p_to_origin = glm::length(p);
+                    if(result < p_to_origin){
+                        result = p_to_origin;
+                    }
+                }
+                return result;
+            };
+
+            largest_position_component = farthest_vertex_distance(vertices);
 
             auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
                                                       vertices.data());
@@ -216,6 +230,7 @@ namespace engine {
             depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
             depthmask_shader->set_vec3("light_position", light_position);
             depthmask_shader->set_float("far_plane", 2000.0f);
+            glUniform1f(0, largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
