@@ -1,16 +1,16 @@
 #ifndef POINT_LIGHT_H
 #define POINT_LIGHT_H
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include "light.h"
 
-namespace engine{
+namespace engine {
 
-    class PointLight{
+    class Point_Light : public Light{
     public:
-        PointLight() = default;
-        explicit PointLight(glm::vec3 light_position) noexcept;
-        glm::vec3 position;
+        Point_Light() = default;
+
+        explicit Point_Light(const glm::vec4 light_position,
+                             const LightAttenuationParameters attenuation_descr) noexcept;
     };
 
 }

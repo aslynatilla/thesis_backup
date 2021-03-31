@@ -44,6 +44,7 @@ namespace engine{
     private:
         bool on_key_pressed(KeyPressedEvent event);
         bool set_light_in_shader(const Spotlight& light, std::shared_ptr<Shader>& shader);
+        bool set_light_in_shader(const Point_Light& light, std::shared_ptr<Shader>& shader);
         void draw_scene(const std::shared_ptr<FlyCamera>& view_camera, const glm::mat4& light_view_matrix,
                         const glm::mat4& light_projection_matrix, std::shared_ptr<Shader>& shader);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
@@ -53,7 +54,7 @@ namespace engine{
 
         bool moving_camera = false;
 
-        Spotlight scene_light;
+        Point_Light scene_light;
 
         std::shared_ptr<Shader> draw_shader;
         std::shared_ptr<Shader> no_indirect_shader;

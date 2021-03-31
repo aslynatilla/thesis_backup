@@ -22,8 +22,8 @@ uniform vec3 light_position;
 struct Light{
     vec3 position;
     vec3 direction;
-    float cutoff_angle;
-    float outer_cutoff_angle;
+//    float cutoff_angle;
+//    float outer_cutoff_angle;
 
     float constant_attenuation;
     float linear_attenuation;
@@ -109,11 +109,11 @@ void main(){
                                     scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
 
     //  Spotlight specific
-    float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, -l);
-    float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
-    float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
-                                        / epsilon,
-                                        0.0, 1.0);
+    // float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, -l);
+    // float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
+    // float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
+    //                                     / epsilon,
+    //                                     0.0, 1.0);
 
     //  Shadow factor
     float shadow_factor = compute_shadow(fragment_light_space_coordinates, distance_from_light);
@@ -127,7 +127,7 @@ void main(){
 
     //  Diffuse component
     float d = max(dot(n, l), 0.0);
-    d = d * attenuation_factor * spotlight_intensity;
+    d = d * attenuation_factor;
     vec3 diffuse_component = d * diffuse_color.rgb * light_intensity * maskable;
 
     //  Ambient component
@@ -138,7 +138,7 @@ void main(){
     //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
     //      float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
     float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
-    vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor * spotlight_intensity;
+    vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
 
     FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
                                         :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);

@@ -13,9 +13,8 @@ namespace engine {
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
 
-            scene_light = Spotlight(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
-                                    SpotlightParameters{30.0f, 45.0f},
-                                    LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
+            scene_light = Point_Light(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
+                                      LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
@@ -198,10 +197,10 @@ namespace engine {
         timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
             const auto light_position = scene_light.get_position_as_vec3();
-
+            const auto light_forward = glm::vec3(scene_light.get_forward());
             const auto light_camera = Camera(
                     CameraGeometricDefinition{light_position,
-                                              scene_light.get_looked_at_point(),
+                                              light_position + light_forward,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
                     CameraPlanes{0.1f, 2000.0f},
@@ -324,6 +323,15 @@ namespace engine {
         shader->set_vec3("scene_light.direction", light.get_forward());
         shader->set_float("scene_light.cutoff_angle", light.spot_params.cosine_cutoff_angle);
         shader->set_float("scene_light.outer_cutoff_angle", light.spot_params.cosine_outer_cutoff_angle);
+        shader->set_float("scene_light.constant_attenuation", light.attenuation.constant);
+        shader->set_float("scene_light.linear_attenuation", light.attenuation.linear);
+        shader->set_float("scene_light.quadratic_attenuation", light.attenuation.quadratic);
+        return glGetError() != 0;
+    }
+
+    bool SceneLayer::set_light_in_shader(const Point_Light& light, std::shared_ptr<Shader>& shader) {
+        shader->set_vec3("scene_light.position", light.get_position_as_vec3());
+        shader->set_vec3("scene_light.direction", light.get_forward());
         shader->set_float("scene_light.constant_attenuation", light.attenuation.constant);
         shader->set_float("scene_light.linear_attenuation", light.attenuation.linear);
         shader->set_float("scene_light.quadratic_attenuation", light.attenuation.quadratic);
