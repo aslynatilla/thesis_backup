@@ -354,19 +354,22 @@ namespace engine {
         shader->set_mat4("projection", view_camera->projection_matrix());
         shader->set_vec3("camera_position", view_camera->position());
         set_light_in_shader(scene_light, shader);
+        shader->set_bool("ies_masking", ies_masking);
 
         //  Texture location binding
         shader->set_int("shadow_map", 0);
         shader->set_int("position_map", 1);
         shader->set_int("normal_map", 2);
         shader->set_int("flux_map", 3);
-        shader->set_int("sample_array", 4);
+        shader->set_int("ies_mask", 4);
+        shader->set_int("sample_array", 5);
         shader->set_int("samples_number", samples_number);
         bind_texture_in_slot(0, depth_texture.get());
         bind_texture_in_slot(1, position_texture.get());
         bind_texture_in_slot(2, normal_texture.get());
         bind_texture_in_slot(3, flux_texture.get());
-        bind_texture_in_slot(4, samples_texture.get());
+        bind_texture_in_slot(4, ies_light_mask.get());
+        bind_texture_in_slot(5, samples_texture.get());
 
         //  Tweakable values
         shader->set_float("light_intensity", light_intensity);

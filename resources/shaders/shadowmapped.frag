@@ -36,6 +36,7 @@ uniform sampler2D shadow_map;
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D flux_map;
+uniform sampler2D ies_mask;
 uniform sampler1D sample_array;
 
 uniform int samples_number;
@@ -50,6 +51,7 @@ uniform float indirect_intensity;
 uniform float light_intensity;
 
 uniform bool hide_direct_component;
+uniform bool ies_masking;
 
 float compute_shadow(vec4 fragment_light_space_coordinates, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
@@ -119,10 +121,14 @@ void main(){
     //  Indirect lighting
     vec3 indirect_component = compute_indirect_illumination(fragment_light_space_coordinates, n) * indirect_intensity;
 
+    //  Masking component
+    float maskable = ies_masking ? texture(ies_mask, fragment_light_space_coordinates.xy).r
+                                 : 1.0;
+
     //  Diffuse component
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor * spotlight_intensity;
-    vec3 diffuse_component = d * diffuse_color.rgb * light_intensity;
+    vec3 diffuse_component = d * diffuse_color.rgb * light_intensity * maskable;
 
     //  Ambient component
     vec3 ambient_component = ambient_color.xyz * ambient_color.w;

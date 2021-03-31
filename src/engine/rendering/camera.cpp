@@ -6,17 +6,17 @@ namespace engine {
             definition({.position{0.0f, 0.0f, -10.0f},
                                .look_at_position{0.0f, 0.0f, 0.0f},
                                .up{0.0f, 1.0f, 0.0f}}),
-            FOV_in_degrees(45.0f),
+            vertical_FOV_in_degrees(45.0f),
             aspect_ratio(1.0f),
             view_planes({.near_plane = 0.1f,
                                 .far_plane = 100.0f}),
             projection_mode(CameraMode::Orthographic) {}
 
 
-    Camera::Camera(const CameraGeometricDefinition& def, float fov, float aspect,
+    Camera::Camera(const CameraGeometricDefinition& def, float vertical_fov, float aspect,
                    CameraPlanes planes, CameraMode mode) :
             definition(def),
-            FOV_in_degrees(fov),
+            vertical_FOV_in_degrees(vertical_fov),
             aspect_ratio(aspect),
             view_planes(planes),
             projection_mode(mode) {}
@@ -37,7 +37,7 @@ namespace engine {
 
     glm::mat4 Camera::get_projection_matrix() const {
         if (projection_mode == CameraMode::Perspective) {
-            return glm::perspective(glm::radians(FOV_in_degrees), aspect_ratio,
+            return glm::perspective(glm::radians(vertical_FOV_in_degrees), aspect_ratio,
                                     view_planes.near_plane, view_planes.far_plane);
         } else { // projection_mode == CameraMode::Orthographic
             const float half_length = view_planes.far_plane / 2.0f;

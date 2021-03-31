@@ -28,7 +28,7 @@ namespace engine{
     class Camera{
     public:
         Camera();
-        Camera(const CameraGeometricDefinition& def, float fov = 45.0f, float aspect = 1.0f,
+        Camera(const CameraGeometricDefinition& def, float vertical_fov = 45.0f, float aspect = 1.0f,
                CameraPlanes planes = {0.1f, 100.0f},
                CameraMode mode = CameraMode::Orthographic);
 
@@ -50,7 +50,7 @@ namespace engine{
         void on_event(Event& event);
     private:
         CameraGeometricDefinition definition;
-        float       FOV_in_degrees;
+        float       vertical_FOV_in_degrees;
         float       aspect_ratio;
         CameraPlanes view_planes;
         CameraMode projection_mode;
