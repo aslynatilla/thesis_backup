@@ -4,14 +4,11 @@ in vec4 frag_pos;
 in vec3 frag_normal;
 in vec4 light_space_frag_pos;
 
-
 uniform vec4 diffuse_color;
 
 struct Light{
     vec3 position;
     vec3 direction;
-    float cutoff_angle;
-    float outer_cutoff_angle;
 
     float constant_attenuation;
     float linear_attenuation;
@@ -39,11 +36,11 @@ void main(){
         scene_light.linear_attenuation * light_distance +
         scene_light.quadratic_attenuation * light_distance * light_distance);
 
-    float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, normalize(light_to_fragment));
-    float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
-    float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
-                                        / epsilon,
-                                        0.0, 1.0);
+    //  float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, normalize(light_to_fragment));
+    //  float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
+    //  float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
+    //                                      / epsilon,
+    //                                      0.0, 1.0);
 
     fragment_world_coordinates = vec4(frag_pos.xyz, 1.0);
     fragment_normal = vec4(frag_normal, 1.0);
@@ -60,6 +57,6 @@ void main(){
     vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
     float mask_component = texture(ies_masking, sampling_coords).r;
 
-    vec4 computed_flux = vec4(diffuse_color.xyz * spotlight_intensity, 1.0);
+    vec4 computed_flux = vec4(diffuse_color.xyz, 1.0);
     fragment_flux = is_masking ? vec4(computed_flux.xyz * mask_component, 1.0) : computed_flux;
 }

@@ -49,6 +49,7 @@ namespace engine{
                         const glm::mat4& light_projection_matrix, std::shared_ptr<Shader>& shader);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
         void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
+        void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture);
 
         std::weak_ptr<FlyCamera> view_camera;
 
@@ -66,12 +67,12 @@ namespace engine{
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
         std::unique_ptr<OpenGL3_FrameBuffer> mask_fbo;
-        std::unique_ptr<OpenGL3_Texture2D> depth_texture;
-        std::unique_ptr<OpenGL3_Texture2D> position_texture;
-        std::unique_ptr<OpenGL3_Texture2D> normal_texture;
-        std::unique_ptr<OpenGL3_Texture2D> flux_texture;
+        std::unique_ptr<OpenGL3_Cubemap> depth_texture;
+        std::unique_ptr<OpenGL3_Cubemap> position_texture;
+        std::unique_ptr<OpenGL3_Cubemap> normal_texture;
+        std::unique_ptr<OpenGL3_Cubemap> flux_texture;
         std::unique_ptr<OpenGL3_Texture1D> samples_texture;
-        std::unique_ptr<OpenGL3_Texture2D> ies_light_mask;
+        std::unique_ptr<OpenGL3_Cubemap> ies_light_mask;
 
         int samples_number;
 
@@ -87,6 +88,7 @@ namespace engine{
 
         std::array<unsigned int, 4> viewport_dimension;
         std::array<unsigned int, 2> texture_dimension;
+        std::array<std::string, 6> light_transforms_strings;
 
         float timestep;
         glm::vec2 previous_mouse_position;

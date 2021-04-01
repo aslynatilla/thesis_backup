@@ -22,7 +22,8 @@ namespace engine {
             no_indirect_shader = shader::create_shader_from("resources/shaders/shadowmapped_no_indirect.vert",
                                                             "resources/shaders/shadowmapped_no_indirect.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
-                                                               "resources/shaders/rsm.frag");
+                                                               "resources/shaders/rsm.frag",
+                                                               "resources/shaders/rsm.geom");
             wireframe_shader = shader::create_shader_from("resources/shaders/wireframe.vert",
                                                           "resources/shaders/wireframe.frag");
             depthmask_shader = shader::create_shader_from("resources/shaders/depth_mask.vert",
@@ -36,39 +37,37 @@ namespace engine {
             viewport_dimension[3] = static_cast<unsigned int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<unsigned int>(viewport_dimension[2] / 2),
-                     static_cast<unsigned int>(viewport_dimension[3]) / 2};
+                    {static_cast<unsigned int>(viewport_dimension[2] / 4),
+                     static_cast<unsigned int>(viewport_dimension[3]) / 4};
+
+            light_transforms_strings = {
+                    "light_transforms[0]",
+                    "light_transforms[1]",
+                    "light_transforms[2]",
+                    "light_transforms[3]",
+                    "light_transforms[4]",
+                    "light_transforms[5]",
+            };
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             mask_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-            depth_texture = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
-                                                                OpenGL3_TextureParameters(
-                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                        {GL_LINEAR, GL_LINEAR,
-                                                                         GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                                texture_dimension[0],
-                                                                texture_dimension[1],
-                                                                GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            depth_texture = std::make_unique<OpenGL3_Cubemap>(GL_DEPTH_COMPONENT,
+                                                              OpenGL3_TextureParameters(
+                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                      {GL_LINEAR, GL_LINEAR,
+                                                                       GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                              texture_dimension[0],
+                                                              texture_dimension[1],
+                                                              GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
             //    Clamping to border allows "not producing" a shadow
             //  in the case sampling outside of the texture happens
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)));
 
-            position_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
-                                                                   OpenGL3_TextureParameters(
-                                                                           {GL_TEXTURE_MIN_FILTER,
-                                                                            GL_TEXTURE_MAG_FILTER,
-                                                                            GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                           {GL_LINEAR, GL_LINEAR,
-                                                                            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                                   texture_dimension[0],
-                                                                   texture_dimension[1],
-                                                                   GL_RGB, GL_FLOAT, nullptr);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
-
-            normal_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
+            position_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
-                                                                         {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                         {GL_TEXTURE_MIN_FILTER,
+                                                                          GL_TEXTURE_MAG_FILTER,
                                                                           GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
                                                                          {GL_LINEAR, GL_LINEAR,
                                                                           GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
@@ -76,7 +75,8 @@ namespace engine {
                                                                  texture_dimension[1],
                                                                  GL_RGB, GL_FLOAT, nullptr);
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
-            flux_texture = std::make_unique<OpenGL3_Texture2D>(GL_RGB8,
+
+            normal_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -85,17 +85,27 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
+            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB8,
+                                                             OpenGL3_TextureParameters(
+                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                     {GL_LINEAR, GL_LINEAR,
+                                                                      GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                             texture_dimension[0],
+                                                             texture_dimension[1],
+                                                             GL_RGB, GL_FLOAT, nullptr);
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
-            ies_light_mask = std::make_unique<OpenGL3_Texture2D>(GL_RGB32F,
-                                                                 OpenGL3_TextureParameters(
-                                                                         {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                          GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                         {GL_LINEAR, GL_LINEAR,
-                                                                          GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                                 texture_dimension[0],
-                                                                 texture_dimension[1],
-                                                                 GL_RGB, GL_FLOAT, nullptr);
+            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
+                                                               OpenGL3_TextureParameters(
+                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                       {GL_LINEAR, GL_LINEAR,
+                                                                        GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                               texture_dimension[0],
+                                                               texture_dimension[1],
+                                                               GL_RGB, GL_FLOAT, nullptr);
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
 
@@ -139,7 +149,7 @@ namespace engine {
 
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
-//            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/TEST.IES");
@@ -148,14 +158,14 @@ namespace engine {
 
             const auto vertices = photometric_solid.get_vertices();
 
-            auto farthest_vertex_distance = [](const std::vector<float>& vs) -> float{
+            auto farthest_vertex_distance = [](const std::vector<float>& vs) -> float {
                 float result = 0.0f;
-                for(auto i = 0u; i < vs.size()/3; ++i){
+                for (auto i = 0u; i < vs.size() / 3; ++i) {
                     const glm::vec3 p(vs[3 * i + 0],
-                                vs[3 * i + 1],
-                                vs[3 * i + 2]);
+                                      vs[3 * i + 1],
+                                      vs[3 * i + 2]);
                     const auto p_to_origin = glm::length(p);
-                    if(result < p_to_origin){
+                    if (result < p_to_origin) {
                         result = p_to_origin;
                     }
                 }
@@ -198,6 +208,7 @@ namespace engine {
         if (auto existing_camera = view_camera.lock()) {
             const auto light_position = scene_light.get_position_as_vec3();
             const auto light_forward = glm::vec3(scene_light.get_forward());
+            const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
             const auto light_camera = Camera(
                     CameraGeometricDefinition{light_position,
                                               light_position + light_forward,
@@ -212,7 +223,8 @@ namespace engine {
             glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
             ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
             ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
-            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
+                                                 glm::vec3(1.0f, 0.0f, 0.0f));
             ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
 
             glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
@@ -241,14 +253,36 @@ namespace engine {
             //  RSM Shader uniforms
             rsm_generation_shader->use();
             rsm_generation_shader->set_float("light_intensity", light_intensity);
-            rsm_generation_shader->set_mat4("light_view", light_view_matrix);
             rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
             rsm_generation_shader->set_float("far_plane", 2000.0f);
             set_light_in_shader(scene_light, rsm_generation_shader);
 
             rsm_generation_shader->set_int("ies_masking", 0);
             rsm_generation_shader->set_bool("is_masking", ies_masking);
-            bind_texture_in_slot(0, ies_light_mask.get());
+            //bind_texture_in_slot(0, ies_light_mask.get());
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(ies_light_mask->bound_type, ies_light_mask->id);
+
+            std::vector<glm::vec3> oriented_cubemap_directions;
+            const auto cubemap_directions = OpenGL3_Cubemap::directions;
+            std::transform(std::begin(cubemap_directions), std::end(cubemap_directions),
+                           std::back_inserter(oriented_cubemap_directions), [&light_orientation](const auto dir) {
+                        return glm::vec3(light_orientation * glm::vec4(dir, 1.0f));
+                    });
+
+            std::vector<glm::vec4> light_view_projection_matrices;
+
+            for (unsigned int i = 0u; i < 6; ++i) {
+                glm::vec3 ith_oriented_forward = light_orientation * glm::vec4(OpenGL3_Cubemap::directions[i], 1.0f);
+                glm::vec3 ith_oriented_up = light_orientation * glm::vec4(OpenGL3_Cubemap::ups[i], 1.0f);
+                rsm_generation_shader->set_mat4(light_transforms_strings[i],
+                                                light_projection_matrix *
+                                                glm::lookAt(
+                                                        light_position,
+                                                        light_position +
+                                                        ith_oriented_forward,
+                                                        ith_oriented_up));
+            }
 
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
@@ -293,10 +327,10 @@ namespace engine {
         auto light_angles = scene_light.get_rotation_in_degrees();
         ImGui::Begin("Shader controls");
         ImGui::Text("Spotlight transform");
-        if(ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 1.0f, -1000.0f, 1000.0f, "%.3f")){
+        if (ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 1.0f, -1000.0f, 1000.0f, "%.3f")) {
             scene_light.translate_to(glm::vec4(light_position, 1.0f));
         }
-        if(ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")){
+        if (ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")) {
             scene_light.set_rotation(light_angles);
         }
 
@@ -344,6 +378,11 @@ namespace engine {
     }
 
     void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
+    }
+
+    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture) {
         texture->make_active_in_slot(slot_number);
         glBindTexture(texture->bound_type, texture->id);
     }
