@@ -33,9 +33,9 @@ struct Light{
 uniform Light scene_light;
 
 uniform samplerCube shadow_map;
-uniform sampler2D position_map;
-uniform sampler2D normal_map;
-uniform sampler2D flux_map;
+uniform samplerCube position_map;
+uniform samplerCube normal_map;
+uniform samplerCube flux_map;
 uniform sampler2D ies_mask;
 uniform sampler1D sample_array;
 
@@ -66,13 +66,15 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
     }
 }
 
-vec3 compute_indirect_illumination(vec4 frag_light_space_coord, vec3 frag_normalized_normal){
+vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_normal){
     vec3 indirect = vec3(0.0);
 
     for(int i = 0; i <= samples_number; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
-        vec2 sampling_coords = vec2(frag_light_space_coord.x + random_sample.x * max_radius,
-                                    frag_light_space_coord.y + random_sample.y * max_radius);
+        vec3 sampling_coords = normalize(vec3(
+                                    light_to_frag.x + random_sample.x * max_radius,
+                                    light_to_frag.y + random_sample.y * max_radius,
+                                    light_to_frag.z));
 
         vec3 vpl_pos = texture(position_map, sampling_coords).rgb;
         vec3 vpl_norm = texture(normal_map, sampling_coords).rgb;
@@ -119,7 +121,7 @@ void main(){
     float shadow_factor = compute_shadow(-l, distance_from_light);
 
     //  Indirect lighting
-    vec3 indirect_component = compute_indirect_illumination(fragment_light_space_coordinates, n) * indirect_intensity;
+    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity;
 
     //  Masking component
     float maskable = ies_masking ? texture(ies_mask, fragment_light_space_coordinates.xy).r

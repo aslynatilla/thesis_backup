@@ -76,10 +76,10 @@ namespace engine{
 
         int samples_number;
 
-        float light_intensity = 2.5f;
-        float indirect_intensity = 30.0f;
-        float max_radius = 0.25f;
-        float shadow_threshold = 0.11f;
+        float light_intensity = 1.5f;
+        float indirect_intensity = 10.0f;
+        float max_radius = 0.5f;
+        float shadow_threshold = 0.15f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = false;

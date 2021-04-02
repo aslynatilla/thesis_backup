@@ -6,11 +6,13 @@
  uniform mat4 model;
 
  out vec4 frag_pos;
- out vec3 frag_normal;
+ out VS_OUT{
+  vec3 normal;
+ } vertex_data;
 
  void main()
  {
      frag_pos = model * vec4(position, 1.0);
-     frag_normal = normalize(mat3(transpose(inverse(model))) * normal);
+     vertex_data.normal = normalize(mat3(transpose(inverse(model))) * normal);
      gl_Position = frag_pos;
  }
