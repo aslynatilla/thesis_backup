@@ -32,7 +32,7 @@ struct Light{
 
 uniform Light scene_light;
 
-uniform sampler2D shadow_map;
+uniform samplerCube shadow_map;
 uniform sampler2D position_map;
 uniform sampler2D normal_map;
 uniform sampler2D flux_map;
@@ -53,10 +53,10 @@ uniform float light_intensity;
 uniform bool hide_direct_component;
 uniform bool ies_masking;
 
-float compute_shadow(vec4 fragment_light_space_coordinates, float light_distance){
+float compute_shadow(vec3 light_to_frag, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
     // of the fragment from the light
-    float depth = texture(shadow_map, fragment_light_space_coordinates.xy).r;
+    float depth = texture(shadow_map, light_to_frag).r;
     depth *= far_plane;
 
     if (light_distance < depth + shadow_threshold){
@@ -116,7 +116,7 @@ void main(){
     //                                     0.0, 1.0);
 
     //  Shadow factor
-    float shadow_factor = compute_shadow(fragment_light_space_coordinates, distance_from_light);
+    float shadow_factor = compute_shadow(-l, distance_from_light);
 
     //  Indirect lighting
     vec3 indirect_component = compute_indirect_illumination(fragment_light_space_coordinates, n) * indirect_intensity;

@@ -263,25 +263,16 @@ namespace engine {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(ies_light_mask->bound_type, ies_light_mask->id);
 
-            std::vector<glm::vec3> oriented_cubemap_directions;
-            const auto cubemap_directions = OpenGL3_Cubemap::directions;
-            std::transform(std::begin(cubemap_directions), std::end(cubemap_directions),
-                           std::back_inserter(oriented_cubemap_directions), [&light_orientation](const auto dir) {
-                        return glm::vec3(light_orientation * glm::vec4(dir, 1.0f));
-                    });
-
             std::vector<glm::vec4> light_view_projection_matrices;
 
             for (unsigned int i = 0u; i < 6; ++i) {
-                glm::vec3 ith_oriented_forward = light_orientation * glm::vec4(OpenGL3_Cubemap::directions[i], 1.0f);
-                glm::vec3 ith_oriented_up = light_orientation * glm::vec4(OpenGL3_Cubemap::ups[i], 1.0f);
                 rsm_generation_shader->set_mat4(light_transforms_strings[i],
                                                 light_projection_matrix *
                                                 glm::lookAt(
                                                         light_position,
                                                         light_position +
-                                                        ith_oriented_forward,
-                                                        ith_oriented_up));
+                                                        OpenGL3_Cubemap::directions[i],
+                                                        OpenGL3_Cubemap::ups[i]));
             }
 
             if (!scene_objects.empty()) {
