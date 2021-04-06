@@ -3,7 +3,8 @@
 Application* Application::instance = nullptr;
 
 Application::Application(const std::string& app_name) {
-    fmt::print("[APPLICATION] {} started.\n", app_name);
+    name = app_name;
+    fmt::print("[APPLICATION] {} started.\n", name);
     if(instance != nullptr){
         fmt::print("[APPLICATION - ERROR] Trying to instantiate more than one application.\n");
     }

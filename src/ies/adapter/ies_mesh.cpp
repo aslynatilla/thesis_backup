@@ -27,7 +27,7 @@ namespace ies::adapter {
         }
     }
 
-    IES_Mesh& IES_Mesh::operator=(const IES_Document& source_document) {
+    IES_Mesh& IES_Mesh::convert_from(const IES_Document& source_document) {
         convertible = &source_document;
         indices.clear();
         normals.clear();

@@ -24,7 +24,9 @@ BoxApp::BoxApp() : Application("Cornell Box App"){
     layers.push_back_layer(std::move(imgui_layer));
 }
 
-BoxApp::~BoxApp() = default;
+BoxApp::~BoxApp(){
+    fmt::print("[APPLICATION] {} terminating.", name);
+}
 
 void BoxApp::on_event(engine::Event& event) {
     Application::on_event(event);

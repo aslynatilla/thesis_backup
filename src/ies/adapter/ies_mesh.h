@@ -14,13 +14,14 @@ namespace ies::adapter {
     public:
         explicit IES_Mesh();
         explicit IES_Mesh(const IES_Document& source_document);
-        IES_Mesh& operator=(const IES_Document& source_document);
 
         ~IES_Mesh() = default;
         IES_Mesh(const IES_Mesh& other) = delete;
         IES_Mesh(IES_Mesh&& other) = delete;
         IES_Mesh& operator=(const IES_Mesh& other) = delete;
         IES_Mesh& operator=(IES_Mesh&& other) = delete;
+
+        IES_Mesh& convert_from(const IES_Document& source_document);
 
         [[no_discard]] std::vector<float> get_vertices() const;
         [[no_discard]] std::vector<unsigned int> get_indices() const noexcept;
