@@ -45,7 +45,7 @@ namespace engine {
                 glfwTerminate();
             }
 
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         }
@@ -68,6 +68,9 @@ namespace engine {
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         glfwSetScrollCallback(window, mouse_scroll_callback);
         glfwSetCursorPosCallback(window, cursor_position_callback);
+
+        fmt::print("[GLFW WINDOW IMPLEMENTATION] Creation of OpenGL context, version {}, was successful.\n",
+                   glGetString(GL_VERSION));
     }
 
     void GLFW_Window_Impl::close() {

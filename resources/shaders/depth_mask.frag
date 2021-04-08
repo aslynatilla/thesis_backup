@@ -1,5 +1,4 @@
-#version 330 core
-#extension GL_ARB_explicit_uniform_location : enable
+#version 430 core
 
 in vec3 frag_pos;
 in vec3 frag_normal;
