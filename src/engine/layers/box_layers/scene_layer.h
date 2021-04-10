@@ -86,8 +86,8 @@ namespace engine{
         glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 0.25f);
         bool ies_masking = false;
 
-        std::array<unsigned int, 4> viewport_dimension;
-        std::array<unsigned int, 2> texture_dimension;
+        std::array<int, 4> viewport_dimension;
+        std::array<int, 2> texture_dimension;
         std::array<std::string, 6> light_transforms_strings;
 
         float timestep;

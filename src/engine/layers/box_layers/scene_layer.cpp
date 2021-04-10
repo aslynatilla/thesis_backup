@@ -27,18 +27,19 @@ namespace engine {
             wireframe_shader = shader::create_shader_from("resources/shaders/wireframe.vert",
                                                           "resources/shaders/wireframe.frag");
             depthmask_shader = shader::create_shader_from("resources/shaders/depth_mask.vert",
-                                                          "resources/shaders/depth_mask.frag");
+                                                          "resources/shaders/depth_mask.frag",
+                                                          "resources/shaders/depth_mask.geom");
 
             auto viewport_float_dimension = std::make_unique<float[]>(4);
             glGetFloatv(GL_VIEWPORT, viewport_float_dimension.get());
-            viewport_dimension[0] = static_cast<unsigned int>(viewport_float_dimension[0]);
-            viewport_dimension[1] = static_cast<unsigned int>(viewport_float_dimension[1]);
-            viewport_dimension[2] = static_cast<unsigned int>(viewport_float_dimension[2]);
-            viewport_dimension[3] = static_cast<unsigned int>(viewport_float_dimension[3]);
+            viewport_dimension[0] = static_cast<int>(viewport_float_dimension[0]);
+            viewport_dimension[1] = static_cast<int>(viewport_float_dimension[1]);
+            viewport_dimension[2] = static_cast<int>(viewport_float_dimension[2]);
+            viewport_dimension[3] = static_cast<int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<unsigned int>(viewport_dimension[2] / 4),
-                     static_cast<unsigned int>(viewport_dimension[3]) / 4};
+                    {static_cast<int>(viewport_dimension[2] / 4),
+                     static_cast<int>(viewport_dimension[3]) / 4};
 
             light_transforms_strings = {
                     "light_transforms[0]",
@@ -219,6 +220,16 @@ namespace engine {
 
             const auto light_view_matrix = light_camera.get_view_matrix();
             const auto light_projection_matrix = light_camera.get_projection_matrix();
+            std::vector<glm::mat4> light_transformations;
+            light_transformations.reserve(6);
+            for (auto i = 0u; i < 6; ++i) {
+                light_transformations.push_back(light_projection_matrix * glm::lookAt(
+                        light_position,
+                        light_position +
+                        OpenGL3_Cubemap::directions[i],
+                        OpenGL3_Cubemap::ups[i]));
+            }
+
 
             glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
             ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
@@ -235,13 +246,15 @@ namespace engine {
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glCullFace(GL_FRONT);
             depthmask_shader->use();
-            depthmask_shader->set_mat4("light_view", light_view_matrix);
-            depthmask_shader->set_mat4("light_projection", light_projection_matrix);
+            for (unsigned int i = 0u; i < 6; ++i) {
+                depthmask_shader->set_mat4(light_transforms_strings[i],
+                                                light_transformations[i]);
+            }
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
-            depthmask_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
+            depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
             depthmask_shader->set_vec3("light_position", light_position);
             depthmask_shader->set_float("far_plane", 2000.0f);
-            glUniform1f(0, largest_position_component * scale_modifier);
+            depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
@@ -263,16 +276,9 @@ namespace engine {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(ies_light_mask->bound_type, ies_light_mask->id);
 
-            std::vector<glm::vec4> light_view_projection_matrices;
-
             for (unsigned int i = 0u; i < 6; ++i) {
                 rsm_generation_shader->set_mat4(light_transforms_strings[i],
-                                                light_projection_matrix *
-                                                glm::lookAt(
-                                                        light_position,
-                                                        light_position +
-                                                        OpenGL3_Cubemap::directions[i],
-                                                        OpenGL3_Cubemap::ups[i]));
+                                                light_transformations[i]);
             }
 
             if (!scene_objects.empty()) {

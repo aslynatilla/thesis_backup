@@ -57,6 +57,7 @@ install_file_to_bin(resources/shaders rsm.frag)
 install_file_to_bin(resources/shaders wireframe.vert)
 install_file_to_bin(resources/shaders wireframe.frag)
 install_file_to_bin(resources/shaders depth_mask.vert)
+install_file_to_bin(resources/shaders depth_mask.geom)
 install_file_to_bin(resources/shaders depth_mask.frag)
 
 #   Copy cornell box scene to resources

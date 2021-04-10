@@ -3,17 +3,18 @@
 layout (location = 0) in vec3 pos;
 layout (location = 1) in vec3 norm;
 
-out vec3 frag_pos;
-out vec3 frag_normal;
-
 uniform mat4 model;
-uniform mat4 transpose_inverse_model;
-uniform mat4 light_view;
-uniform mat4 light_projection;
+uniform mat4 inversed_transposed_model;
+
+out vec3 frag_pos;
+
+out vertex_data {
+    vec3 normal;
+} vdata;
 
 void main()
 {
     frag_pos = vec3(model * vec4(pos, 1.0));
-    gl_Position =  light_projection * light_view * vec4(frag_pos, 1.0);
-    frag_normal = mat3(transpose_inverse_model) * norm;
+    vdata.normal = normalize(mat3(inversed_transposed_model) * norm);
+    gl_Position = vec4(frag_pos, 1.0);
 }
