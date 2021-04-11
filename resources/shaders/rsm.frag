@@ -19,7 +19,7 @@ uniform Light scene_light;
 uniform float far_plane;
 uniform float light_intensity;
 
-uniform sampler2D ies_masking;
+uniform samplerCube ies_mask;
 uniform bool is_masking;
 
 layout (location = 0) out vec4 fragment_world_coordinates;
@@ -29,8 +29,8 @@ layout (location = 2) out vec4 fragment_flux;
 void main(){
     vec3 light_to_fragment = frag_pos.xyz - scene_light.position;
     float light_distance = length(light_to_fragment);
+    vec3 l = normalize(light_to_fragment);
     gl_FragDepth = light_distance / far_plane;
-
 
     float attenuation_factor = 1.0/(scene_light.constant_attenuation +
         scene_light.linear_attenuation * light_distance +
@@ -54,8 +54,8 @@ void main(){
     //  ...so the following line should not be right. Therefore we delete "attenuation_factor"...
     //  fragment_flux = diffuse_color.xyz * attenuation_factor * spotlight_intensity * light_intensity;
 
-    vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
-    float mask_component = texture(ies_masking, sampling_coords).r;
+    // vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
+    float mask_component = texture(ies_mask, l).r;
 
     vec4 computed_flux = vec4(diffuse_color.xyz, 1.0);
     fragment_flux = is_masking ? vec4(computed_flux.xyz * mask_component, 1.0) : computed_flux;

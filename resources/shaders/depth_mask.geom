@@ -18,7 +18,7 @@ void main()
         gl_Layer = face;
 
         for(int i = 0; i < 3; ++i){
-            frag_pos = vec3(light_transforms[face] * gl_in[i].gl_Position);
+            frag_pos = vec3(gl_in[i].gl_Position);
             gl_Position = light_transforms[face] * gl_in[i].gl_Position;
             frag_normal = input_vertices_data[i].normal;
             EmitVertex();

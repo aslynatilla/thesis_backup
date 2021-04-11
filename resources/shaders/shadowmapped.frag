@@ -36,7 +36,7 @@ uniform samplerCube shadow_map;
 uniform samplerCube position_map;
 uniform samplerCube normal_map;
 uniform samplerCube flux_map;
-uniform sampler2D ies_mask;
+uniform samplerCube ies_mask;
 uniform sampler1D sample_array;
 
 uniform int samples_number;
@@ -124,7 +124,7 @@ void main(){
     vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity;
 
     //  Masking component
-    float maskable = ies_masking ? texture(ies_mask, fragment_light_space_coordinates.xy).r
+    float maskable = ies_masking ? texture(ies_mask, -l).r
                                  : 1.0;
 
     //  Diffuse component

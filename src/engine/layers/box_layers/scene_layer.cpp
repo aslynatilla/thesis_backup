@@ -270,11 +270,9 @@ namespace engine {
             rsm_generation_shader->set_float("far_plane", 2000.0f);
             set_light_in_shader(scene_light, rsm_generation_shader);
 
-            rsm_generation_shader->set_int("ies_masking", 0);
             rsm_generation_shader->set_bool("is_masking", ies_masking);
-            //bind_texture_in_slot(0, ies_light_mask.get());
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(ies_light_mask->bound_type, ies_light_mask->id);
+            rsm_generation_shader->set_int("ies_mask", 0);
+            bind_texture_in_slot(0, ies_light_mask.get());
 
             for (unsigned int i = 0u; i < 6; ++i) {
                 rsm_generation_shader->set_mat4(light_transforms_strings[i],
