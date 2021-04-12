@@ -123,14 +123,18 @@ void main(){
     //  Indirect lighting
     vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity;
 
-    //  Masking component
-    float maskable = ies_masking ? texture(ies_mask, -l).r
-                                 : 1.0;
-
     //  Diffuse component
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor;
-    vec3 diffuse_component = d * diffuse_color.rgb * light_intensity * maskable;
+
+    vec3 diffuse_component;
+    if(ies_masking == false){
+        diffuse_component = d * diffuse_color.rgb * light_intensity;
+    } else {
+        float maskable = texture(ies_mask, -l).r;
+        maskable = maskable != 0.0 ? (1.0 - maskable) * far_plane : 0.0;
+        diffuse_component = d * diffuse_color.rgb * light_intensity * maskable * 0.01;
+    }
 
     //  Ambient component
     vec3 ambient_component = ambient_color.xyz * ambient_color.w;
