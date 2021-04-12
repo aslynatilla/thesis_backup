@@ -139,7 +139,11 @@ void main(){
         } else if(lighted_distance >= distance_from_light){
             diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance;
         } else {
-            diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance * 0.3;
+            float delta = lighted_distance - distance_from_light;
+            float distance_attenuation = 1.0/(scene_light.constant_attenuation +
+                                              scene_light.linear_attenuation * delta +
+                                              scene_light.quadratic_attenuation * delta * delta);
+            diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance * distance_attenuation;
         }
     }
 
