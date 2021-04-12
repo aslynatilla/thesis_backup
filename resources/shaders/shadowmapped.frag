@@ -133,10 +133,12 @@ void main(){
     } else {
         float mask_value = texture(ies_mask, -l).r;
         float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * far_plane : 0.0;
-        if(lighted_distance >= distance_from_light){
+        if(lighted_distance == 0.0){
+            diffuse_component = vec3(0.0);
+        } else if(lighted_distance >= distance_from_light){
             diffuse_component = d * diffuse_color.rgb * light_intensity;
         } else {
-            diffuse_component = d * diffuse_color.rgb * light_intensity * (1.0 - mask_value);
+            diffuse_component = d * diffuse_color.rgb * light_intensity * 0.3;
         }
     }
 
