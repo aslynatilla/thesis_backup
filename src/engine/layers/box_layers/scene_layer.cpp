@@ -248,7 +248,7 @@ namespace engine {
             depthmask_shader->use();
             for (unsigned int i = 0u; i < 6; ++i) {
                 depthmask_shader->set_mat4(light_transforms_strings[i],
-                                                light_transformations[i]);
+                                           light_transformations[i]);
             }
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
             depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
@@ -329,7 +329,12 @@ namespace engine {
             scene_light.set_rotation(light_angles);
         }
 
-        ImGui::SliderFloat("Spotlight Intensity", &light_intensity, 0.5f, 15.0f);
+        ImGui::SliderFloat("Light Intensity", &light_intensity, 0.5f, 15.0f);
+        ImGui::SliderFloat("Light attenuation (constant factor)", &scene_light.attenuation.constant, 0.9f, 1.1f);
+        ImGui::SliderFloat("Light attenuation (linear factor)", &scene_light.attenuation.linear, 0.0010f, 1.0f, "%.5f",
+                           ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Light attenuation (quadratic factor)", &scene_light.attenuation.quadratic, 0.000005f, 2.0f,
+                           "%.6f", ImGuiSliderFlags_Logarithmic);
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
                                ImGuiSliderFlags_Logarithmic);
