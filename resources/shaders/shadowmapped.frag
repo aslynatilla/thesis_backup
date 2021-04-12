@@ -131,9 +131,13 @@ void main(){
     if(ies_masking == false){
         diffuse_component = d * diffuse_color.rgb * light_intensity;
     } else {
-        float maskable = texture(ies_mask, -l).r;
-        maskable = maskable != 0.0 ? (1.0 - maskable) * far_plane : 0.0;
-        diffuse_component = d * diffuse_color.rgb * light_intensity * maskable * 0.01;
+        float mask_value = texture(ies_mask, -l).r;
+        float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * far_plane : 0.0;
+        if(lighted_distance >= distance_from_light){
+            diffuse_component = d * diffuse_color.rgb * light_intensity;
+        } else {
+            diffuse_component = d * diffuse_color.rgb * light_intensity * (1.0 - mask_value);
+        }
     }
 
     //  Ambient component
