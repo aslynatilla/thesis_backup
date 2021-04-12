@@ -321,7 +321,7 @@ namespace engine {
         auto light_position = scene_light.get_position_as_vec3();
         auto light_angles = scene_light.get_rotation_in_degrees();
         ImGui::Begin("Shader controls");
-        ImGui::Text("Spotlight transform");
+        ImGui::Text("Light transform");
         if (ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 1.0f, -1000.0f, 1000.0f, "%.3f")) {
             scene_light.translate_to(glm::vec4(light_position, 1.0f));
         }
@@ -329,25 +329,27 @@ namespace engine {
             scene_light.set_rotation(light_angles);
         }
 
-        ImGui::SliderFloat("Light Intensity", &light_intensity, 0.5f, 15.0f);
+        ImGui::SliderFloat("Light intensity", &light_intensity, 0.5f, 15.0f);
+        ImGui::Spacing();
         ImGui::SliderFloat("Light attenuation (constant factor)", &scene_light.attenuation.constant, 0.9f, 1.1f);
         ImGui::SliderFloat("Light attenuation (linear factor)", &scene_light.attenuation.linear, 0.0010f, 1.0f, "%.5f",
                            ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Light attenuation (quadratic factor)", &scene_light.attenuation.quadratic, 0.000005f, 2.0f,
                            "%.6f", ImGuiSliderFlags_Logarithmic);
+        ImGui::Spacing();
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
                                ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
+        ImGui::Spacing();
         ImGui::Checkbox("Visualize IES light wireframe", &ies_light_wireframe);
-        if (ies_light_wireframe) {
-            ImGui::SliderFloat("Wireframe scaling", &scale_modifier, 0.001f, 1.0f, "%.5f",
-                               ImGuiSliderFlags_Logarithmic);
-            ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
-            ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
-        }
+        ImGui::SliderFloat("Wireframe scaling", &scale_modifier, 0.001f, 1.0f, "%.5f",
+                           ImGuiSliderFlags_Logarithmic);
+        ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
+        ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
+        ImGui::Spacing();
         ImGui::Checkbox("Use IES light wireframe to mask light emission", &ies_masking);
         ImGui::End();
     }
