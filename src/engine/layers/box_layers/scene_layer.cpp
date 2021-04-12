@@ -418,6 +418,7 @@ namespace engine {
         shader->set_float("indirect_intensity", indirect_intensity);
         shader->set_float("max_radius", max_radius);
         shader->set_float("shadow_threshold", shadow_threshold);
+        shader->set_float("furthest_photometric_distance", largest_position_component * scale_modifier);
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {

@@ -42,6 +42,7 @@ uniform sampler1D sample_array;
 uniform int samples_number;
 
 uniform float far_plane;
+uniform float furthest_photometric_distance;
 
 // TWEAKABLES
 uniform float shadow_threshold;
@@ -132,13 +133,13 @@ void main(){
         diffuse_component = d * diffuse_color.rgb * light_intensity;
     } else {
         float mask_value = texture(ies_mask, -l).r;
-        float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * far_plane : 0.0;
+        float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * furthest_photometric_distance : 0.0;
         if(lighted_distance == 0.0){
             diffuse_component = vec3(0.0);
         } else if(lighted_distance >= distance_from_light){
-            diffuse_component = d * diffuse_color.rgb * light_intensity;
+            diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance;
         } else {
-            diffuse_component = d * diffuse_color.rgb * light_intensity * 0.3;
+            diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance * 0.3;
         }
     }
 
