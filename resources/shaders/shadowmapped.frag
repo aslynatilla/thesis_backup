@@ -75,7 +75,9 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
         vec3 sampling_coords = normalize(vec3(
                                     light_to_frag.x + random_sample.x * max_radius,
                                     light_to_frag.y + random_sample.y * max_radius,
-                                    light_to_frag.z));
+                                    light_to_frag.z + random_sample.z * max_radius));
+
+        float weight = 1.0 - dot(random_sample, light_to_frag);
 
         vec3 vpl_pos = texture(position_map, sampling_coords).rgb;
         vec3 vpl_norm = texture(normal_map, sampling_coords).rgb;
@@ -88,7 +90,7 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     max(0.0, dot(vpl_norm, vpl_to_frag)) *
                     max(0.0, dot(frag_normalized_normal, -vpl_to_frag)) /
                     pow(distance_to_vpl, 4.0);
-        indirect = indirect + result * random_sample.z;
+        indirect = indirect + result * weight;
     }
     return clamp(indirect, 0.0, 1.0);
 }

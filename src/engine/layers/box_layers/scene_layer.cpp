@@ -110,8 +110,8 @@ namespace engine {
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
 
-            samples_number = 400;
-            const auto samples = random_num::random_polar_offsets(samples_number);
+            samples_number = 100;
+            const auto samples = random_num::random_directions(samples_number);
 
             //  TODO: consider using BufferTexture for this
             //  see: https://www.khronos.org/opengl/wiki/Buffer_Texture
