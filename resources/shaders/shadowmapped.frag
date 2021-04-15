@@ -72,16 +72,16 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
 
     for(int i = 0; i <= samples_number; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
-        vec3 sampling_coords = normalize(vec3(
+        vec3 sampling_direction = normalize(vec3(
                                     light_to_frag.x + random_sample.x * max_radius,
                                     light_to_frag.y + random_sample.y * max_radius,
                                     light_to_frag.z + random_sample.z * max_radius));
 
-        float weight = 1.0 - dot(random_sample, light_to_frag);
+        float weight = 1.0 - dot(sampling_direction, light_to_frag);
 
-        vec3 vpl_pos = texture(position_map, sampling_coords).rgb;
-        vec3 vpl_norm = texture(normal_map, sampling_coords).rgb;
-        vec3 vpl_flux = texture(flux_map, sampling_coords).rgb;
+        vec3 vpl_pos = texture(position_map, sampling_direction).rgb;
+        vec3 vpl_norm = texture(normal_map, sampling_direction).rgb;
+        vec3 vpl_flux = texture(flux_map, sampling_direction).rgb;
 
         //vec3 vpl_to_frag = frag_pos - (vpl_pos - 10.0 * vpl_norm);
         vec3 vpl_to_frag = frag_pos - vpl_pos;
