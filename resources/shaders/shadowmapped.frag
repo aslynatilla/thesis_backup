@@ -138,11 +138,11 @@ void main(){
         float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * furthest_photometric_distance : 0.0;
         if(lighted_distance == 0.0){
             diffuse_component = vec3(0.0);
-        } else if(distance_from_light <= lighted_distance){
-            diffuse_component = d * diffuse_color.rgb * light_intensity * lighted_distance;
-        } else {
+        } else if(lighted_distance > 0.0 && distance_from_light <= lighted_distance){
+            diffuse_component = d * diffuse_color.rgb * light_intensity;
+        } else if(lighted_distance > 0.0 && distance_from_light >= lighted_distance){
             float delta = distance_from_light - lighted_distance;
-            diffuse_component = d * diffuse_color.rgb * light_intensity * (1.0 - smoothstep(0.0, far_plane, delta));
+            diffuse_component = d * diffuse_color.rgb * light_intensity * (1.0 - smoothstep(0.0, lighted_distance, delta));
         }
     }
 
