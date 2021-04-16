@@ -36,7 +36,7 @@ namespace engine{
         SceneLayer& operator=(SceneLayer&& other) = delete;
 
         void on_attach() final;
-        void on_detach() final ;
+        void on_detach() final;
         void on_event(Event& event) final;
         void update(float delta_time) final;
         void on_imgui_render() final;

@@ -16,7 +16,7 @@ BoxApp::BoxApp() : Application("Cornell Box App"){
     std::weak_ptr ptr_to_camera(first_person_camera);
 
     layers.push_layer(std::make_unique<CameraLayer>(std::move(first_person_camera)));
-    layers.push_layer(std::make_unique<SceneLayer>(std::move(ptr_to_camera)));
+    layers.push_layer(std::make_unique<DeferredLayer>(std::move(ptr_to_camera)));
 
     const auto glfw_window_pointer = dynamic_cast<GLFW_Window_Impl*>(main_window.get());
     auto imgui_layer = std::make_unique<ImGuiLayer>(glfw_window_pointer);
