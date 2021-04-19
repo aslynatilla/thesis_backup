@@ -55,8 +55,13 @@ void main(){
     //  fragment_flux = diffuse_color.xyz * attenuation_factor * spotlight_intensity * light_intensity;
 
     // vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
-    float mask_component = texture(ies_mask, l).r;
 
+    float mask_component = texture(ies_mask, l).r;
     vec4 computed_flux = vec4(diffuse_color.xyz, 1.0);
+    //  Masking the fragment albedo/outgoing flux is not done properly in this case.
+    // The mask is scaled according to the far plane and stores depth information; however, this depth is not used in
+    // order to define whether the considered fragment is in light or not.
+    //  In its starting position, for example, the floor shouldn't be a source of indirect lighting.
+    //  ALSO SEE: the sampling problem
     fragment_flux = is_masking ? vec4(computed_flux.xyz * mask_component, 1.0) : computed_flux;
 }

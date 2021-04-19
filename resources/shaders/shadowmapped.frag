@@ -67,6 +67,14 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
     }
 }
 
+//  Sampling is currently done by offsetting light_to_frag vector in a random direction, through a random unit
+// vector. However this allows to offset the original light_to_frag vector (which is a unit vector) only by less than
+// 90 degrees. This is reasonable since we want to sample texels on the cubemap which are "nearby" the light_to_frag
+// vector's direction; because of this, the method stays coherent to the original paper.
+//  However, this method adapts poorly to the masking we're currently doing and, even worse, to the one we should do
+// once it is fixed: we want to sample the areas we know are in light. This probably gets on the opposite side of what
+// the paper allows to do, though. How do we solve this?
+
 vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_normal){
     vec3 indirect = vec3(0.0);
 
@@ -130,13 +138,22 @@ void main(){
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor;
 
+
+//  Current method to calculate what is in light and how much it is in light is not proper.
+// How could it be done better? What should be considered, according to the current abstractions?
+//  ALSO SEE: RSM masking problem is linked to this too.
+
     vec3 diffuse_component;
     if(ies_masking == false){
         diffuse_component = d * diffuse_color.rgb * light_intensity;
     } else {
         float mask_value = texture(ies_mask, -l).r;
         float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * furthest_photometric_distance : 0.0;
-        lighted_distance *= 3.0;
+
+//  Different results can be gained by using different multipliers; however, there's no more than trial and error
+//  and the method seems a rough approximation of the direct lighting as intended
+//        lighted_distance *= 1.0;
+
         if(lighted_distance == 0.0){
             diffuse_component = vec3(0.0);
         } else if(lighted_distance > 0.0 && distance_from_light <= lighted_distance){
