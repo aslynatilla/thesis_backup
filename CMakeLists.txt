@@ -70,6 +70,7 @@ set_property(TARGET cornell_box PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 target_include_directories(cornell_box PRIVATE include)
 target_link_libraries(cornell_box PRIVATE assimp::assimp fmt::fmt glfw::glfw glm::glm)
+target_compile_definitions(cornell_box PRIVATE GLM_FORCE_XYZW_ONLY)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang|AppleClang|GNU)
     target_compile_options(cornell_box PRIVATE -Wall -Wextra -Wpedantic -Wunreachable-code)

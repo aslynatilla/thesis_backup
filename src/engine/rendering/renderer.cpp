@@ -14,7 +14,7 @@ namespace engine {
     }
 
     void OpenGL3_Renderer::set_clear_color(const glm::vec4& clear_color) {
-        glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     }
 
     void OpenGL3_Renderer::set_clear_color(const float r, const float g, const float b, const float a) {
