@@ -139,12 +139,12 @@ void main(){
     d = d * attenuation_factor;
 
     vec3 diffuse_component;
-    if(ies_masking == false){
-        diffuse_component = d * diffuse_color.rgb * light_intensity;
-    } else {
-        float mask_value = texture(ies_mask, -l).r;
-        mask_value = 1.0 - mask_value;
-        diffuse_component = d * diffuse_color.rgb * light_intensity * mask_value;
+    diffuse_component = d * diffuse_color.rgb * light_intensity;
+    if(ies_masking == true){
+        vec3 mask_value = texture(ies_mask, -l).rgb;
+        float scaled_distance = mask_value.g;
+        bool is_active = (mask_value.b == 1.0);
+        diffuse_component *= is_active ? scaled_distance : 0.0;
     }
 
     //  Ambient component

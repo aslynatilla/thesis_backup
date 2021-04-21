@@ -61,9 +61,6 @@ namespace engine {
                                                               texture_dimension[0],
                                                               texture_dimension[1],
                                                               GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-            //    Clamping to border allows "not producing" a shadow
-            //  in the case sampling outside of the texture happens
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)));
 
             position_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                  OpenGL3_TextureParameters(
@@ -75,7 +72,6 @@ namespace engine {
                                                                  texture_dimension[0],
                                                                  texture_dimension[1],
                                                                  GL_RGB, GL_FLOAT, nullptr);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
 
             normal_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                OpenGL3_TextureParameters(
@@ -86,7 +82,6 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)));
             flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB8,
                                                              OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -96,7 +91,6 @@ namespace engine {
                                                              texture_dimension[0],
                                                              texture_dimension[1],
                                                              GL_RGB, GL_FLOAT, nullptr);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
             ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
                                                                OpenGL3_TextureParameters(
@@ -107,7 +101,6 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)));
 
 
             samples_number = 100;
