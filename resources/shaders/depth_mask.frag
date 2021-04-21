@@ -17,7 +17,7 @@ void main()
 
     //  furthest_distance might be swapped with far_plane
     //  so that scaling doesn't matter
-    float inverted_scaled_distance = 1.0 - (distance_from_light / far_plane);
+    float inverted_scaled_distance = 1.0 - (distance_from_light / furthest_distance);
 
     FragColor = vec4(inverted_scaled_distance, inverted_scaled_distance, inverted_scaled_distance, 1.0);
 }
