@@ -12,8 +12,12 @@ namespace engine {
                                                           aiProcess_ValidateDataStructure;
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
+            const auto uniform_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(1.0f/250.0f));
+            for(auto& object : scene_objects){
+                object.transform = uniform_scaling * object.transform;
+            }
 
-            scene_light = Point_Light(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
+            scene_light = Point_Light(glm::vec4(0.5f, 2.0f, 0.5f, 1.0f),
                                       LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
