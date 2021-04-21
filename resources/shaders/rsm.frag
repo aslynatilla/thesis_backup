@@ -56,7 +56,7 @@ void main(){
 
     // vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
 
-    float mask_component = texture(ies_mask, l).r;
+    float mask_component = texture(ies_mask, l).b;
     vec4 computed_flux = vec4(diffuse_color.xyz, 1.0);
     //  Masking the fragment albedo/outgoing flux is not done properly in this case.
     // The mask is scaled according to the far plane and stores depth information; however, this depth is not used in
