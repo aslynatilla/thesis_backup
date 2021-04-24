@@ -18,6 +18,7 @@ struct Light{
 uniform Light scene_light;
 uniform float far_plane;
 uniform float light_intensity;
+uniform vec4 light_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 uniform samplerCube ies_mask;
 uniform bool is_masking;
@@ -36,32 +37,17 @@ void main(){
         scene_light.linear_attenuation * light_distance +
         scene_light.quadratic_attenuation * light_distance * light_distance);
 
-    //  float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, normalize(light_to_fragment));
-    //  float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
-    //  float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
-    //                                      / epsilon,
-    //                                      0.0, 1.0);
-
     fragment_world_coordinates = vec4(frag_pos.xyz, 1.0);
     fragment_normal = vec4(frag_normal, 1.0);
 
-    //  Dachsbacher says:
-    //       For a uniform spotlight, this flux decreases with the cosine to
-    //      the spot direction due to the decreasing solid angle.
-    //      The reflected flux is then the flux through the pixel times
-    //      the reflection coefficient of the surface. No distance attenuation
-    //      or receiver cosine must be computed.
-    //  ...so the following line should not be right. Therefore we delete "attenuation_factor"...
-    //  fragment_flux = diffuse_color.xyz * attenuation_factor * spotlight_intensity * light_intensity;
+    vec3 mask_data = texture(ies_mask, l).rgb;
+    vec4 computed_flux = vec4(diffuse_color.xyz, 1.0) * light_color;
 
-    // vec2 sampling_coords = light_space_frag_pos.xy/light_space_frag_pos.w * 0.5 + 0.5;
-
-    float mask_component = texture(ies_mask, l).b;
-    vec4 computed_flux = vec4(diffuse_color.xyz, 1.0);
-    //  Masking the fragment albedo/outgoing flux is not done properly in this case.
-    // The mask is scaled according to the far plane and stores depth information; however, this depth is not used in
-    // order to define whether the considered fragment is in light or not.
-    //  In its starting position, for example, the floor shouldn't be a source of indirect lighting.
-    //  ALSO SEE: the sampling problem
-    fragment_flux = is_masking ? vec4(computed_flux.xyz * mask_component, 1.0) : computed_flux;
+    if(is_masking == false){
+        fragment_flux = computed_flux;
+    } else {
+        float is_emitting_along_l = mask_data.b;
+        float intensity_modifier = mask_data.g;
+        fragment_flux = vec4(computed_flux.xyz * intensity_modifier * is_emitting_along_l, 1.0);
+    }
 }

@@ -16,8 +16,7 @@ void main()
     float distance_from_light = length(light_to_fragment);
 
     float scaled_distance = distance_from_light / furthest_distance;
-    float complementary_scaled_distance = 1.0 - scaled_distance;
-    float activity_component = 1.0;
+    float emitting_along_direction_l = 1.0;
 
-    FragColor = vec4(complementary_scaled_distance, scaled_distance, activity_component, 1.0);
+    FragColor = vec4(distance_from_light, scaled_distance, emitting_along_direction_l, 1.0);
 }
