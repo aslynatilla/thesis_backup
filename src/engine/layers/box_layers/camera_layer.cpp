@@ -38,7 +38,7 @@ namespace engine{
     }
 
     bool CameraLayer::on_key_pressed(KeyPressedEvent event) {
-        const float translational_speed = 150.0f * timestep;
+        const float translational_speed = 5.0f * timestep;
 
         glm::vec3 translation_vector(0.0f);
         if (event.get_keycode() == GLFW_KEY_D) {

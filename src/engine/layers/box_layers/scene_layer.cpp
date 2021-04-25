@@ -12,9 +12,17 @@ namespace engine {
                                                           aiProcess_ValidateDataStructure;
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
+            //548.0f / 3.0f => ~185.0f
+            const auto scene_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(1.0f/185.0f));
+            const auto transposed_inverse_scene_scaling = glm::transpose(scene_scaling);
+            for(auto&& object : scene_objects){
+                const auto T = object.transform;
+                object.transform = scene_scaling;
+                object.transpose_inverse_transform = transposed_inverse_scene_scaling;
+            }
 
-            scene_light = Point_Light(glm::vec4(278.0f, 548.0f, 279.5f, 1.0f),
-                                      LightAttenuationParameters{1.0f, 0.004f, 0.00009f});
+            scene_light = Point_Light(glm::vec4(1.5f, 2.7f, 2.9f, 1.0f),
+                                      LightAttenuationParameters{1.0f, 0.5f, 1.8f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
             draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
@@ -208,7 +216,7 @@ namespace engine {
                                               light_position + light_forward,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, 2000.0f},
+                    CameraPlanes{0.1f, 100.0f},
                     CameraMode::Perspective);
 
             const auto light_view_matrix = light_camera.get_view_matrix();
@@ -246,7 +254,7 @@ namespace engine {
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
             depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
             depthmask_shader->set_vec3("light_position", light_position);
-            depthmask_shader->set_float("far_plane", 2000.0f);
+            depthmask_shader->set_float("far_plane", 100.0f);
             depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
@@ -315,30 +323,30 @@ namespace engine {
         auto light_angles = scene_light.get_rotation_in_degrees();
         ImGui::Begin("Shader controls");
         ImGui::Text("Light transform");
-        if (ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 1.0f, -1000.0f, 1000.0f, "%.3f")) {
+        if (ImGui::DragFloat3("Light position", glm::value_ptr(light_position), 0.05f, -5.0f, 5.0f, "%.3f")) {
             scene_light.translate_to(glm::vec4(light_position, 1.0f));
         }
         if (ImGui::DragFloat3("Light rotation angle", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")) {
             scene_light.set_rotation(light_angles);
         }
 
-        ImGui::SliderFloat("Light intensity", &light_intensity, 0.5f, 15.0f);
+        ImGui::SliderFloat("Light intensity", &light_intensity, 0.1f, 20.0f);
         ImGui::Spacing();
-        ImGui::SliderFloat("Light attenuation (constant factor)", &scene_light.attenuation.constant, 0.9f, 1.1f);
-        ImGui::SliderFloat("Light attenuation (linear factor)", &scene_light.attenuation.linear, 0.0010f, 1.0f, "%.5f",
+        ImGui::SliderFloat("Light attenuation (constant factor)", &scene_light.attenuation.constant, 0.5f, 1.5f);
+        ImGui::SliderFloat("Light attenuation (linear factor)", &scene_light.attenuation.linear, 0.01f, 2.0f, "%.5f",
                            ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Light attenuation (quadratic factor)", &scene_light.attenuation.quadratic, 0.000005f, 2.0f,
+        ImGui::SliderFloat("Light attenuation (quadratic factor)", &scene_light.attenuation.quadratic, 0.01f, 2.0f,
                            "%.6f", ImGuiSliderFlags_Logarithmic);
         ImGui::Spacing();
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
                                ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Max radius sample", &max_radius, 0.001f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Max radius sample", &max_radius, 0.0001f, 1.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
         ImGui::Spacing();
         ImGui::Checkbox("Visualize IES light wireframe", &ies_light_wireframe);
-        ImGui::SliderFloat("Wireframe scaling", &scale_modifier, 0.001f, 1.0f, "%.5f",
+        ImGui::SliderFloat("Wireframe scaling", &scale_modifier, 0.00001f, 2.0f, "%.5f",
                            ImGuiSliderFlags_Logarithmic);
         ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
         ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
