@@ -22,8 +22,6 @@ uniform vec3 light_position;
 struct Light{
     vec3 position;
     vec3 direction;
-//    float cutoff_angle;
-//    float outer_cutoff_angle;
 
     float constant_attenuation;
     float linear_attenuation;
@@ -44,7 +42,7 @@ uniform int samples_number;
 uniform float far_plane;
 uniform float furthest_photometric_distance;
 
-// TWEAKABLES
+// Tweakable values
 uniform float shadow_threshold;
 
 uniform float max_radius;
@@ -66,14 +64,6 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
         return 0.4;
     }
 }
-
-//  Sampling is currently done by offsetting light_to_frag vector in a random direction, through a random unit
-// vector. However this allows to offset the original light_to_frag vector (which is a unit vector) only by less than
-// 90 degrees. This is reasonable since we want to sample texels on the cubemap which are "nearby" the light_to_frag
-// vector's direction; because of this, the method stays coherent to the original paper.
-//  However, this method adapts poorly to the masking we're currently doing and, even worse, to the one we should do
-// once it is fixed: we want to sample the areas we know are in light. This probably gets on the opposite side of what
-// the paper allows to do, though. How do we solve this?
 
 vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_normal){
     vec3 indirect = vec3(0.0);
@@ -121,13 +111,6 @@ void main(){
                                     scene_light.linear_attenuation * distance_from_light +
                                     scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
 
-    //  Spotlight specific
-    // float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, -l);
-    // float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
-    // float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
-    //                                     / epsilon,
-    //                                     0.0, 1.0);
-
     //  Shadow factor
     float shadow_factor = compute_shadow(-l, distance_from_light);
 
@@ -154,7 +137,7 @@ void main(){
     vec3 reflection_direction = reflect(-l, n);
     //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
     //      float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
-    float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
+    float specular_factor = (shininess == 0) ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
 
     FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
