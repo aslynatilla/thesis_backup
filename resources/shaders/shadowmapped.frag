@@ -90,7 +90,8 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect, 0.0, 1.0);
+    return clamp(indirect, 0.0, 1.0)  * 12.566/(float(samples_number));
+    //  or clamp(indirect * 12.566/(float(samples_number)), 0.0, 1.0)
 }
 
 void main(){
@@ -126,6 +127,9 @@ void main(){
     if(ies_masking == true){
         vec3 mask_value = texture(ies_mask, -l).rgb;
         float scaled_distance = mask_value.g;
+        //   Consider using the following line if you want it to scale with the size
+        //  of the photometric solid used.
+        //      float scaled_distance = mask_value.r;
         bool is_active = (mask_value.b == 1.0);
         diffuse_component *= is_active ? scaled_distance : 0.0;
     }
