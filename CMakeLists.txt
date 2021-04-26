@@ -42,6 +42,10 @@ endfunction()
 
 #   Copy IES files used for testing and executing the application
 install_file_to_bin(resources/ies TEST.IES)
+install_file_to_bin(resources/ies ITL53278.ies)
+install_file_to_bin(resources/ies IES_2002.ies)
+install_file_to_bin(resources/ies APWP3T8.IES)
+install_file_to_bin(resources/ies 111621PN.IES)
 #   Copy shaders
 install_file_to_bin(resources/shaders base.vert)
 install_file_to_bin(resources/shaders base.frag)

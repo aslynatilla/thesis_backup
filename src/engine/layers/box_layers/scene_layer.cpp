@@ -154,7 +154,7 @@ namespace engine {
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
             //TODO: refactor as IES_Loader class or as a free function
-            const auto path_to_IES_data = files::make_path_absolute("resources/ies/TEST.IES");
+            const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
             document = parser.parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
             ies::adapter::IES_Mesh photometric_solid(document);
 
