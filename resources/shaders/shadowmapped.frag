@@ -90,8 +90,8 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect, 0.0, 1.0)  * 12.566/(float(samples_number));
-    //  or clamp(indirect * 12.566/(float(samples_number)), 0.0, 1.0)
+    return clamp(indirect * 12.566/(float(samples_number)), 0.0, 1.0);
+    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(samples_number));
 }
 
 void main(){
@@ -116,7 +116,7 @@ void main(){
     float shadow_factor = compute_shadow(-l, distance_from_light);
 
     //  Indirect lighting
-    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity;
+    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity * diffuse_color.rgb;
 
     //  Diffuse component
     float d = max(dot(n, l), 0.0);
