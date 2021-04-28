@@ -76,15 +76,15 @@ namespace engine{
 
         int samples_number;
 
-        float light_intensity = 1.15f;
+        float light_intensity = 1.0f;
         float indirect_intensity = 1.0f;
-        float max_radius = 0.305f;
+        float max_radius = 0.400f;
         float shadow_threshold = 0.15f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
-        bool ies_light_wireframe = false;
-        glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 0.20f);
-        bool ies_masking = false;
+        bool ies_light_wireframe = true;
+        glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 0.10f);
+        bool ies_masking = true;
 
         std::array<int, 4> viewport_dimension;
         std::array<int, 2> texture_dimension;
@@ -98,7 +98,7 @@ namespace engine{
         VertexArray ies_light_vao;
 
         float largest_position_component;
-        float scale_modifier = 0.00002f;
+        float scale_modifier = 0.00193f;
     };
 }
 

@@ -21,7 +21,7 @@ namespace engine {
                 object.transpose_inverse_transform = transposed_inverse_scene_scaling;
             }
 
-            scene_light = Point_Light(glm::vec4(1.5f, 2.7f, 2.9f, 1.0f),
+            scene_light = Point_Light(glm::vec4(1.5f, 2.6f, 1.5f, 1.0f),
                                       LightAttenuationParameters{1.0f, 0.5f, 1.8f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
@@ -216,7 +216,7 @@ namespace engine {
                                               light_position + light_forward,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, 100.0f},
+                    CameraPlanes{0.1f, 100.0},
                     CameraMode::Perspective);
 
             const auto light_view_matrix = light_camera.get_view_matrix();

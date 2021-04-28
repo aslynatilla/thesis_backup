@@ -126,10 +126,12 @@ void main(){
     diffuse_component = d * diffuse_color.rgb * light_intensity;
     if(ies_masking == true){
         vec3 mask_value = texture(ies_mask, -l).rgb;
-        float scaled_distance = mask_value.g;
+        float scaled_distance = mask_value.r;
         //   Consider using the following line if you want it to scale with the size
         //  of the photometric solid used.
         //      float scaled_distance = mask_value.r;
+        //   Use the following version if you want it to be scale indepedent:
+        //      float scaled_distance = mask_value.g;
         bool is_active = (mask_value.b == 1.0);
         diffuse_component *= is_active ? scaled_distance : 0.0;
     }
