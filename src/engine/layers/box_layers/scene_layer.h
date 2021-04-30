@@ -80,6 +80,7 @@ namespace engine{
         float indirect_intensity = 1.0f;
         float max_radius = 0.400f;
         float shadow_threshold = 0.15f;
+        float light_far_plane = 100.0f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = true;

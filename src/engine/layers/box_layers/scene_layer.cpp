@@ -12,14 +12,21 @@ namespace engine {
                                                           aiProcess_ValidateDataStructure;
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
-            //548.0f / 3.0f => ~185.0f
-            const auto scene_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(1.0f/185.0f));
-            const auto transposed_inverse_scene_scaling = glm::transpose(scene_scaling);
-            for(auto&& object : scene_objects){
-                const auto T = object.transform;
-                object.transform = scene_scaling;
-                object.transpose_inverse_transform = transposed_inverse_scene_scaling;
-            }
+
+            //  This scaling is needed for the cornell_box_multimaterial.obj scene
+            //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
+            //  548.0f / 3.0f ~= 185.0f
+            const auto scaling_factor = 1.0f/185.0f;
+            const auto scale_scene_for = [&](const float scale_factor){
+                const auto scene_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(scale_factor));
+                const auto transposed_inverse_scene_scaling = glm::transpose(scene_scaling);
+                for(auto&& object : scene_objects){
+                    const auto T = object.transform;
+                    object.transform = scene_scaling;
+                    object.transpose_inverse_transform = transposed_inverse_scene_scaling;
+                }
+            };
+            scale_scene_for(scaling_factor);
 
             scene_light = Point_Light(glm::vec4(1.5f, 2.6f, 1.5f, 1.0f),
                                       LightAttenuationParameters{1.0f, 0.5f, 1.8f});
@@ -160,7 +167,7 @@ namespace engine {
 
             const auto vertices = photometric_solid.get_vertices();
 
-            auto farthest_vertex_distance = [](const std::vector<float>& vs) -> float {
+            const auto farthest_vertex_distance = [](const std::vector<float>& vs) -> float {
                 float result = 0.0f;
                 for (auto i = 0u; i < vs.size() / 3; ++i) {
                     const glm::vec3 p(vs[3 * i + 0],
@@ -216,7 +223,7 @@ namespace engine {
                                               light_position + light_forward,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, 100.0},
+                    CameraPlanes{0.1f, light_far_plane},
                     CameraMode::Perspective);
 
             const auto light_view_matrix = light_camera.get_view_matrix();
@@ -254,7 +261,7 @@ namespace engine {
             depthmask_shader->set_mat4("model", ies_light_model_matrix);
             depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
             depthmask_shader->set_vec3("light_position", light_position);
-            depthmask_shader->set_float("far_plane", 100.0f);
+            depthmask_shader->set_float("far_plane", light_far_plane);
             depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
@@ -268,7 +275,7 @@ namespace engine {
             rsm_generation_shader->use();
             rsm_generation_shader->set_float("light_intensity", light_intensity);
             rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
-            rsm_generation_shader->set_float("far_plane", 2000.0f);
+            rsm_generation_shader->set_float("far_plane", light_far_plane);
             set_light_in_shader(scene_light, rsm_generation_shader);
 
             rsm_generation_shader->set_bool("is_masking", ies_masking);
@@ -399,7 +406,7 @@ namespace engine {
         shader->use();
         shader->set_mat4("light_view", light_view_matrix);
         shader->set_mat4("light_projection", light_projection_matrix);
-        shader->set_float("far_plane", 2000.0f);
+        shader->set_float("far_plane", light_far_plane);
         shader->set_mat4("view", view_camera->view_matrix());
         shader->set_mat4("projection", view_camera->projection_matrix());
         shader->set_vec3("camera_position", view_camera->position());
