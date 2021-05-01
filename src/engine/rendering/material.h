@@ -21,6 +21,7 @@ namespace engine{
         glm::vec4 transparent_color;
 
         void bind_uniforms_to(std::shared_ptr<Shader> shader) const;
+        void bind_uniforms_in_order(const int first_uniform_location, std::shared_ptr<Shader> shader_to_bind) const;
 
         static std::string default_name;
     };

@@ -304,7 +304,7 @@ namespace engine {
 
             if (draw_indirect_light) {
                 draw_shader->use();
-                draw_shader->set_bool("hide_direct_component", hide_direct_component);
+                draw_shader->set_bool(29, hide_direct_component);
             }
 
             draw_indirect_light ? draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
@@ -404,44 +404,45 @@ namespace engine {
 
         //  Shader uniforms
         shader->use();
-        shader->set_mat4("light_view", light_view_matrix);
-        shader->set_mat4("light_projection", light_projection_matrix);
-        shader->set_float("far_plane", light_far_plane);
-        shader->set_mat4("view", view_camera->view_matrix());
-        shader->set_mat4("projection", view_camera->projection_matrix());
-        shader->set_vec3("camera_position", view_camera->position());
+        shader->set_mat4(2, view_camera->view_matrix());
+        shader->set_mat4(3, view_camera->projection_matrix());
+        shader->set_mat4(4, light_view_matrix);
+        shader->set_mat4(5, light_projection_matrix);
+
         set_light_in_shader(scene_light, shader);
-        shader->set_bool("ies_masking", ies_masking);
 
         //  Texture location binding
-        shader->set_int("shadow_map", 0);
-        shader->set_int("position_map", 1);
-        shader->set_int("normal_map", 2);
-        shader->set_int("flux_map", 3);
-        shader->set_int("ies_mask", 4);
-        shader->set_int("sample_array", 5);
-        shader->set_int("samples_number", samples_number);
+        shader->set_int(14, 0);
         bind_texture_in_slot(0, depth_texture.get());
+        shader->set_int(15, 1);
         bind_texture_in_slot(1, position_texture.get());
+        shader->set_int(16, 2);
         bind_texture_in_slot(2, normal_texture.get());
+        shader->set_int(17, 3);
         bind_texture_in_slot(3, flux_texture.get());
+        shader->set_int(18, 4);
         bind_texture_in_slot(4, ies_light_mask.get());
+        shader->set_int(19, 5);
         bind_texture_in_slot(5, samples_texture.get());
 
-        //  Tweakable values
-        shader->set_float("light_intensity", light_intensity);
-        shader->set_float("indirect_intensity", indirect_intensity);
-        shader->set_float("max_radius", max_radius);
-        shader->set_float("shadow_threshold", shadow_threshold);
-        shader->set_float("furthest_photometric_distance", largest_position_component * scale_modifier);
+        //  Tweakable values and common uniforms
+        shader->set_int(20, samples_number);
+        shader->set_vec3(21, view_camera->position());
+        shader->set_float(22, light_far_plane);
+        shader->set_float(23, largest_position_component * scale_modifier);
+        shader->set_float(24, shadow_threshold);
+        shader->set_float(25, max_radius);
+        shader->set_float(26, indirect_intensity);
+        shader->set_float(27, light_intensity);
+        shader->set_bool(28, ies_masking);
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
-                drawable.material.bind_uniforms_to(shader);
                 const auto& model_matrix = drawable.transform;
                 const auto& transpose_inverse_matrix = drawable.transpose_inverse_transform;
-                shader->set_mat4("model", model_matrix);
-                shader->set_mat4("transpose_inverse_model", transpose_inverse_matrix);
+                shader->set_mat4(0, model_matrix);
+                shader->set_mat4(1, transpose_inverse_matrix);
+                drawable.material.bind_uniforms_in_order(6, shader);
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
         }

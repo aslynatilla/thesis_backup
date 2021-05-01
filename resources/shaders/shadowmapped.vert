@@ -7,12 +7,12 @@ out vec3 frag_pos;
 out vec4 light_frag_pos;
 out vec3 normal;
 
-uniform mat4 model;
-uniform mat4 transpose_inverse_model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform mat4 light_view;
-uniform mat4 light_projection;
+layout (location = 0) uniform mat4 model;
+layout (location = 1) uniform mat4 transpose_inverse_model;
+layout (location = 2) uniform mat4 view;
+layout (location = 3) uniform mat4 projection;
+layout (location = 4) uniform mat4 light_view;
+layout (location = 5) uniform mat4 light_projection;
 
 void main(){
 	frag_pos = vec3(model * vec4(pos, 1.0));
