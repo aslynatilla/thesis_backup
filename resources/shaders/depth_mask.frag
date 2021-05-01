@@ -5,10 +5,10 @@ in vec3 frag_normal;
 
 out vec4 FragColor;
 
-uniform vec3 light_position;
-uniform float far_plane;
+layout (location = 9) uniform vec3 light_position;
+layout (location = 10) uniform float far_plane;
 
-uniform float furthest_distance;
+layout (location = 11) uniform float furthest_distance;
 
 void main()
 {

@@ -255,14 +255,20 @@ namespace engine {
             glCullFace(GL_FRONT);
             depthmask_shader->use();
             for (unsigned int i = 0u; i < 6; ++i) {
-                depthmask_shader->set_mat4(light_transforms_strings[i],
-                                           light_transformations[i]);
+//                depthmask_shader->set_mat4(light_transforms_strings[i],
+//                                           light_transformations[i]);
+                glUniformMatrix4fv(2 + i, 1, GL_FALSE, glm::value_ptr(light_transformations[i]));
             }
-            depthmask_shader->set_mat4("model", ies_light_model_matrix);
-            depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
-            depthmask_shader->set_vec3("light_position", light_position);
-            depthmask_shader->set_float("far_plane", light_far_plane);
-            depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
+            //depthmask_shader->set_mat4("model", ies_light_model_matrix);
+            //depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
+            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(ies_light_model_matrix));
+            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(ies_light_inverse_transposed));
+//            depthmask_shader->set_vec3("light_position", light_position);
+//            depthmask_shader->set_float("far_plane", light_far_plane);
+//            depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
+            glUniform3fv(9, 1, glm::value_ptr(light_position));
+            glUniform1f(10, light_far_plane);
+            glUniform1f(11, largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
