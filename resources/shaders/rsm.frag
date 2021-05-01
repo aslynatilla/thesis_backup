@@ -4,7 +4,7 @@ in vec4 frag_pos;
 in vec3 frag_normal;
 in vec4 light_space_frag_pos;
 
-uniform vec4 diffuse_color;
+layout (location = 8) uniform vec4 diffuse_color;
 
 struct Light{
     vec3 position;
@@ -16,12 +16,12 @@ struct Light{
 };
 
 uniform Light scene_light;
-uniform float far_plane;
-uniform float light_intensity;
-uniform vec4 light_color = vec4(1.0, 1.0, 1.0, 1.0);
+layout (location = 9) uniform float far_plane;
+layout (location = 10) uniform float light_intensity;
+layout (location = 11) uniform vec4 light_color = vec4(1.0, 1.0, 1.0, 1.0);
 
-uniform samplerCube ies_mask;
-uniform bool is_masking;
+layout (location = 12) uniform samplerCube ies_mask;
+layout (location = 13) uniform bool is_masking;
 
 layout (location = 0) out vec4 fragment_world_coordinates;
 layout (location = 1) out vec4 fragment_normal;

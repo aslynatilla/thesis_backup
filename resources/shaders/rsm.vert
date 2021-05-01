@@ -3,7 +3,7 @@
  layout (location = 0) in vec3 position;
  layout (location = 1) in vec3 normal;
 
- uniform mat4 model;
+ layout (location = 0) uniform mat4 model;
 
  out vec4 frag_pos;
  out VS_OUT{

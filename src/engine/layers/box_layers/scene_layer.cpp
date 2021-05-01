@@ -255,20 +255,14 @@ namespace engine {
             glCullFace(GL_FRONT);
             depthmask_shader->use();
             for (unsigned int i = 0u; i < 6; ++i) {
-//                depthmask_shader->set_mat4(light_transforms_strings[i],
-//                                           light_transformations[i]);
-                glUniformMatrix4fv(2 + i, 1, GL_FALSE, glm::value_ptr(light_transformations[i]));
+                depthmask_shader->set_mat4(2 + i,
+                                           light_transformations[i]);
             }
-            //depthmask_shader->set_mat4("model", ies_light_model_matrix);
-            //depthmask_shader->set_mat4("inversed_transposed_model", ies_light_inverse_transposed);
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(ies_light_model_matrix));
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(ies_light_inverse_transposed));
-//            depthmask_shader->set_vec3("light_position", light_position);
-//            depthmask_shader->set_float("far_plane", light_far_plane);
-//            depthmask_shader->set_float("furthest_distance", largest_position_component * scale_modifier);
-            glUniform3fv(9, 1, glm::value_ptr(light_position));
-            glUniform1f(10, light_far_plane);
-            glUniform1f(11, largest_position_component * scale_modifier);
+            depthmask_shader->set_mat4(0, ies_light_model_matrix);
+            depthmask_shader->set_mat4(1, ies_light_inverse_transposed);
+            depthmask_shader->set_vec3(9, light_position);
+            depthmask_shader->set_float(10, light_far_plane);
+            depthmask_shader->set_float(11, largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
@@ -279,25 +273,25 @@ namespace engine {
 
             //  RSM Shader uniforms
             rsm_generation_shader->use();
-            rsm_generation_shader->set_float("light_intensity", light_intensity);
-            rsm_generation_shader->set_mat4("light_projection", light_projection_matrix);
-            rsm_generation_shader->set_float("far_plane", light_far_plane);
-            set_light_in_shader(scene_light, rsm_generation_shader);
-
-            rsm_generation_shader->set_bool("is_masking", ies_masking);
-            rsm_generation_shader->set_int("ies_mask", 0);
-            bind_texture_in_slot(0, ies_light_mask.get());
 
             for (unsigned int i = 0u; i < 6; ++i) {
-                rsm_generation_shader->set_mat4(light_transforms_strings[i],
+                rsm_generation_shader->set_mat4(1 + i,
                                                 light_transformations[i]);
             }
+            
+            rsm_generation_shader->set_float(9, light_far_plane);
+            rsm_generation_shader->set_float(10, light_intensity);
+            rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
+            rsm_generation_shader->set_int(12, 0);
+            rsm_generation_shader->set_bool(13, ies_masking);
+            set_light_in_shader(scene_light, rsm_generation_shader);
+            bind_texture_in_slot(0, ies_light_mask.get());
 
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
                     const auto& model_matrix = drawable.transform;
-                    rsm_generation_shader->set_mat4("model", model_matrix);
-                    rsm_generation_shader->set_vec4("diffuse_color", drawable.material.diffuse_color);
+                    rsm_generation_shader->set_mat4(0, model_matrix);
+                    rsm_generation_shader->set_vec4(8, drawable.material.diffuse_color);
                     OpenGL3_Renderer::draw(*(drawable.vao));
                 }
             }

@@ -6,7 +6,7 @@ in VS_OUT {
     vec3 normal;
 } input_vertices_data[];
 
-uniform mat4 light_transforms[6];
+layout (location = 1) uniform mat4 light_transforms[6];
 
 out vec4 frag_pos;
 out vec4 light_space_frag_pos;
