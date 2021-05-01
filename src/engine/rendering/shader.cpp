@@ -1,6 +1,6 @@
 #include "shader.h"
 
-namespace engine{
+namespace engine {
     Shader::Shader(std::string&& vertex_src, std::string&& fragment_src, const std::string_view vertex_name,
                    const std::string_view fragment_name) {
         const std::array<shader_object_src, 2> sources{
@@ -10,7 +10,6 @@ namespace engine{
 
         initialize_from_sources<2>(sources);
     }
-
 
 
     Shader::Shader(std::string&& vertex_src, std::string&& geometry_src, std::string&& fragment_src,
@@ -25,63 +24,99 @@ namespace engine{
         initialize_from_sources<3>(sources);
     }
 
-    void Shader::use() const
-    {
+    void Shader::use() const {
         glUseProgram(this->id);
     }
 
-    void Shader::set_int(const std::string_view name, const int val) const noexcept
-    {
+    void Shader::set_int(const std::string_view name, const int val) const noexcept {
         glUniform1i(glGetUniformLocation(id, name.data()), val);
     }
 
-    void Shader::set_bool(const std::string_view name, const bool val) const noexcept
-    {
+    void Shader::set_int(const int location, const int val) const noexcept {
+        glUniform1i(location, val);
+    }
+
+    void Shader::set_bool(const std::string_view name, const bool val) const noexcept {
         glUniform1i(glGetUniformLocation(id, name.data()), static_cast<int>(val));
     }
 
-    void Shader::set_vec2(const std::string_view name, const glm::vec2 v) const noexcept
-    {
+    void Shader::set_bool(const int location, const bool val) const noexcept {
+        glUniform1i(location, static_cast<int>(val));
+    }
+
+    void Shader::set_vec2(const std::string_view name, const glm::vec2 v) const noexcept {
         glUniform2f(glGetUniformLocation(id, name.data()), v.x, v.y);
     }
 
-    void Shader::set_vec2(const std::string_view name, const float vx, const float vy) const noexcept
-    {
+    void Shader::set_vec2(const std::string_view name, const float vx, const float vy) const noexcept {
         glUniform2f(glGetUniformLocation(id, name.data()), vx, vy);
     }
 
-    void Shader::set_vec3(const std::string_view name, const glm::vec3 v) const noexcept
-    {
+    void Shader::set_vec2(const int location, const glm::vec2 v) const noexcept {
+        glUniform2f(location, v.x, v.y);
+    }
+
+    void Shader::set_vec2(const int location, const float vx, const float vy) const noexcept {
+        glUniform2f(location, vx, vy);
+    }
+
+    void Shader::set_vec3(const std::string_view name, const glm::vec3 v) const noexcept {
         glUniform3f(glGetUniformLocation(id, name.data()), v.x, v.y, v.z);
     }
 
-    void Shader::set_vec3(const std::string_view name, const float vx, const float vy, const float vz) const noexcept
-    {
+    void Shader::set_vec3(const std::string_view name, const float vx, const float vy, const float vz) const noexcept {
         glUniform3f(glGetUniformLocation(id, name.data()), vx, vy, vz);
     }
 
-    void Shader::set_vec4(const std::string_view name, const glm::vec4 v) const noexcept
-    {
+    void Shader::set_vec3(const int location, const glm::vec3 v) const noexcept {
+        glUniform3f(location, v.x, v.y, v.z);
+    }
+
+    void Shader::set_vec3(const int location, const float vx, const float vy, const float vz) const noexcept {
+        glUniform3f(location, vx, vy, vz);
+    }
+
+    void Shader::set_vec4(const std::string_view name, const glm::vec4 v) const noexcept {
         glUniform4f(glGetUniformLocation(id, name.data()), v.x, v.y, v.z, v.w);
     }
 
-    void Shader::set_vec4(const std::string_view name, const float vx, const float vy, const float vz, const float vw) const noexcept
-    {
+    void Shader::set_vec4(const std::string_view name, const float vx, const float vy, const float vz,
+                          const float vw) const noexcept {
         glUniform4f(glGetUniformLocation(id, name.data()), vx, vy, vz, vw);
     }
 
-    void Shader::set_mat4(const std::string_view name, const glm::mat4 mat) const noexcept{
+    void Shader::set_vec4(const int location, const glm::vec4 v) const noexcept {
+        glUniform4f(location, v.x, v.y, v.z, v.w);
+    }
+
+    void
+    Shader::set_vec4(const int location, const float vx, const float vy, const float vz, const float w) const noexcept {
+        glUniform4f(location, vx, vy, vz, w);
+    }
+
+    void Shader::set_mat4(const std::string_view name, const glm::mat4 mat) const noexcept {
         glUniformMatrix4fv(glGetUniformLocation(id, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
     }
 
-    void Shader::set_uint(const std::string_view name, const unsigned int val) const noexcept
-    {
+
+    void Shader::set_mat4(const int location, const glm::mat4 mat) const noexcept {
+        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
+    }
+
+    void Shader::set_uint(const std::string_view name, const unsigned int val) const noexcept {
         glUniform1ui(glGetUniformLocation(id, name.data()), val);
     }
 
-    void Shader::set_float(const std::string_view name, const float val) const noexcept
-    {
+    void Shader::set_uint(const int location, const unsigned int val) const noexcept {
+        glUniform1ui(location, val);
+    }
+
+    void Shader::set_float(const std::string_view name, const float val) const noexcept {
         glUniform1f(glGetUniformLocation(id, name.data()), val);
+    }
+
+    void Shader::set_float(const int location, const float val) const noexcept {
+        glUniform1f(location, val);
     }
 
     template<int source_size>
@@ -116,13 +151,14 @@ namespace engine{
     }
 
     bool Shader::check_shader_object_compilation(const unsigned int shader_id, const std::string_view shader_name) {
-        int  success;
+        int success;
         char log[512];
 
         glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
         if (success == 0) {
             glGetShaderInfoLog(shader_id, 512, nullptr, log);
-            fmt::print("SHADER >>> Compilation failed for shader with id: {} named {}\nInfo log >>> {}", shader_id, shader_name, log);
+            fmt::print("SHADER >>> Compilation failed for shader with id: {} named {}\nInfo log >>> {}", shader_id,
+                       shader_name, log);
             return false;
         } else {
             return true;
@@ -130,7 +166,7 @@ namespace engine{
     }
 
     bool Shader::check_shader_program_linking(const unsigned int shader_id) {
-        int  success;
+        int success;
         char log[512];
 
         glGetProgramiv(shader_id, GL_LINK_STATUS, &success);

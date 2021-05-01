@@ -25,16 +25,27 @@ namespace engine {
 
         void use() const;
         void set_int(const std::string_view name, const int val) const noexcept;
+        void set_int(const int location, const int val) const noexcept;
         void set_bool(const std::string_view name, const bool val) const noexcept;
+        void set_bool(const int location, const bool val) const noexcept;
         void set_vec2(const std::string_view name, const glm::vec2 v) const noexcept;
         void set_vec2(const std::string_view name, const float vx, const float vy) const noexcept;
+        void set_vec2(const int location, const glm::vec2 v) const noexcept;
+        void set_vec2(const int location, const float vx, const float vy) const noexcept;
         void set_vec3(const std::string_view name, const glm::vec3 v) const noexcept;
         void set_vec3(const std::string_view name, const float vx, const float vy, const float vz) const noexcept;
+        void set_vec3(const int location, const glm::vec3 v) const noexcept;
+        void set_vec3(const int location, const float vx, const float vy, const float vz) const noexcept;
         void set_vec4(const std::string_view name, const glm::vec4 v) const noexcept;
         void set_vec4(const std::string_view name, const float vx, const float vy, const float vz, const float w) const noexcept;
+        void set_vec4(const int location, const glm::vec4 v) const noexcept;
+        void set_vec4(const int location, const float vx, const float vy, const float vz, const float w) const noexcept;
         void set_mat4(const std::string_view name, const glm::mat4 mat) const noexcept;
+        void set_mat4(const int location, const glm::mat4 mat) const noexcept;
         void set_uint(const std::string_view name, const unsigned int val) const noexcept;
+        void set_uint(const int location, const unsigned int val) const noexcept;
         void set_float(const std::string_view name, const float val) const noexcept;
+        void set_float(const int location, const float val) const noexcept;
 
     private:
         struct shader_object_src{

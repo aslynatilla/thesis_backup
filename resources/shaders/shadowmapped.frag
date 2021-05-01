@@ -6,18 +6,14 @@ in vec3 normal;
 
 out vec4 FragColor;
 
-uniform float opacity;
-uniform float shininess;
-uniform float refract_i;
-
-uniform vec4 diffuse_color;
-uniform vec4 ambient_color;
-uniform vec4 specular_color;
-uniform vec4 emissive_color;
-uniform vec4 transparent_color;
-
-uniform vec3 camera_position;
-uniform vec3 light_position;
+layout ( location = 6) uniform float opacity;
+layout ( location = 7) uniform float shininess;
+layout ( location = 8) uniform float refract_i;
+layout ( location = 9) uniform vec4 diffuse_color;
+layout ( location = 10) uniform vec4 ambient_color;
+layout ( location = 11) uniform vec4 specular_color;
+layout ( location = 12) uniform vec4 emissive_color;
+layout ( location = 13) uniform vec4 transparent_color;
 
 struct Light{
     vec3 position;
@@ -30,27 +26,26 @@ struct Light{
 
 uniform Light scene_light;
 
-uniform samplerCube shadow_map;
-uniform samplerCube position_map;
-uniform samplerCube normal_map;
-uniform samplerCube flux_map;
-uniform samplerCube ies_mask;
-uniform sampler1D sample_array;
+layout ( location = 14) uniform samplerCube shadow_map;
+layout ( location = 15) uniform samplerCube position_map;
+layout ( location = 16) uniform samplerCube normal_map;
+layout ( location = 17) uniform samplerCube flux_map;
+layout ( location = 18) uniform samplerCube ies_mask;
+layout ( location = 19) uniform sampler1D sample_array;
 
-uniform int samples_number;
+layout ( location = 20) uniform int samples_number;
 
-uniform float far_plane;
-uniform float furthest_photometric_distance;
+layout ( location = 21) uniform vec3 camera_position;
+layout ( location = 22) uniform float far_plane;
+layout ( location = 23) uniform float furthest_photometric_distance;
 
 // Tweakable values
-uniform float shadow_threshold;
-
-uniform float max_radius;
-uniform float indirect_intensity;
-uniform float light_intensity;
-
-uniform bool hide_direct_component;
-uniform bool ies_masking;
+layout ( location = 24) uniform float shadow_threshold;
+layout ( location = 25) uniform float max_radius;
+layout ( location = 26) uniform float indirect_intensity;
+layout ( location = 27) uniform float light_intensity;
+layout ( location = 28) uniform bool ies_masking;
+layout ( location = 29) uniform bool hide_direct_component;
 
 float compute_shadow(vec3 light_to_frag, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
