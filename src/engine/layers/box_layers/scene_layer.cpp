@@ -278,7 +278,7 @@ namespace engine {
                 rsm_generation_shader->set_mat4(1 + i,
                                                 light_transformations[i]);
             }
-            
+
             rsm_generation_shader->set_float(9, light_far_plane);
             rsm_generation_shader->set_float(10, light_intensity);
             rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
@@ -315,11 +315,11 @@ namespace engine {
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 wireframe_shader->use();
-                wireframe_shader->set_mat4("view", existing_camera->view_matrix());
-                wireframe_shader->set_mat4("projection", existing_camera->projection_matrix());
-                wireframe_shader->set_mat4("model", ies_light_model_matrix);
-                wireframe_shader->set_mat4("transpose_inverse_model", ies_light_inverse_transposed);
-                wireframe_shader->set_vec4("wireframe_color", wireframe_color);
+                wireframe_shader->set_mat4(0, ies_light_model_matrix);
+                wireframe_shader->set_mat4(1, ies_light_inverse_transposed);
+                wireframe_shader->set_mat4(2, existing_camera->view_matrix());
+                wireframe_shader->set_mat4(3, existing_camera->projection_matrix());
+                wireframe_shader->set_vec4(4, wireframe_color);
                 OpenGL3_Renderer::draw(ies_light_vao);
             }
         }

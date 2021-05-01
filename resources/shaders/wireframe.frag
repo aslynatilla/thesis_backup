@@ -3,7 +3,7 @@
 in vec3 frag_position;
 in vec3 frag_normal;
 
-uniform vec4 wireframe_color;
+layout (location = 4) uniform vec4 wireframe_color;
 
 out vec4 FragColor;
 
