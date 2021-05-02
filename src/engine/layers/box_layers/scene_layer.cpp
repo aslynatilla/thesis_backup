@@ -192,6 +192,14 @@ namespace engine {
                                                                                   "normal")}));
             ies_light_vao.set_vbo(std::move(vbo));
             ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
+
+            glGenBuffers(1, &light_data_buffer);
+            glBindBuffer(GL_UNIFORM_BUFFER, light_data_buffer);
+            //  Using std140, 16 bytes needed per element to set
+            //   We need to set two vec4 and three floats
+            glBufferData(GL_UNIFORM_BUFFER, (16 * 2) + (4 * 4), nullptr, GL_STATIC_DRAW);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0, light_data_buffer);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
         }
     }
 
@@ -217,6 +225,13 @@ namespace engine {
         if (auto existing_camera = view_camera.lock()) {
             const auto light_position = scene_light.get_position_as_vec3();
             const auto light_forward = glm::vec3(scene_light.get_forward());
+            glBindBuffer(GL_UNIFORM_BUFFER, light_data_buffer);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, glm::value_ptr(light_position));
+            glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, glm::value_ptr(light_forward));
+            glBufferSubData(GL_UNIFORM_BUFFER, 32, 4, &(scene_light.attenuation.constant));
+            glBufferSubData(GL_UNIFORM_BUFFER, 36, 4, &(scene_light.attenuation.linear));
+            glBufferSubData(GL_UNIFORM_BUFFER, 40, 4, &(scene_light.attenuation.quadratic));
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
             const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
             const auto light_camera = Camera(
                     CameraGeometricDefinition{light_position,
@@ -284,7 +299,7 @@ namespace engine {
             rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
             rsm_generation_shader->set_int(12, 0);
             rsm_generation_shader->set_bool(13, ies_masking);
-            set_light_in_shader(scene_light, rsm_generation_shader);
+//            set_light_in_shader(scene_light, rsm_generation_shader);
             bind_texture_in_slot(0, ies_light_mask.get());
 
             if (!scene_objects.empty()) {
@@ -409,7 +424,7 @@ namespace engine {
         shader->set_mat4(4, light_view_matrix);
         shader->set_mat4(5, light_projection_matrix);
 
-        set_light_in_shader(scene_light, shader);
+//        set_light_in_shader(scene_light, shader);
 
         //  Texture location binding
         shader->set_int(14, 0);

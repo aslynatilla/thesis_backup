@@ -6,16 +6,15 @@ in vec4 light_space_frag_pos;
 
 layout (location = 8) uniform vec4 diffuse_color;
 
-struct Light{
-    vec3 position;
-    vec3 direction;
+layout(std140, binding = 0) uniform Light{
+    vec4 position;
+    vec4 direction;
 
     float constant_attenuation;
     float linear_attenuation;
     float quadratic_attenuation;
-};
+} scene_light;
 
-uniform Light scene_light;
 layout (location = 9) uniform float far_plane;
 layout (location = 10) uniform float light_intensity;
 layout (location = 11) uniform vec4 light_color = vec4(1.0, 1.0, 1.0, 1.0);
@@ -28,7 +27,7 @@ layout (location = 1) out vec4 fragment_normal;
 layout (location = 2) out vec4 fragment_flux;
 
 void main(){
-    vec3 light_to_fragment = frag_pos.xyz - scene_light.position;
+    vec3 light_to_fragment = frag_pos.xyz - scene_light.position.xyz;
     float light_distance = length(light_to_fragment);
     vec3 l = normalize(light_to_fragment);
     gl_FragDepth = light_distance / far_plane;

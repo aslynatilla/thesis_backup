@@ -100,6 +100,8 @@ namespace engine{
 
         float largest_position_component;
         float scale_modifier = 0.00193f;
+
+        unsigned int light_data_buffer;
     };
 }
 

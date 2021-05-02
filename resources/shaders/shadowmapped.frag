@@ -15,16 +15,14 @@ layout ( location = 11) uniform vec4 specular_color;
 layout ( location = 12) uniform vec4 emissive_color;
 layout ( location = 13) uniform vec4 transparent_color;
 
-struct Light{
-    vec3 position;
-    vec3 direction;
+layout(std140, binding = 0) uniform Light{
+    vec4 position;
+    vec4 direction;
 
     float constant_attenuation;
     float linear_attenuation;
     float quadratic_attenuation;
-};
-
-uniform Light scene_light;
+} scene_light;
 
 layout ( location = 14) uniform samplerCube shadow_map;
 layout ( location = 15) uniform samplerCube position_map;
@@ -92,7 +90,7 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
 void main(){
     //  Common data
     vec3 n = normalize(normal);
-    vec3 frag_to_light = scene_light.position - frag_pos;
+    vec3 frag_to_light = scene_light.position.xyz - frag_pos;
     float distance_from_light = length(frag_to_light);
     vec3 l = normalize(frag_to_light);
     vec3 camera_to_frag = normalize(frag_pos - camera_position);
