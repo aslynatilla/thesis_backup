@@ -13,7 +13,8 @@ namespace random_num {
         return flattened_points;
     }
 
-    std::vector<float> uniform_samples_in_interval(const unsigned int number_of_samples, const float min_value, const float max_value) {
+    std::vector<float>
+    uniform_samples_in_interval(const unsigned int number_of_samples, const float min_value, const float max_value) {
         std::random_device seeder;
         std::mt19937 generator(seeder());
         std::uniform_real_distribution<float> distribution(min_value, max_value);
@@ -50,7 +51,24 @@ namespace random_num {
                                     random_triples_of_floats[3 * i + 2]);
             result.emplace_back(glm::normalize(new_direction));
         }
-         return result;
+        return result;
+    }
+
+    std::vector<glm::vec3> uniform_samples_on_unit_sphere(const unsigned int number_of_samples) {
+        const auto random_couples_of_floats = uniform_samples_in_unit_interval(number_of_samples * 2);
+        std::vector<glm::vec3> result;
+        result.reserve(number_of_samples);
+        constexpr float two_pi = 2.0f * 3.1415926f;
+        for (auto i = 0u; i < number_of_samples; ++i) {
+            const auto& u = random_couples_of_floats[2 * i];
+            const auto& v = random_couples_of_floats[2 * i + 1];
+            const float theta = two_pi * u;
+            const float phi = std::acos(2.0f * v - 1.0f);
+            result.emplace_back(glm::vec3(std::cos(theta) * std::sin(phi),
+                                          std::sin(theta) * std::sin(phi),
+                                          std::cos(phi)));
+        }
+        return result;
     }
 }
 

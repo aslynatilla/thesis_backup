@@ -119,7 +119,7 @@ namespace engine {
 
 
             samples_number = 100;
-            const auto samples = random_num::random_directions(samples_number);
+            const auto samples = random_num::uniform_samples_on_unit_sphere(samples_number);
 
             //  TODO: consider using BufferTexture for this
             //  see: https://www.khronos.org/opengl/wiki/Buffer_Texture
@@ -356,7 +356,7 @@ namespace engine {
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
                                ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Max radius sample", &max_radius, 0.0001f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Displacing sphere scale", &max_radius, 0.0001f, 2.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
         ImGui::Spacing();
