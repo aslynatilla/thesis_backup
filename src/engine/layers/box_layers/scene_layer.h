@@ -26,10 +26,6 @@
 #include <glm/glm.hpp>
 
 namespace engine{
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture);
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture);
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture);
-
     class SceneLayer : public Layer{
     public:
         SceneLayer(std::weak_ptr<FlyCamera> application_camera);

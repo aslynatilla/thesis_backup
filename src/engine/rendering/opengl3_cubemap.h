@@ -18,7 +18,7 @@ namespace engine {
         OpenGL3_Cubemap& operator=(const OpenGL3_Cubemap& other) = delete;
         OpenGL3_Cubemap& operator=(OpenGL3_Cubemap&& other) = delete;
 
-        void make_active_in_slot(const unsigned int slot);
+        void bind_to_slot(const unsigned int slot);
 
         unsigned int id;
         GLenum bound_type;

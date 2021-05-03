@@ -16,11 +16,11 @@ namespace engine {
             //  This scaling is needed for the cornell_box_multimaterial.obj scene
             //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
             //  548.0f / 3.0f ~= 185.0f
-            const auto scaling_factor = 1.0f/185.0f;
-            const auto scale_scene_for = [&](const float scale_factor){
+            const auto scaling_factor = 1.0f / 185.0f;
+            const auto scale_scene_for = [&](const float scale_factor) {
                 const auto scene_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(scale_factor));
                 const auto transposed_inverse_scene_scaling = glm::transpose(scene_scaling);
-                for(auto&& object : scene_objects){
+                for (auto&& object : scene_objects) {
                     const auto T = object.transform;
                     object.transform = scene_scaling;
                     object.transpose_inverse_transform = transposed_inverse_scene_scaling;
@@ -293,7 +293,7 @@ namespace engine {
             rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
             rsm_generation_shader->set_int(12, 0);
             rsm_generation_shader->set_bool(13, ies_masking);
-            bind_texture_in_slot(0, ies_light_mask.get());
+            ies_light_mask->bind_to_slot(0);
 
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
@@ -386,17 +386,17 @@ namespace engine {
 
         //  Texture location binding
         shader->set_int(14, 0);
-        bind_texture_in_slot(0, depth_texture.get());
+        depth_texture->bind_to_slot(0);
         shader->set_int(15, 1);
-        bind_texture_in_slot(1, position_texture.get());
+        position_texture->bind_to_slot(1);
         shader->set_int(16, 2);
-        bind_texture_in_slot(2, normal_texture.get());
+        normal_texture->bind_to_slot(2);
         shader->set_int(17, 3);
-        bind_texture_in_slot(3, flux_texture.get());
+        flux_texture->bind_to_slot(3);
         shader->set_int(18, 4);
-        bind_texture_in_slot(4, ies_light_mask.get());
+        ies_light_mask->bind_to_slot(4);
         shader->set_int(19, 5);
-        bind_texture_in_slot(5, samples_texture.get());
+        samples_texture->bind_to_slot(5);
 
         //  Tweakable values and common uniforms
         shader->set_int(20, samples_number);
@@ -426,21 +426,6 @@ namespace engine {
             draw_indirect_light = !draw_indirect_light;
         }
         return false;
-    }
-
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
-    }
-
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
-    }
-
-    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
     }
 }
 

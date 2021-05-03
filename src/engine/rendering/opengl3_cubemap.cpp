@@ -25,8 +25,9 @@ namespace engine{
         glDeleteTextures(1, &id);
     }
 
-    void OpenGL3_Cubemap::make_active_in_slot(const unsigned int slot) {
-        glActiveTexture(GL_TEXTURE0+slot);
+    void OpenGL3_Cubemap::bind_to_slot(const unsigned int slot_number) {
+        glActiveTexture(GL_TEXTURE0 + slot_number);
+        glBindTexture(bound_type, id);
     }
 }
 
