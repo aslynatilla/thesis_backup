@@ -193,13 +193,11 @@ namespace engine {
             ies_light_vao.set_vbo(std::move(vbo));
             ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
 
-            glGenBuffers(1, &light_data_buffer);
-            glBindBuffer(GL_UNIFORM_BUFFER, light_data_buffer);
             //  Using std140, 16 bytes needed per element to set
             //   We need to set two vec4 and three floats
-            glBufferData(GL_UNIFORM_BUFFER, (16 * 2) + (4 * 4), nullptr, GL_STATIC_DRAW);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 0, light_data_buffer);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            light_data_buffer = std::make_shared<UniformBuffer>((16 * 2) + (4 * 4));
+            light_data_buffer->bind_to_binding_point(0);
+            light_data_buffer->unbind_from_uniform_buffer_target();
         }
     }
 
@@ -225,13 +223,13 @@ namespace engine {
         if (auto existing_camera = view_camera.lock()) {
             const auto light_position = scene_light.get_position_as_vec3();
             const auto light_forward = glm::vec3(scene_light.get_forward());
-            glBindBuffer(GL_UNIFORM_BUFFER, light_data_buffer);
-            glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, glm::value_ptr(light_position));
-            glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, glm::value_ptr(light_forward));
-            glBufferSubData(GL_UNIFORM_BUFFER, 32, 4, &(scene_light.attenuation.constant));
-            glBufferSubData(GL_UNIFORM_BUFFER, 36, 4, &(scene_light.attenuation.linear));
-            glBufferSubData(GL_UNIFORM_BUFFER, 40, 4, &(scene_light.attenuation.quadratic));
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            light_data_buffer->bind_to_uniform_buffer_target();
+            light_data_buffer->copy_to_buffer(0, 16, &light_position.x);
+            light_data_buffer->copy_to_buffer(16, 16, &light_forward.x);
+            light_data_buffer->copy_to_buffer(32, 4, &(scene_light.attenuation.constant));
+            light_data_buffer->copy_to_buffer(36, 4, &(scene_light.attenuation.linear));
+            light_data_buffer->copy_to_buffer(40, 4, &(scene_light.attenuation.quadratic));
+            light_data_buffer->unbind_from_uniform_buffer_target();
             const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
             const auto light_camera = Camera(
                     CameraGeometricDefinition{light_position,

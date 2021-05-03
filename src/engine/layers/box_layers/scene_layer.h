@@ -10,6 +10,7 @@
 #include "../../rendering/renderer.h"
 #include "../../rendering/shader_loading.h"
 #include "../../rendering/opengl3_framebuffer.h"
+#include "../../rendering/uniform_buffer.h"
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
 #include "../../scene_management/spotlight.h"
@@ -101,7 +102,7 @@ namespace engine{
         float largest_position_component;
         float scale_modifier = 0.00193f;
 
-        unsigned int light_data_buffer;
+        std::shared_ptr<UniformBuffer> light_data_buffer;
     };
 }
 
