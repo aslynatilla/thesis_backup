@@ -221,19 +221,15 @@ namespace engine {
     void SceneLayer::update(float delta_time) {
         timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
-            const auto light_position = scene_light.get_position_as_vec3();
-            const auto light_forward = glm::vec3(scene_light.get_forward());
+            const auto light_data = scene_light.get_representative_data();
+            const auto light_position = glm::vec3(light_data.position);
             light_data_buffer->bind_to_uniform_buffer_target();
-            light_data_buffer->copy_to_buffer(0, 16, &light_position.x);
-            light_data_buffer->copy_to_buffer(16, 16, &light_forward.x);
-            light_data_buffer->copy_to_buffer(32, 4, &(scene_light.attenuation.constant));
-            light_data_buffer->copy_to_buffer(36, 4, &(scene_light.attenuation.linear));
-            light_data_buffer->copy_to_buffer(40, 4, &(scene_light.attenuation.quadratic));
+            light_data_buffer->copy_to_buffer(0, 44, light_data.raw());
             light_data_buffer->unbind_from_uniform_buffer_target();
             const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
             const auto light_camera = Camera(
-                    CameraGeometricDefinition{light_position,
-                                              light_position + light_forward,
+                    CameraGeometricDefinition{light_data.position,
+                                              light_data.position + light_data.direction,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
                     CameraPlanes{0.1f, light_far_plane},
@@ -252,7 +248,7 @@ namespace engine {
             }
 
 
-            glm::mat4 ies_light_model_matrix = glm::identity<glm::mat4>();
+            auto ies_light_model_matrix = glm::identity<glm::mat4>();
             ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
             ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
             ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
@@ -273,7 +269,7 @@ namespace engine {
             }
             depthmask_shader->set_mat4(0, ies_light_model_matrix);
             depthmask_shader->set_mat4(1, ies_light_inverse_transposed);
-            depthmask_shader->set_vec3(9, light_position);
+            depthmask_shader->set_vec3(9, light_data.position);
             depthmask_shader->set_float(10, light_far_plane);
             depthmask_shader->set_float(11, largest_position_component * scale_modifier);
             OpenGL3_Renderer::draw(ies_light_vao);
@@ -297,7 +293,6 @@ namespace engine {
             rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
             rsm_generation_shader->set_int(12, 0);
             rsm_generation_shader->set_bool(13, ies_masking);
-//            set_light_in_shader(scene_light, rsm_generation_shader);
             bind_texture_in_slot(0, ies_light_mask.get());
 
             if (!scene_objects.empty()) {
@@ -375,41 +370,6 @@ namespace engine {
         ImGui::End();
     }
 
-    bool SceneLayer::set_light_in_shader(const Spotlight& light, std::shared_ptr<Shader>& shader) {
-        shader->set_vec3("scene_light.position", light.get_position_as_vec3());
-        shader->set_vec3("scene_light.direction", light.get_forward());
-        shader->set_float("scene_light.cutoff_angle", light.spot_params.cosine_cutoff_angle);
-        shader->set_float("scene_light.outer_cutoff_angle", light.spot_params.cosine_outer_cutoff_angle);
-        shader->set_float("scene_light.constant_attenuation", light.attenuation.constant);
-        shader->set_float("scene_light.linear_attenuation", light.attenuation.linear);
-        shader->set_float("scene_light.quadratic_attenuation", light.attenuation.quadratic);
-        return glGetError() != 0;
-    }
-
-    bool SceneLayer::set_light_in_shader(const Point_Light& light, std::shared_ptr<Shader>& shader) {
-        shader->set_vec3("scene_light.position", light.get_position_as_vec3());
-        shader->set_vec3("scene_light.direction", light.get_forward());
-        shader->set_float("scene_light.constant_attenuation", light.attenuation.constant);
-        shader->set_float("scene_light.linear_attenuation", light.attenuation.linear);
-        shader->set_float("scene_light.quadratic_attenuation", light.attenuation.quadratic);
-        return glGetError() != 0;
-    }
-
-    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
-    }
-
-    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
-    }
-
-    void SceneLayer::bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture) {
-        texture->make_active_in_slot(slot_number);
-        glBindTexture(texture->bound_type, texture->id);
-    }
-
     void SceneLayer::draw_scene(const std::shared_ptr<FlyCamera>& view_camera,
                                 const glm::mat4& light_view_matrix,
                                 const glm::mat4& light_projection_matrix,
@@ -466,6 +426,21 @@ namespace engine {
             draw_indirect_light = !draw_indirect_light;
         }
         return false;
+    }
+
+    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture1D* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
+    }
+
+    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Texture2D* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
+    }
+
+    void bind_texture_in_slot(const unsigned int slot_number, OpenGL3_Cubemap* texture) {
+        texture->make_active_in_slot(slot_number);
+        glBindTexture(texture->bound_type, texture->id);
     }
 }
 
