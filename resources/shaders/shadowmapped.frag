@@ -1,21 +1,11 @@
 #version 430 core
 
 in vec3 frag_pos;
-in vec4 light_frag_pos;
 in vec3 normal;
 
 out vec4 FragColor;
 
-layout ( location = 6) uniform float opacity;
-layout ( location = 7) uniform float shininess;
-layout ( location = 8) uniform float refract_i;
-layout ( location = 9) uniform vec4 diffuse_color;
-layout ( location = 10) uniform vec4 ambient_color;
-layout ( location = 11) uniform vec4 specular_color;
-layout ( location = 12) uniform vec4 emissive_color;
-layout ( location = 13) uniform vec4 transparent_color;
-
-layout(std140, binding = 0) uniform Light{
+layout(std140, binding = 1) uniform Light{
     vec4 position;
     vec4 direction;
 
@@ -24,26 +14,37 @@ layout(std140, binding = 0) uniform Light{
     float quadratic_attenuation;
 } scene_light;
 
-layout ( location = 14) uniform samplerCube shadow_map;
-layout ( location = 15) uniform samplerCube position_map;
-layout ( location = 16) uniform samplerCube normal_map;
-layout ( location = 17) uniform samplerCube flux_map;
-layout ( location = 18) uniform samplerCube ies_mask;
-layout ( location = 19) uniform sampler1D sample_array;
+layout(std140, binding = 2) uniform Material{
+    vec4 diffuse_color;
+    vec4 ambient_color;
+    vec4 specular_color;
+    vec4 emissive_color;
+    vec4 transparent_color;
+    float opacity;
+    float shininess;
+    float refract_i;
+};
 
-layout ( location = 20) uniform int samples_number;
+layout ( location = 0) uniform samplerCube shadow_map;
+layout ( location = 1) uniform samplerCube position_map;
+layout ( location = 2) uniform samplerCube normal_map;
+layout ( location = 3) uniform samplerCube flux_map;
+layout ( location = 4) uniform samplerCube ies_mask;
+layout ( location = 5) uniform sampler1D sample_array;
 
-layout ( location = 21) uniform vec3 camera_position;
-layout ( location = 22) uniform float far_plane;
-layout ( location = 23) uniform float furthest_photometric_distance;
+layout ( location = 6) uniform int samples_number;
+
+layout ( location = 7) uniform vec3 camera_position;
+layout ( location = 8) uniform float far_plane;
+layout ( location = 9) uniform float furthest_photometric_distance;
 
 // Tweakable values
-layout ( location = 24) uniform float shadow_threshold;
-layout ( location = 25) uniform float max_radius;
-layout ( location = 26) uniform float indirect_intensity;
-layout ( location = 27) uniform float light_intensity;
-layout ( location = 28) uniform bool ies_masking;
-layout ( location = 29) uniform bool hide_direct_component;
+layout ( location = 10) uniform float shadow_threshold;
+layout ( location = 11) uniform float max_radius;
+layout ( location = 12) uniform float indirect_intensity;
+layout ( location = 13) uniform float light_intensity;
+layout ( location = 14) uniform bool ies_masking;
+layout ( location = 15) uniform bool hide_direct_component;
 
 float compute_shadow(vec3 light_to_frag, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
@@ -95,10 +96,6 @@ void main(){
     vec3 l = normalize(frag_to_light);
     vec3 camera_to_frag = normalize(frag_pos - camera_position);
     vec3 v = - normalize(camera_to_frag);
-
-    //  Compute fragment position in light space and move it in the unit square [0, 1]×[0, 1]
-    vec4 fragment_light_space_coordinates = vec4(light_frag_pos.xyz / light_frag_pos.w, light_frag_pos.w);
-    fragment_light_space_coordinates.xy = fragment_light_space_coordinates.xy * 0.5 + 0.5;
 
     //  Attenuation computation
     float attenuation_factor = 1.0/(scene_light.constant_attenuation +

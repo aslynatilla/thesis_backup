@@ -32,45 +32,45 @@ namespace engine::scenes{
         } else {
             m.name = std::string(material_name.C_Str());
         }
-        if(assimp_material->Get(AI_MATKEY_OPACITY, m.opacity) != aiReturn_SUCCESS){
-            m.opacity = 1.0f;
+        if(assimp_material->Get(AI_MATKEY_OPACITY, m.data.opacity) != aiReturn_SUCCESS){
+            m.data.opacity = 1.0f;
         }
-        if(assimp_material->Get(AI_MATKEY_SHININESS, m.shininess) != aiReturn_SUCCESS){
-            m.shininess = 0.0f;
+        if(assimp_material->Get(AI_MATKEY_SHININESS, m.data.shininess) != aiReturn_SUCCESS){
+            m.data.shininess = 0.0f;
         }
-        if(assimp_material->Get(AI_MATKEY_REFRACTI, m.refraction_index) != aiReturn_SUCCESS){
-            m.refraction_index = 1.0f;
+        if(assimp_material->Get(AI_MATKEY_REFRACTI, m.data.refraction_index) != aiReturn_SUCCESS){
+            m.data.refraction_index = 1.0f;
         }
         aiColor3D color;
         if(assimp_material->Get(AI_MATKEY_COLOR_DIFFUSE, color) != aiReturn_SUCCESS){
-            m.diffuse_color = glm::vec4(0.0f);
+            m.data.diffuse_color = glm::vec4(0.0f);
         }
         else {
-            m.diffuse_color = glm::vec4(color.r, color.g, color.b, 1.0f);
+            m.data.diffuse_color = glm::vec4(color.r, color.g, color.b, 1.0f);
         }
         if(assimp_material->Get(AI_MATKEY_COLOR_AMBIENT, color) != aiReturn_SUCCESS){
-            m.ambient_color = glm::vec4(0.0f);
+            m.data.ambient_color = glm::vec4(0.0f);
         }
         else {
-            m.ambient_color = glm::vec4(color.r, color.g, color.b, 1.0f);
+            m.data.ambient_color = glm::vec4(color.r, color.g, color.b, 1.0f);
         }
         if(assimp_material->Get(AI_MATKEY_COLOR_SPECULAR, color) != aiReturn_SUCCESS){
-            m.specular_color = glm::vec4(0.0f);
+            m.data.specular_color = glm::vec4(0.0f);
         }
         else {
-            m.specular_color = glm::vec4(color.r, color.g, color.b, 1.0f);
+            m.data.specular_color = glm::vec4(color.r, color.g, color.b, 1.0f);
         }
         if(assimp_material->Get(AI_MATKEY_COLOR_EMISSIVE, color) != aiReturn_SUCCESS){
-            m.emissive_color = glm::vec4(0.0f);
+            m.data.emissive_color = glm::vec4(0.0f);
         }
         else {
-            m.emissive_color = glm::vec4(color.r, color.g, color.b, 1.0f);
+            m.data.emissive_color = glm::vec4(color.r, color.g, color.b, 1.0f);
         }
         if(assimp_material->Get(AI_MATKEY_COLOR_TRANSPARENT, color) != aiReturn_SUCCESS){
-            m.transparent_color = glm::vec4(0.0f);
+            m.data.transparent_color = glm::vec4(0.0f);
         }
         else {
-            m.transparent_color = glm::vec4(color.r, color.g, color.b, 1.0f);
+            m.data.transparent_color = glm::vec4(color.r, color.g, color.b, 1.0f);
         }
         return m;
     }

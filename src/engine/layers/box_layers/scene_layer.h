@@ -44,8 +44,7 @@ namespace engine{
 
     private:
         bool on_key_pressed(KeyPressedEvent event);
-        void draw_scene(const std::shared_ptr<FlyCamera>& view_camera, const glm::mat4& light_view_matrix,
-                        const glm::mat4& light_projection_matrix, std::shared_ptr<Shader>& shader);
+        void draw_scene(const std::shared_ptr<FlyCamera>& view_camera, std::shared_ptr<Shader>& shader);
 
         std::weak_ptr<FlyCamera> view_camera;
 
@@ -98,6 +97,8 @@ namespace engine{
         float scale_modifier = 0.00193f;
 
         std::shared_ptr<UniformBuffer> light_data_buffer;
+        std::shared_ptr<UniformBuffer> matrices_buffer;
+        std::shared_ptr<UniformBuffer> material_buffer;
     };
 }
 

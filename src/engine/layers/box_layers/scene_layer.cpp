@@ -193,11 +193,24 @@ namespace engine {
             ies_light_vao.set_vbo(std::move(vbo));
             ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
 
-            //  Using std140, 16 bytes needed per element to set
-            //   We need to set two vec4 and three floats
+
+            //   16 bytes per matrix column, times 4 because they are mat4; times 4
+            //  again because we got 4 matrices
+            matrices_buffer = std::make_shared<UniformBuffer>((4 * 4 * 4) * 4);
+            matrices_buffer->bind_to_binding_point(0);
+            matrices_buffer->unbind_from_uniform_buffer_target();
+
+            //   16 is the number of bytes per float times the number of floats in a vec4
+            //   4 is the number of bytes of a float, and we need to use 3 floats, rounded to 4
+            //  for the rules implied by std140 alignment
             light_data_buffer = std::make_shared<UniformBuffer>((16 * 2) + (4 * 4));
-            light_data_buffer->bind_to_binding_point(0);
+            light_data_buffer->bind_to_binding_point(1);
             light_data_buffer->unbind_from_uniform_buffer_target();
+
+            //   5 colors and 3 floats (rounded to 4)
+            material_buffer = std::make_shared<UniformBuffer>((16 * 5) + (4 * 4));
+            material_buffer->bind_to_binding_point(2);
+            material_buffer->unbind_from_uniform_buffer_target();
         }
     }
 
@@ -221,11 +234,9 @@ namespace engine {
     void SceneLayer::update(float delta_time) {
         timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
+            //  Setup and compute common data
             const auto light_data = scene_light.get_representative_data();
             const auto light_position = glm::vec3(light_data.position);
-            light_data_buffer->bind_to_uniform_buffer_target();
-            light_data_buffer->copy_to_buffer(0, 44, light_data.raw());
-            light_data_buffer->unbind_from_uniform_buffer_target();
             const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
             const auto light_camera = Camera(
                     CameraGeometricDefinition{light_data.position,
@@ -235,7 +246,6 @@ namespace engine {
                     CameraPlanes{0.1f, light_far_plane},
                     CameraMode::Perspective);
 
-            const auto light_view_matrix = light_camera.get_view_matrix();
             const auto light_projection_matrix = light_camera.get_projection_matrix();
             std::vector<glm::mat4> light_transformations;
             light_transformations.reserve(6);
@@ -246,32 +256,41 @@ namespace engine {
                         OpenGL3_Cubemap::directions[i],
                         OpenGL3_Cubemap::ups[i]));
             }
-
-
+            //  TODO: refactor in a method
             auto ies_light_model_matrix = glm::identity<glm::mat4>();
             ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
             ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
             ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
                                                  glm::vec3(1.0f, 0.0f, 0.0f));
             ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
+            //  End method extraction here
 
-            glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
+            const glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
+            light_data_buffer->bind_to_uniform_buffer_target();
+            light_data_buffer->copy_to_buffer(0, 44, light_data.raw());
+            light_data_buffer->unbind_from_uniform_buffer_target();
 
+            //  Depth mask uniforms and drawing
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             mask_fbo->bind_as(GL_FRAMEBUFFER);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glCullFace(GL_FRONT);
+
             depthmask_shader->use();
             for (unsigned int i = 0u; i < 6; ++i) {
-                depthmask_shader->set_mat4(2 + i,
+                depthmask_shader->set_mat4(0 + i,
                                            light_transformations[i]);
             }
-            depthmask_shader->set_mat4(0, ies_light_model_matrix);
-            depthmask_shader->set_mat4(1, ies_light_inverse_transposed);
-            depthmask_shader->set_vec3(9, light_data.position);
-            depthmask_shader->set_float(10, light_far_plane);
-            depthmask_shader->set_float(11, largest_position_component * scale_modifier);
+
+            depthmask_shader->set_vec3(6, light_data.position);
+            depthmask_shader->set_float(7, light_far_plane);
+            depthmask_shader->set_float(8, largest_position_component * scale_modifier);
+
+            matrices_buffer->bind_to_uniform_buffer_target();
+            matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(ies_light_model_matrix));
+            matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_light_inverse_transposed));
+            matrices_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
             glCullFace(GL_BACK);
@@ -284,49 +303,56 @@ namespace engine {
             rsm_generation_shader->use();
 
             for (unsigned int i = 0u; i < 6; ++i) {
-                rsm_generation_shader->set_mat4(1 + i,
+                rsm_generation_shader->set_mat4(0 + i,
                                                 light_transformations[i]);
             }
 
-            rsm_generation_shader->set_float(9, light_far_plane);
-            rsm_generation_shader->set_float(10, light_intensity);
-            rsm_generation_shader->set_vec4(11, glm::vec4(1.0f));
-            rsm_generation_shader->set_int(12, 0);
-            rsm_generation_shader->set_bool(13, ies_masking);
+            rsm_generation_shader->set_float(7, light_far_plane);
+            rsm_generation_shader->set_float(8, light_intensity);
+            rsm_generation_shader->set_vec4(9, glm::vec4(1.0f));
+            rsm_generation_shader->set_int(10, 0);
+            rsm_generation_shader->set_bool(11, ies_masking);
             ies_light_mask->bind_to_slot(0);
 
             if (!scene_objects.empty()) {
                 for (const auto& drawable : scene_objects) {
                     const auto& model_matrix = drawable.transform;
-                    rsm_generation_shader->set_mat4(0, model_matrix);
-                    rsm_generation_shader->set_vec4(8, drawable.material.diffuse_color);
+                    const auto& inverse_model_matrix = drawable.transpose_inverse_transform;
+                    matrices_buffer->bind_to_uniform_buffer_target();
+                    matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(model_matrix));
+                    matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(inverse_model_matrix));
+                    matrices_buffer->unbind_from_uniform_buffer_target();
+                    rsm_generation_shader->set_vec4(6, drawable.material.data.diffuse_color);
                     OpenGL3_Renderer::draw(*(drawable.vao));
                 }
             }
-
             rsm_fbo->unbind_from(GL_FRAMEBUFFER);
 
+
+            //  Final pass for rendering the scene
             glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear();
 
             if (draw_indirect_light) {
                 draw_shader->use();
-                draw_shader->set_bool(29, hide_direct_component);
+                draw_shader->set_bool(15, hide_direct_component);
             }
 
-            draw_indirect_light ? draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
+            draw_indirect_light ? draw_scene(existing_camera,
                                              draw_shader)
-                                : draw_scene(existing_camera, light_view_matrix, light_projection_matrix,
+                                : draw_scene(existing_camera,
                                              no_indirect_shader);
 
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 wireframe_shader->use();
-                wireframe_shader->set_mat4(0, ies_light_model_matrix);
-                wireframe_shader->set_mat4(1, ies_light_inverse_transposed);
-                wireframe_shader->set_mat4(2, existing_camera->view_matrix());
-                wireframe_shader->set_mat4(3, existing_camera->projection_matrix());
+                matrices_buffer->bind_to_uniform_buffer_target();
+                matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(ies_light_model_matrix));
+                matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_light_inverse_transposed));
+                matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(existing_camera->view_matrix()));
+                matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(existing_camera->projection_matrix()));
+                matrices_buffer->unbind_from_uniform_buffer_target();
                 wireframe_shader->set_vec4(4, wireframe_color);
                 OpenGL3_Renderer::draw(ies_light_vao);
             }
@@ -371,51 +397,52 @@ namespace engine {
     }
 
     void SceneLayer::draw_scene(const std::shared_ptr<FlyCamera>& view_camera,
-                                const glm::mat4& light_view_matrix,
-                                const glm::mat4& light_projection_matrix,
                                 std::shared_ptr<Shader>& shader) {
 
         //  Shader uniforms
         shader->use();
-        shader->set_mat4(2, view_camera->view_matrix());
-        shader->set_mat4(3, view_camera->projection_matrix());
-        shader->set_mat4(4, light_view_matrix);
-        shader->set_mat4(5, light_projection_matrix);
-
-//        set_light_in_shader(scene_light, shader);
+        matrices_buffer->bind_to_uniform_buffer_target();
+        matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(view_camera->view_matrix()));
+        matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(view_camera->projection_matrix()));
+        matrices_buffer->unbind_from_uniform_buffer_target();
 
         //  Texture location binding
-        shader->set_int(14, 0);
+        shader->set_int(0, 0);
         depth_texture->bind_to_slot(0);
-        shader->set_int(15, 1);
+        shader->set_int(1, 1);
         position_texture->bind_to_slot(1);
-        shader->set_int(16, 2);
+        shader->set_int(2, 2);
         normal_texture->bind_to_slot(2);
-        shader->set_int(17, 3);
+        shader->set_int(3, 3);
         flux_texture->bind_to_slot(3);
-        shader->set_int(18, 4);
+        shader->set_int(4, 4);
         ies_light_mask->bind_to_slot(4);
-        shader->set_int(19, 5);
+        shader->set_int(5, 5);
         samples_texture->bind_to_slot(5);
 
         //  Tweakable values and common uniforms
-        shader->set_int(20, samples_number);
-        shader->set_vec3(21, view_camera->position());
-        shader->set_float(22, light_far_plane);
-        shader->set_float(23, largest_position_component * scale_modifier);
-        shader->set_float(24, shadow_threshold);
-        shader->set_float(25, max_radius);
-        shader->set_float(26, indirect_intensity);
-        shader->set_float(27, light_intensity);
-        shader->set_bool(28, ies_masking);
+        shader->set_int(6, samples_number);
+        shader->set_vec3(7, view_camera->position());
+        shader->set_float(8, light_far_plane);
+        shader->set_float(9, largest_position_component * scale_modifier);
+        shader->set_float(10, shadow_threshold);
+        shader->set_float(11, max_radius);
+        shader->set_float(12, indirect_intensity);
+        shader->set_float(13, light_intensity);
+        shader->set_bool(14, ies_masking);
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
                 const auto& model_matrix = drawable.transform;
                 const auto& transpose_inverse_matrix = drawable.transpose_inverse_transform;
-                shader->set_mat4(0, model_matrix);
-                shader->set_mat4(1, transpose_inverse_matrix);
-                drawable.material.bind_uniforms_in_order(6, shader);
+                matrices_buffer->bind_to_uniform_buffer_target();
+                matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(model_matrix));
+                matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(transpose_inverse_matrix));
+                matrices_buffer->unbind_from_uniform_buffer_target();
+
+                material_buffer->bind_to_uniform_buffer_target();
+                material_buffer->copy_to_buffer(0, sizeof(MaterialData), drawable.material.data.raw());
+                material_buffer->unbind_from_uniform_buffer_target();
                 OpenGL3_Renderer::draw(*(drawable.vao));
             }
         }

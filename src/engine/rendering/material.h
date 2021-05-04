@@ -1,27 +1,28 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "shader.h"
-
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 
 namespace engine{
+    struct MaterialData{
+        alignas(16) glm::vec4 diffuse_color;
+        alignas(16) glm::vec4 ambient_color;
+        alignas(16) glm::vec4 specular_color;
+        alignas(16) glm::vec4 emissive_color;
+        alignas(16) glm::vec4 transparent_color;
+        alignas(4) float opacity;
+        alignas(4) float shininess;
+        alignas(4) float refraction_index;
+
+        [[nodiscard]] const void* raw() const;
+    };
+
     struct Material{
     public:
         std::string name;
-        float opacity;
-        float shininess;
-        float refraction_index;
-        glm::vec4 diffuse_color;
-        glm::vec4 ambient_color;
-        glm::vec4 specular_color;
-        glm::vec4 emissive_color;
-        glm::vec4 transparent_color;
-
-        void bind_uniforms_to(std::shared_ptr<Shader> shader) const;
-        void bind_uniforms_in_order(const int first_uniform_location, std::shared_ptr<Shader> shader_to_bind) const;
+        MaterialData data;
 
         static std::string default_name;
     };

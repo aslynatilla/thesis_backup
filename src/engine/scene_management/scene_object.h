@@ -4,6 +4,8 @@
 #include "../rendering/vertex_array.h"
 #include "../rendering/material.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #pragma warning(disable : 4061)
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
