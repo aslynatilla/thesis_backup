@@ -118,8 +118,8 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            samples_number = 100;
-            const auto samples = random_num::uniform_samples_on_unit_sphere(samples_number);
+            VPL_samples_per_fragment = 100;
+            const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
             //  see: https://www.khronos.org/opengl/wiki/Buffer_Texture
@@ -128,7 +128,7 @@ namespace engine {
                                                                           {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                            GL_TEXTURE_WRAP_S},
                                                                           {GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE}),
-                                                                  samples_number,
+                                                                  VPL_samples_per_fragment,
                                                                   GL_RGB, GL_FLOAT, samples.data());
 
             //  Reflective Shadow Map Framebuffer setup
@@ -203,13 +203,18 @@ namespace engine {
             //   16 is the number of bytes per float times the number of floats in a vec4
             //   4 is the number of bytes of a float, and we need to use 3 floats, rounded to 4
             //  for the rules implied by std140 alignment
-            light_data_buffer = std::make_shared<UniformBuffer>((16 * 2) + (4 * 4));
+            light_data_buffer = std::make_shared<UniformBuffer>((16 * 3) + (4 * 4));
             light_data_buffer->bind_to_binding_point(1);
             light_data_buffer->unbind_from_uniform_buffer_target();
 
             //   5 colors and 3 floats (rounded to 4)
             material_buffer = std::make_shared<UniformBuffer>((16 * 5) + (4 * 4));
             material_buffer->bind_to_binding_point(2);
+            material_buffer->unbind_from_uniform_buffer_target();
+
+            //  2 floats and 1 bool
+            common_data_buffer = std::make_shared<UniformBuffer>(4 * 3);
+            common_data_buffer->bind_to_binding_point(3);
             material_buffer->unbind_from_uniform_buffer_target();
         }
     }
@@ -235,6 +240,8 @@ namespace engine {
         timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
             //  Setup and compute common data
+            const auto camera_view_matrix = existing_camera->view_matrix();
+            const auto camera_projection_matrix = existing_camera->projection_matrix();
             const auto light_data = scene_light.get_representative_data();
             const auto light_position = glm::vec3(light_data.position);
             const auto light_orientation = glm::mat4_cast(scene_light.get_orientation());
@@ -268,14 +275,24 @@ namespace engine {
             const glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
             light_data_buffer->bind_to_uniform_buffer_target();
             light_data_buffer->copy_to_buffer(0, 44, light_data.raw());
+            light_data_buffer->copy_to_buffer(44, 4, &light_intensity);
+            light_data_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
             light_data_buffer->unbind_from_uniform_buffer_target();
 
+            const float distance_to_furthest_ies_vertex = largest_position_component * scale_modifier;
+            common_data_buffer->bind_to_uniform_buffer_target();
+            common_data_buffer->copy_to_buffer(0, 4, &light_far_plane);
+            common_data_buffer->copy_to_buffer(4, 4, &distance_to_furthest_ies_vertex);
+            common_data_buffer->copy_to_buffer(8, 1, &is_using_ies_masking);
+            common_data_buffer->unbind_from_uniform_buffer_target();
+
+
             //  Depth mask uniforms and drawing
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             mask_fbo->bind_as(GL_FRAMEBUFFER);
+            glCullFace(GL_FRONT);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glCullFace(GL_FRONT);
 
             depthmask_shader->use();
             for (unsigned int i = 0u; i < 6; ++i) {
@@ -283,23 +300,20 @@ namespace engine {
                                            light_transformations[i]);
             }
 
-            depthmask_shader->set_vec3(6, light_data.position);
-            depthmask_shader->set_float(7, light_far_plane);
-            depthmask_shader->set_float(8, largest_position_component * scale_modifier);
-
             matrices_buffer->bind_to_uniform_buffer_target();
             matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(ies_light_model_matrix));
             matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_light_inverse_transposed));
             matrices_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(ies_light_vao);
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
-            glCullFace(GL_BACK);
 
+
+            //  RSM uniforms and drawing
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
+            glCullFace(GL_BACK);
             glViewport(0, 0, texture_dimension[0], texture_dimension[1]);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            //  RSM Shader uniforms
             rsm_generation_shader->use();
 
             for (unsigned int i = 0u; i < 6; ++i) {
@@ -307,11 +321,7 @@ namespace engine {
                                                 light_transformations[i]);
             }
 
-            rsm_generation_shader->set_float(7, light_far_plane);
-            rsm_generation_shader->set_float(8, light_intensity);
-            rsm_generation_shader->set_vec4(9, glm::vec4(1.0f));
-            rsm_generation_shader->set_int(10, 0);
-            rsm_generation_shader->set_bool(11, ies_masking);
+            rsm_generation_shader->set_int(7, 0);
             ies_light_mask->bind_to_slot(0);
 
             if (!scene_objects.empty()) {
@@ -336,13 +346,12 @@ namespace engine {
 
             if (draw_indirect_light) {
                 draw_shader->use();
-                draw_shader->set_bool(15, hide_direct_component);
+                draw_shader->set_bool(11, hide_direct_component);
             }
 
-            draw_indirect_light ? draw_scene(existing_camera,
-                                             draw_shader)
-                                : draw_scene(existing_camera,
-                                             no_indirect_shader);
+            draw_indirect_light ? draw_scene(glm::vec3(), camera_view_matrix, camera_projection_matrix, draw_shader)
+                                : draw_scene(
+                    glm::vec3(), camera_view_matrix, camera_projection_matrix, no_indirect_shader);
 
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -350,8 +359,8 @@ namespace engine {
                 matrices_buffer->bind_to_uniform_buffer_target();
                 matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(ies_light_model_matrix));
                 matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_light_inverse_transposed));
-                matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(existing_camera->view_matrix()));
-                matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(existing_camera->projection_matrix()));
+                matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(camera_view_matrix));
+                matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(camera_projection_matrix));
                 matrices_buffer->unbind_from_uniform_buffer_target();
                 wireframe_shader->set_vec4(4, wireframe_color);
                 OpenGL3_Renderer::draw(ies_light_vao);
@@ -382,7 +391,7 @@ namespace engine {
         if (draw_indirect_light) {
             ImGui::SliderFloat("Indirect Component Intensity", &indirect_intensity, 1.0f, 1000.0f, "%.3f",
                                ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Displacing sphere scale", &max_radius, 0.0001f, 2.0f, "%.3f");
+            ImGui::SliderFloat("Displacing sphere scale", &displacement_sphere_radius, 0.0001f, 2.0f, "%.3f");
             ImGui::Checkbox("Visualize only indirect lighting", &hide_direct_component);
         }
         ImGui::Spacing();
@@ -392,18 +401,18 @@ namespace engine {
         ImGui::Text("Max component by scale factor: %.5f", largest_position_component * scale_modifier);
         ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color), ImGuiColorEditFlags_NoPicker);
         ImGui::Spacing();
-        ImGui::Checkbox("Use IES light wireframe to mask light emission", &ies_masking);
+        ImGui::Checkbox("Use IES light wireframe to mask light emission", &is_using_ies_masking);
         ImGui::End();
     }
 
-    void SceneLayer::draw_scene(const std::shared_ptr<FlyCamera>& view_camera,
-                                std::shared_ptr<Shader>& shader) {
+    void SceneLayer::draw_scene(const glm::vec3 camera_position, const glm::mat4 view_matrix,
+                                const glm::mat4 projection_matrix, std::shared_ptr<Shader>& shader) {
 
         //  Shader uniforms
         shader->use();
         matrices_buffer->bind_to_uniform_buffer_target();
-        matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(view_camera->view_matrix()));
-        matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(view_camera->projection_matrix()));
+        matrices_buffer->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(view_matrix));
+        matrices_buffer->copy_to_buffer(192, 4 * 4 * 4, glm::value_ptr(projection_matrix));
         matrices_buffer->unbind_from_uniform_buffer_target();
 
         //  Texture location binding
@@ -421,15 +430,11 @@ namespace engine {
         samples_texture->bind_to_slot(5);
 
         //  Tweakable values and common uniforms
-        shader->set_int(6, samples_number);
-        shader->set_vec3(7, view_camera->position());
-        shader->set_float(8, light_far_plane);
-        shader->set_float(9, largest_position_component * scale_modifier);
-        shader->set_float(10, shadow_threshold);
-        shader->set_float(11, max_radius);
-        shader->set_float(12, indirect_intensity);
-        shader->set_float(13, light_intensity);
-        shader->set_bool(14, ies_masking);
+        shader->set_int(6, VPL_samples_per_fragment);
+        shader->set_vec3(7, camera_position);
+        shader->set_float(8, shadow_threshold);
+        shader->set_float(9, displacement_sphere_radius);
+        shader->set_float(10, indirect_intensity);
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {

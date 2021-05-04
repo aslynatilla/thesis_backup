@@ -44,7 +44,9 @@ namespace engine{
 
     private:
         bool on_key_pressed(KeyPressedEvent event);
-        void draw_scene(const std::shared_ptr<FlyCamera>& view_camera, std::shared_ptr<Shader>& shader);
+        void
+        draw_scene(const glm::vec3 camera_position, const glm::mat4 view_matrix, const glm::mat4 projection_matrix,
+                   std::shared_ptr<Shader>& shader);
 
         std::weak_ptr<FlyCamera> view_camera;
 
@@ -69,18 +71,19 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture1D> samples_texture;
         std::unique_ptr<OpenGL3_Cubemap> ies_light_mask;
 
-        int samples_number;
+        int VPL_samples_per_fragment;
 
         float light_intensity = 1.0f;
+        glm::vec4 light_color = glm::vec4(1.0f);
         float indirect_intensity = 1.0f;
-        float max_radius = 0.400f;
+        float displacement_sphere_radius = 0.400f;
         float shadow_threshold = 0.15f;
         float light_far_plane = 100.0f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = true;
         glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 0.10f);
-        bool ies_masking = true;
+        bool is_using_ies_masking = true;
 
         std::array<int, 4> viewport_dimension;
         std::array<int, 2> texture_dimension;
@@ -99,6 +102,7 @@ namespace engine{
         std::shared_ptr<UniformBuffer> light_data_buffer;
         std::shared_ptr<UniformBuffer> matrices_buffer;
         std::shared_ptr<UniformBuffer> material_buffer;
+        std::shared_ptr<UniformBuffer> common_data_buffer;
     };
 }
 

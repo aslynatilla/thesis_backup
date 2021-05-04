@@ -34,14 +34,14 @@ uniform Light scene_light;
 
 uniform sampler2D shadow_map;
 
-uniform int samples_number;
+uniform int VPL_samples_per_fragment;
 
 uniform float far_plane;
 
 // TWEAKABLES
 uniform float shadow_threshold;
 
-uniform float max_radius;
+uniform float displacement_sphere_radius;
 uniform float indirect_intensity;
 uniform float light_intensity;
 

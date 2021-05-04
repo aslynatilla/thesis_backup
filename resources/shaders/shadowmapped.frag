@@ -8,10 +8,12 @@ out vec4 FragColor;
 layout(std140, binding = 1) uniform Light{
     vec4 position;
     vec4 direction;
-
     float constant_attenuation;
     float linear_attenuation;
     float quadratic_attenuation;
+
+    float intensity;
+    vec4 color;
 } scene_light;
 
 layout(std140, binding = 2) uniform Material{
@@ -25,6 +27,12 @@ layout(std140, binding = 2) uniform Material{
     float refract_i;
 };
 
+layout(std140, binding = 3) uniform CommonData{
+    float light_camera_far_plane;
+    float distance_to_furthest_ies_vertex;
+    bool is_using_ies_masking;
+};
+
 layout ( location = 0) uniform samplerCube shadow_map;
 layout ( location = 1) uniform samplerCube position_map;
 layout ( location = 2) uniform samplerCube normal_map;
@@ -32,25 +40,20 @@ layout ( location = 3) uniform samplerCube flux_map;
 layout ( location = 4) uniform samplerCube ies_mask;
 layout ( location = 5) uniform sampler1D sample_array;
 
-layout ( location = 6) uniform int samples_number;
-
+layout ( location = 6) uniform int VPL_samples_per_fragment;
 layout ( location = 7) uniform vec3 camera_position;
-layout ( location = 8) uniform float far_plane;
-layout ( location = 9) uniform float furthest_photometric_distance;
 
 // Tweakable values
-layout ( location = 10) uniform float shadow_threshold;
-layout ( location = 11) uniform float max_radius;
-layout ( location = 12) uniform float indirect_intensity;
-layout ( location = 13) uniform float light_intensity;
-layout ( location = 14) uniform bool ies_masking;
-layout ( location = 15) uniform bool hide_direct_component;
+layout ( location = 8) uniform float shadow_threshold;
+layout ( location = 9) uniform float displacement_sphere_radius;
+layout ( location = 10) uniform float indirect_intensity;
+layout ( location = 11) uniform bool hide_direct_component;
 
 float compute_shadow(vec3 light_to_frag, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
     // of the fragment from the light
     float depth = texture(shadow_map, light_to_frag).r;
-    depth *= far_plane;
+    depth *= light_camera_far_plane;
 
     if (light_distance < depth + shadow_threshold){
         return 1.0;
@@ -62,12 +65,12 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
 vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_normal){
     vec3 indirect = vec3(0.0);
 
-    for(int i = 0; i <= samples_number; i++){
+    for(int i = 0; i <= VPL_samples_per_fragment; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
         vec3 sampling_direction = normalize(vec3(
-                                    light_to_frag.x + random_sample.x * max_radius,
-                                    light_to_frag.y + random_sample.y * max_radius,
-                                    light_to_frag.z + random_sample.z * max_radius));
+                                    light_to_frag.x + random_sample.x * displacement_sphere_radius,
+                                    light_to_frag.y + random_sample.y * displacement_sphere_radius,
+                                    light_to_frag.z + random_sample.z * displacement_sphere_radius));
 
         float weight = 1.0 - dot(sampling_direction, light_to_frag);
 
@@ -84,8 +87,8 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect * 12.566/(float(samples_number)), 0.0, 1.0);
-    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(samples_number));
+    return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
 }
 
 void main(){
@@ -113,8 +116,8 @@ void main(){
     d = d * attenuation_factor;
 
     vec3 diffuse_component;
-    diffuse_component = d * diffuse_color.rgb * light_intensity;
-    if(ies_masking == true){
+    diffuse_component = d * diffuse_color.rgb * scene_light.intensity;
+    if(is_using_ies_masking == true){
         vec3 mask_value = texture(ies_mask, -l).rgb;
         float scaled_distance = mask_value.r;
         //   Consider using the following line if you want it to scale with the size
