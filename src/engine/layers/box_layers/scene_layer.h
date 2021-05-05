@@ -58,9 +58,14 @@ namespace engine {
                         const glm::mat4 projection_matrix,
                         std::shared_ptr<Shader>& shader);
 
-        [[nodiscard]] glm::mat4 compute_light_model_matrix(const glm::vec3 position,
-                                                           const glm::mat4 orientation_matrix,
-                                                           const float scale) const;
+        [[nodiscard]] glm::mat4
+        compute_light_model_matrix(const glm::vec3 position,
+                                   const glm::mat4 orientation_matrix,
+                                   const float scale) const;
+
+        [[nodiscard]] std::vector<glm::mat4>
+        compute_VP_transform_for_cubemap(const glm::vec3 view_position,
+                                         const glm::mat4 projection_matrix) const;
 
         std::weak_ptr<FlyCamera> view_camera;
 

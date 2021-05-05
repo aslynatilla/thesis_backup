@@ -236,7 +236,7 @@ namespace engine {
         event.handled = false;
     }
 
-    void SceneLayer::update(float delta_time) {
+    void SceneLayer::update([[maybe_unused]] float delta_time) {
         if (auto existing_camera = view_camera.lock()) {
             //  Setup and compute common data
             const auto camera_view_matrix = existing_camera->view_matrix();
@@ -253,17 +253,12 @@ namespace engine {
                     CameraMode::Perspective);
 
             const auto light_projection_matrix = light_camera.get_projection_matrix();
-            std::vector<glm::mat4> light_transformations;
-            light_transformations.reserve(6);
-            for (auto i = 0u; i < 6; ++i) {
-                light_transformations.push_back(light_projection_matrix * glm::lookAt(
-                        light_position,
-                        light_position +
-                        OpenGL3_Cubemap::directions[i],
-                        OpenGL3_Cubemap::ups[i]));
-            }
+            const auto light_transformations = compute_VP_transform_for_cubemap(light_position,
+                                                                                light_projection_matrix);
 
-            auto ies_light_model_matrix = compute_light_model_matrix(light_position, light_orientation, scale_modifier);
+            const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
+                                                                           light_orientation,
+                                                                           scale_modifier);
 
             const glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
             light_data_buffer->bind_to_uniform_buffer_target();
@@ -359,6 +354,21 @@ namespace engine {
                 OpenGL3_Renderer::draw(ies_light_vao);
             }
         }
+    }
+
+    std::vector<glm::mat4>
+    SceneLayer::compute_VP_transform_for_cubemap(const glm::vec3 view_position,
+                                                 const glm::mat4 projection_matrix) const {
+        std::vector<glm::mat4> VP_transformation;
+        VP_transformation.reserve(6);
+        for (auto i = 0u; i < 6; ++i) {
+            VP_transformation.push_back(projection_matrix * glm::lookAt(
+                    view_position,
+                    view_position +
+                    OpenGL3_Cubemap::directions[i],
+                    OpenGL3_Cubemap::ups[i]));
+        }
+        return VP_transformation;
     }
 
     glm::mat4 SceneLayer::compute_light_model_matrix(const glm::vec3 position, const glm::mat4 orientation_matrix,
