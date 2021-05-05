@@ -25,32 +25,44 @@
 
 #include <glm/glm.hpp>
 
-namespace engine{
-    class SceneLayer : public Layer{
+namespace engine {
+    class SceneLayer : public Layer {
     public:
         SceneLayer(std::weak_ptr<FlyCamera> application_camera);
 
         SceneLayer() = delete;
+
         SceneLayer(const SceneLayer& other) = delete;
+
         SceneLayer(SceneLayer&& other) = delete;
+
         SceneLayer& operator=(const SceneLayer& other) = delete;
+
         SceneLayer& operator=(SceneLayer&& other) = delete;
 
         void on_attach() final;
-        void on_detach() final ;
+
+        void on_detach() final;
+
         void on_event(Event& event) final;
+
         void update(float delta_time) final;
+
         void on_imgui_render() final;
 
     private:
         bool on_key_pressed(KeyPressedEvent event);
-        void
-        draw_scene(const glm::vec3 camera_position, const glm::mat4 view_matrix, const glm::mat4 projection_matrix,
-                   std::shared_ptr<Shader>& shader);
+
+        void draw_scene(const glm::vec3 camera_position,
+                        const glm::mat4 view_matrix,
+                        const glm::mat4 projection_matrix,
+                        std::shared_ptr<Shader>& shader);
+
+        [[nodiscard]] glm::mat4 compute_light_model_matrix(const glm::vec3 position,
+                                                           const glm::mat4 orientation_matrix,
+                                                           const float scale) const;
 
         std::weak_ptr<FlyCamera> view_camera;
-
-        bool moving_camera = false;
 
         Point_Light scene_light;
 
@@ -73,24 +85,21 @@ namespace engine{
 
         int VPL_samples_per_fragment;
 
-        float light_intensity = 1.0f;
+        float light_intensity = 1.00f;
         glm::vec4 light_color = glm::vec4(1.0f);
-        float indirect_intensity = 1.0f;
-        float displacement_sphere_radius = 0.400f;
+        float indirect_intensity = 1.00f;
+        float displacement_sphere_radius = 1.00f;
         float shadow_threshold = 0.15f;
-        float light_far_plane = 100.0f;
+        float light_far_plane = 100.00f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = true;
-        glm::vec4 wireframe_color = glm::vec4(0.2f, 1.0f, 1.0f, 0.10f);
+        glm::vec4 wireframe_color = glm::vec4(0.20f, 1.00f, 1.00f, 0.10f);
         bool is_using_ies_masking = true;
 
         std::array<int, 4> viewport_dimension;
         std::array<int, 2> texture_dimension;
         std::array<std::string, 6> light_transforms_strings;
-
-        float timestep;
-        glm::vec2 previous_mouse_position;
 
         ies::IES_Default_Parser parser;
         ies::IES_Document document;

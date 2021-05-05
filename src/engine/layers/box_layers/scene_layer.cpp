@@ -237,7 +237,6 @@ namespace engine {
     }
 
     void SceneLayer::update(float delta_time) {
-        timestep = delta_time;
         if (auto existing_camera = view_camera.lock()) {
             //  Setup and compute common data
             const auto camera_view_matrix = existing_camera->view_matrix();
@@ -263,14 +262,8 @@ namespace engine {
                         OpenGL3_Cubemap::directions[i],
                         OpenGL3_Cubemap::ups[i]));
             }
-            //  TODO: refactor in a method
-            auto ies_light_model_matrix = glm::identity<glm::mat4>();
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
-            ies_light_model_matrix = ies_light_model_matrix * glm::mat4_cast(scene_light.get_orientation());
-            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
-                                                 glm::vec3(1.0f, 0.0f, 0.0f));
-            ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
-            //  End method extraction here
+
+            auto ies_light_model_matrix = compute_light_model_matrix(light_position, light_orientation, scale_modifier);
 
             const glm::mat4 ies_light_inverse_transposed = glm::transpose(glm::inverse(ies_light_model_matrix));
             light_data_buffer->bind_to_uniform_buffer_target();
@@ -366,6 +359,17 @@ namespace engine {
                 OpenGL3_Renderer::draw(ies_light_vao);
             }
         }
+    }
+
+    glm::mat4 SceneLayer::compute_light_model_matrix(const glm::vec3 position, const glm::mat4 orientation_matrix,
+                                                     const float scale) const {
+        auto model = glm::identity<glm::mat4>();
+        model = glm::translate(model, position);
+        model = model * orientation_matrix;
+        model = glm::rotate(model, glm::radians(90.0f),
+                            glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(scale));
+        return model;
     }
 
     void SceneLayer::on_imgui_render() {
