@@ -13,20 +13,30 @@ namespace engine {
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
 
+            angel = scenes::load_scene_objects_from("resources/Winged_Victory.obj",
+                                                    ai_postprocess_flags);
+
             //  This scaling is needed for the cornell_box_multimaterial.obj scene
             //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
             //  548.0f / 3.0f ~= 185.0f
             const auto scaling_factor = 1.0f / 185.0f;
-            const auto scale_scene_for = [&](const float scale_factor) {
-                const auto scene_scaling = glm::scale(glm::identity<glm::mat4>(), glm::vec3(scale_factor));
-                const auto transposed_inverse_scene_scaling = glm::transpose(scene_scaling);
-                for (auto&& object : scene_objects) {
+            const auto scale_by = [](const float scale_factor, std::vector<SceneObject>& scene) {
+                for (auto&& object : scene) {
                     const auto T = object.transform;
+                    const auto scene_scaling = glm::scale(T, glm::vec3(scale_factor));
+                    const auto transposed_inverse_scene_scaling = glm::transpose(glm::inverse(scene_scaling));
                     object.transform = scene_scaling;
                     object.transpose_inverse_transform = transposed_inverse_scene_scaling;
                 }
             };
-            scale_scene_for(scaling_factor);
+            scale_by(scaling_factor, scene_objects);
+            for (auto&& object : angel) {
+                const auto T = object.transform;
+                object.transform = glm::translate(T, glm::vec3(1.0f, 0.85f, 1.0f));
+                const auto transposed_inverse = glm::transpose(glm::inverse(T));
+                object.transpose_inverse_transform = transposed_inverse;
+            }
+            scale_by(1.0f / 260.0f, angel);
 
             scene_light = Point_Light(glm::vec4(1.5f, 2.6f, 1.5f, 1.0f),
                                       LightAttenuationParameters{1.0f, 0.5f, 1.8f});
@@ -324,6 +334,19 @@ namespace engine {
                     OpenGL3_Renderer::draw(*(drawable.vao));
                 }
             }
+
+            if (!angel.empty()) {
+                for (const auto& drawable : angel) {
+                    const auto& model_matrix = drawable.transform;
+                    const auto& inverse_model_matrix = drawable.transpose_inverse_transform;
+                    matrices_buffer->bind_to_uniform_buffer_target();
+                    matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(model_matrix));
+                    matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(inverse_model_matrix));
+                    matrices_buffer->unbind_from_uniform_buffer_target();
+                    rsm_generation_shader->set_vec4(6, drawable.material.data.diffuse_color);
+                    OpenGL3_Renderer::draw(*(drawable.vao));
+                }
+            }
             rsm_fbo->unbind_from(GL_FRAMEBUFFER);
 
 
@@ -452,6 +475,22 @@ namespace engine {
 
         if (!scene_objects.empty()) {
             for (const auto& drawable : scene_objects) {
+                const auto& model_matrix = drawable.transform;
+                const auto& transpose_inverse_matrix = drawable.transpose_inverse_transform;
+                matrices_buffer->bind_to_uniform_buffer_target();
+                matrices_buffer->copy_to_buffer(0, 4 * 4 * 4, glm::value_ptr(model_matrix));
+                matrices_buffer->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(transpose_inverse_matrix));
+                matrices_buffer->unbind_from_uniform_buffer_target();
+
+                material_buffer->bind_to_uniform_buffer_target();
+                material_buffer->copy_to_buffer(0, sizeof(MaterialData), drawable.material.data.raw());
+                material_buffer->unbind_from_uniform_buffer_target();
+                OpenGL3_Renderer::draw(*(drawable.vao));
+            }
+        }
+
+        if (!angel.empty()) {
+            for (const auto& drawable : angel) {
                 const auto& model_matrix = drawable.transform;
                 const auto& transpose_inverse_matrix = drawable.transpose_inverse_transform;
                 matrices_buffer->bind_to_uniform_buffer_target();

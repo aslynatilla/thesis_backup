@@ -67,6 +67,7 @@ install_file_to_bin(resources/shaders depth_mask.frag)
 #   Copy cornell box scene to resources
 install_file_to_bin(resources cornell_box_multimaterial.obj)
 install_file_to_bin(resources cornell_box.mtl)
+install_file_to_bin(resources Winged_Victory.obj)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)

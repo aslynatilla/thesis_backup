@@ -78,6 +78,7 @@ namespace engine {
         std::shared_ptr<Shader> depthmask_shader;
 
         std::vector<SceneObject> scene_objects;
+        std::vector<SceneObject> angel;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
         std::unique_ptr<OpenGL3_FrameBuffer> mask_fbo;
