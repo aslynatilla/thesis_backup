@@ -42,6 +42,10 @@ endfunction()
 
 #   Copy IES files used for testing and executing the application
 install_file_to_bin(resources/ies TEST.IES)
+install_file_to_bin(resources/ies ITL53278.ies)
+install_file_to_bin(resources/ies IES_2002.ies)
+install_file_to_bin(resources/ies APWP3T8.IES)
+install_file_to_bin(resources/ies 111621PN.IES)
 #   Copy shaders
 install_file_to_bin(resources/shaders base.vert)
 install_file_to_bin(resources/shaders base.frag)
@@ -68,6 +72,7 @@ install_file_to_bin(resources/shaders/deferred gbuffer_creation.frag)
 #   Copy cornell box scene to resources
 install_file_to_bin(resources cornell_box_multimaterial.obj)
 install_file_to_bin(resources cornell_box.mtl)
+install_file_to_bin(resources Winged_Victory.obj)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
 set(CMAKE_LINK_WHAT_YOU_USE 1)
@@ -75,6 +80,7 @@ set_property(TARGET cornell_box PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 target_include_directories(cornell_box PRIVATE include)
 target_link_libraries(cornell_box PRIVATE assimp::assimp fmt::fmt glfw::glfw glm::glm)
+target_compile_definitions(cornell_box PRIVATE GLM_FORCE_XYZW_ONLY)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES Clang|AppleClang|GNU)
     target_compile_options(cornell_box PRIVATE -Wall -Wextra -Wpedantic -Wunreachable-code)

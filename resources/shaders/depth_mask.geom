@@ -7,7 +7,7 @@ in vertex_data {
     vec3 normal;
 } input_vertices_data[];
 
-uniform mat4 light_transforms[6];
+layout (location = 0) uniform mat4 light_transforms[6];
 
 out vec3 frag_pos;
 out vec3 frag_normal;
@@ -25,5 +25,4 @@ void main()
         }
         EndPrimitive();
     }
-
 }

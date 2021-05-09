@@ -14,6 +14,7 @@ set(renderer_SOURCES 	camera.h camera.cpp
 			opengl3_texture.h opengl3_texture.cpp
 			opengl3_cubemap.h opengl3_cubemap.cpp
 			rendering_context.h rendering_context.cpp
+			uniform_buffer.h uniform_buffer.cpp
 			)
 
 list(TRANSFORM renderer_SOURCES PREPEND "rendering/")

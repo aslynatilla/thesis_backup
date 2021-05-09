@@ -38,26 +38,26 @@ namespace engine{
     }
 
     bool CameraLayer::on_key_pressed(KeyPressedEvent event) {
-        const float translational_speed = 150.0f * timestep;
+        const float scaled_speed = translation_speed * timestep;
 
         glm::vec3 translation_vector(0.0f);
         if (event.get_keycode() == GLFW_KEY_D) {
-            translation_vector += glm::vec3(-translational_speed, 0.0f, 0.0f);
+            translation_vector += glm::vec3(-scaled_speed, 0.0f, 0.0f);
         }
         if (event.get_keycode() == GLFW_KEY_A) {
-            translation_vector += glm::vec3(translational_speed, 0.0f, 0.0f);
+            translation_vector += glm::vec3(scaled_speed, 0.0f, 0.0f);
         }
         if (event.get_keycode() == GLFW_KEY_W) {
-            translation_vector += glm::vec3(0.0f, 0.0f, translational_speed);
+            translation_vector += glm::vec3(0.0f, 0.0f, scaled_speed);
         }
         if (event.get_keycode() == GLFW_KEY_S) {
-            translation_vector += glm::vec3(0.0f, 0.0f, -translational_speed);
+            translation_vector += glm::vec3(0.0f, 0.0f, -scaled_speed);
         }
         if (event.get_keycode() == GLFW_KEY_Q) {
-            translation_vector += glm::vec3(0.0f, translational_speed, 0.0f);
+            translation_vector += glm::vec3(0.0f, scaled_speed, 0.0f);
         }
         if (event.get_keycode() == GLFW_KEY_E) {
-            translation_vector += glm::vec3(0.0f, -translational_speed, 0.0f);
+            translation_vector += glm::vec3(0.0f, -scaled_speed, 0.0f);
         }
 
         view_camera->translate(translation_vector);
@@ -65,12 +65,12 @@ namespace engine{
     }
 
     bool CameraLayer::on_mouse_moved(MouseMovedEvent event) {
-        const auto rotational_speed = 0.5f * timestep;
+        const auto scaled_speed = rotation_speed * timestep;
         const auto x = event.x();
         const auto y = event.y();
         if (is_camera_rotating) {
-            view_camera->rotate_horizontally(-(x - previous_mouse_position.x) * rotational_speed);
-            view_camera->rotate_vertically(-(y - previous_mouse_position.y) * rotational_speed);
+            view_camera->rotate_horizontally(-(x - previous_mouse_position.x) * scaled_speed);
+            view_camera->rotate_vertically(-(y - previous_mouse_position.y) * scaled_speed);
         }
         previous_mouse_position.x = x;
         previous_mouse_position.y = y;

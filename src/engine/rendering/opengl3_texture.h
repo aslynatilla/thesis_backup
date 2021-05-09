@@ -34,7 +34,7 @@ namespace engine{
         OpenGL3_Texture2D& operator=(const OpenGL3_Texture2D& other) = delete;
         OpenGL3_Texture2D& operator=(OpenGL3_Texture2D&& other) = delete;
 
-        void make_active_in_slot(const unsigned int slot);
+        void bind_to_slot(const unsigned int slot);
 
         unsigned int id;
         GLenum bound_type;
@@ -54,7 +54,7 @@ namespace engine{
         OpenGL3_Texture1D& operator=(const OpenGL3_Texture1D& other) = delete;
         OpenGL3_Texture1D& operator=(OpenGL3_Texture1D&& other) = delete;
 
-        void make_active_in_slot(const unsigned int slot);
+        void bind_to_slot(const unsigned int slot);
 
         unsigned int id;
         GLenum bound_type;

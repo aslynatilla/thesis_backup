@@ -41,6 +41,8 @@ namespace engine{
         bool is_camera_rotating = false;
 
         float timestep;
+        float translation_speed = 5.0f;
+        float rotation_speed = 0.5f;
         glm::vec2 previous_mouse_position;
     };
 }

@@ -44,10 +44,12 @@ namespace engine{
         glDeleteTextures(1, &id);
     }
 
-    void OpenGL3_Texture2D::make_active_in_slot(const unsigned int slot) {
+    void OpenGL3_Texture2D::bind_to_slot(const unsigned int slot_number) {
         //  slot in [0, GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-        glActiveTexture(GL_TEXTURE0+slot);
+        glActiveTexture(GL_TEXTURE0 + slot_number);
+        glBindTexture(bound_type, id);
     }
+
 
     OpenGL3_Texture1D::OpenGL3_Texture1D(const GLenum image_format, const OpenGL3_TextureParameters& parameters,
                                          const unsigned int texture_width, const GLenum data_format,
@@ -68,8 +70,9 @@ namespace engine{
         glDeleteTextures(1, &id);
     }
 
-    void OpenGL3_Texture1D::make_active_in_slot(const unsigned int slot) {
+    void OpenGL3_Texture1D::bind_to_slot(const unsigned int slot_number) {
         //  slot in [0, GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-        glActiveTexture(GL_TEXTURE0+slot);
+        glActiveTexture(GL_TEXTURE0 + slot_number);
+        glBindTexture(bound_type, id);
     }
 }

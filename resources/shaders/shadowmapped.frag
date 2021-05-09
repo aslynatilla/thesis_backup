@@ -1,64 +1,59 @@
 #version 430 core
 
 in vec3 frag_pos;
-in vec4 light_frag_pos;
 in vec3 normal;
 
 out vec4 FragColor;
 
-uniform float opacity;
-uniform float shininess;
-uniform float refract_i;
-
-uniform vec4 diffuse_color;
-uniform vec4 ambient_color;
-uniform vec4 specular_color;
-uniform vec4 emissive_color;
-uniform vec4 transparent_color;
-
-uniform vec3 camera_position;
-uniform vec3 light_position;
-
-struct Light{
-    vec3 position;
-    vec3 direction;
-//    float cutoff_angle;
-//    float outer_cutoff_angle;
-
+layout(std140, binding = 1) uniform Light{
+    vec4 position;
+    vec4 direction;
     float constant_attenuation;
     float linear_attenuation;
     float quadratic_attenuation;
+
+    float intensity;
+    vec4 color;
+} scene_light;
+
+layout(std140, binding = 2) uniform Material{
+    vec4 diffuse_color;
+    vec4 ambient_color;
+    vec4 specular_color;
+    vec4 emissive_color;
+    vec4 transparent_color;
+    float opacity;
+    float shininess;
+    float refract_i;
 };
 
-uniform Light scene_light;
+layout(std140, binding = 3) uniform CommonData{
+    float light_camera_far_plane;
+    float distance_to_furthest_ies_vertex;
+    bool is_using_ies_masking;
+};
 
-uniform samplerCube shadow_map;
-uniform samplerCube position_map;
-uniform samplerCube normal_map;
-uniform samplerCube flux_map;
-uniform samplerCube ies_mask;
-uniform sampler1D sample_array;
+layout ( location = 0) uniform samplerCube shadow_map;
+layout ( location = 1) uniform samplerCube position_map;
+layout ( location = 2) uniform samplerCube normal_map;
+layout ( location = 3) uniform samplerCube flux_map;
+layout ( location = 4) uniform samplerCube ies_mask;
+layout ( location = 5) uniform sampler1D sample_array;
 
-uniform int samples_number;
+layout ( location = 6) uniform int VPL_samples_per_fragment;
+layout ( location = 7) uniform vec3 camera_position;
 
-uniform float far_plane;
-uniform float furthest_photometric_distance;
-
-// TWEAKABLES
-uniform float shadow_threshold;
-
-uniform float max_radius;
-uniform float indirect_intensity;
-uniform float light_intensity;
-
-uniform bool hide_direct_component;
-uniform bool ies_masking;
+// Tweakable values
+layout ( location = 8) uniform float shadow_threshold;
+layout ( location = 9) uniform float displacement_sphere_radius;
+layout ( location = 10) uniform float indirect_intensity;
+layout ( location = 11) uniform bool hide_direct_component;
 
 float compute_shadow(vec3 light_to_frag, float light_distance){
     //  Sample the shadow_map and multiply it for the far plane distance, so you can compare it to the distance
     // of the fragment from the light
     float depth = texture(shadow_map, light_to_frag).r;
-    depth *= far_plane;
+    depth *= light_camera_far_plane;
 
     if (light_distance < depth + shadow_threshold){
         return 1.0;
@@ -70,12 +65,12 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
 vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_normal){
     vec3 indirect = vec3(0.0);
 
-    for(int i = 0; i <= samples_number; i++){
+    for(int i = 0; i <= VPL_samples_per_fragment; i++){
         vec3 random_sample = texelFetch(sample_array, i, 0).rgb;
         vec3 sampling_direction = normalize(vec3(
-                                    light_to_frag.x + random_sample.x * max_radius,
-                                    light_to_frag.y + random_sample.y * max_radius,
-                                    light_to_frag.z + random_sample.z * max_radius));
+                                    light_to_frag.x + random_sample.x * displacement_sphere_radius,
+                                    light_to_frag.y + random_sample.y * displacement_sphere_radius,
+                                    light_to_frag.z + random_sample.z * displacement_sphere_radius));
 
         float weight = 1.0 - dot(sampling_direction, light_to_frag);
 
@@ -92,59 +87,46 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect, 0.0, 1.0);
+    return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
 }
 
 void main(){
     //  Common data
     vec3 n = normalize(normal);
-    vec3 frag_to_light = scene_light.position - frag_pos;
+    vec3 frag_to_light = scene_light.position.xyz - frag_pos;
     float distance_from_light = length(frag_to_light);
     vec3 l = normalize(frag_to_light);
     vec3 camera_to_frag = normalize(frag_pos - camera_position);
     vec3 v = - normalize(camera_to_frag);
-
-    //  Compute fragment position in light space and move it in the unit square [0, 1]×[0, 1]
-    vec4 fragment_light_space_coordinates = vec4(light_frag_pos.xyz / light_frag_pos.w, light_frag_pos.w);
-    fragment_light_space_coordinates.xy = fragment_light_space_coordinates.xy * 0.5 + 0.5;
 
     //  Attenuation computation
     float attenuation_factor = 1.0/(scene_light.constant_attenuation +
                                     scene_light.linear_attenuation * distance_from_light +
                                     scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
 
-    //  Spotlight specific
-    // float angle_between_light_dir_and_light_to_frag = dot(scene_light.direction, -l);
-    // float epsilon = scene_light.cutoff_angle - scene_light.outer_cutoff_angle;
-    // float spotlight_intensity = clamp((angle_between_light_dir_and_light_to_frag - scene_light.outer_cutoff_angle)
-    //                                     / epsilon,
-    //                                     0.0, 1.0);
-
     //  Shadow factor
     float shadow_factor = compute_shadow(-l, distance_from_light);
 
     //  Indirect lighting
-    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity;
+    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity * diffuse_color.rgb;
 
     //  Diffuse component
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor;
 
     vec3 diffuse_component;
-    if(ies_masking == false){
-        diffuse_component = d * diffuse_color.rgb * light_intensity;
-    } else {
-        float mask_value = texture(ies_mask, -l).r;
-        float lighted_distance = mask_value > 0.0 ? (1.0 - mask_value) * furthest_photometric_distance : 0.0;
-        lighted_distance *= 3.0;
-        if(lighted_distance == 0.0){
-            diffuse_component = vec3(0.0);
-        } else if(lighted_distance > 0.0 && distance_from_light <= lighted_distance){
-            diffuse_component = d * diffuse_color.rgb * light_intensity;
-        } else if(lighted_distance > 0.0 && distance_from_light >= lighted_distance){
-            float delta = distance_from_light - lighted_distance;
-            diffuse_component = d * diffuse_color.rgb * light_intensity * (1.0 - smoothstep(0.0, lighted_distance, delta));
-        }
+    diffuse_component = d * diffuse_color.rgb * scene_light.intensity;
+    if(is_using_ies_masking == true){
+        vec3 mask_value = texture(ies_mask, -l).rgb;
+        float scaled_distance = mask_value.r;
+        //   Consider using the following line if you want it to scale with the size
+        //  of the photometric solid used.
+        //      float scaled_distance = mask_value.r;
+        //   Use the following version if you want it to be scale indepedent:
+        //      float scaled_distance = mask_value.g;
+        bool is_active = (mask_value.b == 1.0);
+        diffuse_component *= is_active ? scaled_distance : 0.0;
     }
 
     //  Ambient component
@@ -154,7 +136,7 @@ void main(){
     vec3 reflection_direction = reflect(-l, n);
     //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
     //      float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
-    float specular_factor = shininess == 0 ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
+    float specular_factor = (shininess == 0) ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
 
     FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)

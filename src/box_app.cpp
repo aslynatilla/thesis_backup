@@ -4,13 +4,13 @@ BoxApp::BoxApp() : Application("Cornell Box App"){
     using namespace engine;
 
     std::shared_ptr first_person_camera = std::make_shared<FlyCamera>(
-            glm::vec3{278.0f, 277.0f, -800.0f},
+            glm::vec3{1.5f, 1.5f, -5.0f},
             glm::radians(0.0f),
             glm::radians(0.0f),
             CameraProjectionParameters{
                 .aspect_ratio = 1.0f,
                 .field_of_view = 45.0f,
-                .planes = CameraPlanes{0.1f, 2000.0f}
+                .planes = CameraPlanes{0.1f, 100.0f}
             },
             CameraMode::Perspective);
     std::weak_ptr ptr_to_camera(first_person_camera);

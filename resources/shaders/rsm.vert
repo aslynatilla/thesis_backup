@@ -3,7 +3,12 @@
  layout (location = 0) in vec3 position;
  layout (location = 1) in vec3 normal;
 
- uniform mat4 model;
+layout(std140, binding = 0) uniform TransformationMatrices{
+    mat4 model;
+    mat4 transpose_inverse_model;
+    mat4 view;
+    mat4 projection;
+};
 
  out vec4 frag_pos;
  out VS_OUT{
