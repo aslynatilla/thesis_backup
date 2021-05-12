@@ -360,10 +360,12 @@ namespace engine {
                 draw_shader->set_bool(11, hide_direct_component);
             }
 
+            glEnable(GL_FRAMEBUFFER_SRGB);
             draw_indirect_light ? draw_scene(glm::vec3(), camera_view_matrix, camera_projection_matrix, draw_shader)
                                 : draw_scene(
                     glm::vec3(), camera_view_matrix, camera_projection_matrix, no_indirect_shader);
-
+            glDisable(GL_FRAMEBUFFER_SRGB);
+            
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 wireframe_shader->use();
