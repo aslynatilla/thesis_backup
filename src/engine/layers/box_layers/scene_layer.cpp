@@ -63,8 +63,8 @@ namespace engine {
             viewport_dimension[3] = static_cast<int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<int>(viewport_dimension[2] / 4),
-                     static_cast<int>(viewport_dimension[3]) / 4};
+                    {static_cast<int>(viewport_dimension[2] / 2),
+                     static_cast<int>(viewport_dimension[3]) / 2};
 
             light_transforms_strings = {
                     "light_transforms[0]",
@@ -107,7 +107,7 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB8,
+            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_SRGB8,
                                                              OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -169,6 +169,7 @@ namespace engine {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+            glEnable(GL_FRAMEBUFFER_SRGB);
 
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
