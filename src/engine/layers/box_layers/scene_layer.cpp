@@ -169,7 +169,6 @@ namespace engine {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-            glEnable(GL_FRAMEBUFFER_SRGB);
 
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
