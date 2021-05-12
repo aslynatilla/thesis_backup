@@ -128,7 +128,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            VPL_samples_per_fragment = 100;
+            VPL_samples_per_fragment = 200;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
@@ -169,6 +169,7 @@ namespace engine {
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
             glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+            glEnable(GL_FRAMEBUFFER_SRGB);
 
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
