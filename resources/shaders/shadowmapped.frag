@@ -139,6 +139,8 @@ void main(){
     float specular_factor = (shininess == 0) ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
 
-    FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
+    vec4 c = hide_direct_component ?   vec4(indirect_component, 1.0)
                                         :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+    FragColor = c + dFdx(c)/8.0 + dFdy(c)/8.0 + dFdx(dFdy(c))/8.0;
+    //FragColor = c;
 }
