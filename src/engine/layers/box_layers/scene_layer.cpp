@@ -63,8 +63,8 @@ namespace engine {
             viewport_dimension[3] = static_cast<int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<int>(viewport_dimension[2] / 2),
-                     static_cast<int>(viewport_dimension[3]) / 2};
+                    {static_cast<int>(viewport_dimension[2]),
+                     static_cast<int>(viewport_dimension[3])};
 
             light_transforms_strings = {
                     "light_transforms[0]",
