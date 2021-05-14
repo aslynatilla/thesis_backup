@@ -63,8 +63,8 @@ namespace engine {
             viewport_dimension[3] = static_cast<int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<int>(viewport_dimension[2] / 4),
-                     static_cast<int>(viewport_dimension[3]) / 4};
+                    {static_cast<int>(viewport_dimension[2] / 2),
+                     static_cast<int>(viewport_dimension[3]) / 2};
 
             light_transforms_strings = {
                     "light_transforms[0]",
@@ -128,7 +128,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            VPL_samples_per_fragment = 100;
+            VPL_samples_per_fragment = 200;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
@@ -360,10 +360,12 @@ namespace engine {
                 draw_shader->set_bool(11, hide_direct_component);
             }
 
+            glEnable(GL_FRAMEBUFFER_SRGB);
             draw_indirect_light ? draw_scene(glm::vec3(), camera_view_matrix, camera_projection_matrix, draw_shader)
                                 : draw_scene(
                     glm::vec3(), camera_view_matrix, camera_projection_matrix, no_indirect_shader);
-
+            glDisable(GL_FRAMEBUFFER_SRGB);
+            
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 wireframe_shader->use();
