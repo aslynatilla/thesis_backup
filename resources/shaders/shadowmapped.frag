@@ -58,7 +58,7 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
     if (light_distance < depth + shadow_threshold){
         return 1.0;
     } else {
-        return 0.4;
+        return 0.0;
     }
 }
 
@@ -87,9 +87,9 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-        return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+        //return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
         // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
-        //return indirect * 12.566/(float(VPL_samples_per_fragment));
+        return indirect * 12.566/(float(VPL_samples_per_fragment));
     }
 
     void main(){
@@ -113,7 +113,7 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
         vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity * diffuse_color.rgb;
 
         //  Diffuse component
-        float d = max(dot(n, l), 0.0);
+        float d = 0.35 * max(dot(n, l), 0.0)/3.14;
         d = d * attenuation_factor;
 
         vec3 diffuse_component;
