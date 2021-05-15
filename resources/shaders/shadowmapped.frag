@@ -145,5 +145,7 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
         //  IMHO this is the worst of the two techniques:
         //      FragColor = vec4(vec3(1.0) - exp(-oc.rgb * 1.0), 1.0);
         //  Reinhard looks lighter and more effective:
-        FragColor = vec4(oc.rgb / (oc.rgb + vec3(1.0)), 1.0);
+        //  FragColor = vec4(oc.rgb / (oc.rgb + vec3(1.0)), 1.0);
+        FragColor = vec4(vec3(1.0) - exp(-oc.rgb * 12.0), 1.0);
+
 }
