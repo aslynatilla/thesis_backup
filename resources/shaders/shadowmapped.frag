@@ -87,58 +87,63 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
-    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
-}
-
-void main(){
-    //  Common data
-    vec3 n = normalize(normal);
-    vec3 frag_to_light = scene_light.position.xyz - frag_pos;
-    float distance_from_light = length(frag_to_light);
-    vec3 l = normalize(frag_to_light);
-    vec3 camera_to_frag = normalize(frag_pos - camera_position);
-    vec3 v = - normalize(camera_to_frag);
-
-    //  Attenuation computation
-    float attenuation_factor = 1.0/(scene_light.constant_attenuation +
-                                    scene_light.linear_attenuation * distance_from_light +
-                                    scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
-
-    //  Shadow factor
-    float shadow_factor = compute_shadow(-l, distance_from_light);
-
-    //  Indirect lighting
-    vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity * diffuse_color.rgb;
-
-    //  Diffuse component
-    float d = max(dot(n, l), 0.0);
-    d = d * attenuation_factor;
-
-    vec3 diffuse_component;
-    diffuse_component = d * diffuse_color.rgb * scene_light.intensity;
-    if(is_using_ies_masking == true){
-        vec3 mask_value = texture(ies_mask, -l).rgb;
-        float scaled_distance = mask_value.r;
-        //   Consider using the following line if you want it to scale with the size
-        //  of the photometric solid used.
-        //      float scaled_distance = mask_value.r;
-        //   Use the following version if you want it to be scale indepedent:
-        //      float scaled_distance = mask_value.g;
-        bool is_active = (mask_value.b == 1.0);
-        diffuse_component *= is_active ? scaled_distance : 0.0;
+        return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+        // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
+        //return indirect * 12.566/(float(VPL_samples_per_fragment));
     }
 
-    //  Ambient component
-    vec3 ambient_component = ambient_color.xyz * ambient_color.w;
+    void main(){
+        //  Common data
+        vec3 n = normalize(normal);
+        vec3 frag_to_light = scene_light.position.xyz - frag_pos;
+        float distance_from_light = length(frag_to_light);
+        vec3 l = normalize(frag_to_light);
+        vec3 camera_to_frag = normalize(frag_pos - camera_position);
+        vec3 v = - normalize(camera_to_frag);
 
-    //  Specular component
-    vec3 reflection_direction = reflect(-l, n);
-    //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
-    //      float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
-    float specular_factor = (shininess == 0) ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
-    vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
+        //  Attenuation computation
+        float attenuation_factor = 1.0/(scene_light.constant_attenuation +
+                                        scene_light.linear_attenuation * distance_from_light +
+                                        scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
 
-    FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
-                                        :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+        //  Shadow factor
+        float shadow_factor = compute_shadow(-l, distance_from_light);
+
+        //  Indirect lighting
+        vec3 indirect_component = compute_indirect_illumination(-l, n) * indirect_intensity * diffuse_color.rgb;
+
+        //  Diffuse component
+        float d = max(dot(n, l), 0.0);
+        d = d * attenuation_factor;
+
+        vec3 diffuse_component;
+        diffuse_component = d * diffuse_color.rgb * scene_light.intensity;
+        if(is_using_ies_masking == true){
+            vec3 mask_value = texture(ies_mask, -l).rgb;
+            float scaled_distance = mask_value.r;
+            //   Consider using the following line if you want it to scale with the size
+            //  of the photometric solid used.
+            //      float scaled_distance = mask_value.r;
+            //   Use the following version if you want it to be scale indepedent:
+            //      float scaled_distance = mask_value.g;
+            bool is_active = (mask_value.b == 1.0);
+            diffuse_component *= is_active ? scaled_distance : 0.0;
+        }
+
+        //  Ambient component
+        vec3 ambient_component = ambient_color.xyz * ambient_color.w;
+
+        //  Specular component
+        vec3 reflection_direction = reflect(-l, n);
+        //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
+        //      float specular_factor = pow(max(dot(v, reflection_direction), 0.0000000001), shininess);
+        float specular_factor = (shininess == 0) ? 1.0 : pow(max(dot(v, reflection_direction), 0.0), shininess);
+        vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
+
+        vec4 oc = hide_direct_component ?   vec4(indirect_component, 1.0)
+                                            :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+        //  IMHO this is the worst of the two techniques:
+        //      FragColor = vec4(vec3(1.0) - exp(-oc.rgb * 1.0), 1.0);
+        //  Reinhard looks lighter and more effective:
+        FragColor = vec4(oc.rgb / (oc.rgb + vec3(1.0)), 1.0);
 }
