@@ -92,9 +92,9 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
         return indirect * 12.566/(float(VPL_samples_per_fragment));
     }
 
-    // vec3 F_Schlick(vec3 f0, float f90, float u){
-    //     return f0 + (f90-f0) * pow(1.0 - u, 5.0);
-    // }
+    vec3 F_Schlick(vec3 f0, float f90, float u){
+        return f0 + (f90-f0) * pow(1.0 - u, 5.0);
+    }
 
     void main(){
         //  Common data
@@ -125,16 +125,16 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
         d = d * attenuation_factor;
 
         //Disney addition
-        // float roughness = 0.2;
-        // float energy_bias = mix(0.0, 0.5, roughness);
-        // float energy_factor = mix(1.0, 1.0/1.51, roughness);
-        // float LdotH = dot(l, h);
-        // float fd90 = energy_bias + 2.0 * LdotH * LdotH * roughness;
-        // vec3 f0 = vec3(1.0);
-        // float light_scatter = F_Schlick(f0, fd90, dot(n, l)).r;
-        // float view_scatter = F_Schlick(f0, fd90, dot(n, v)).r;
-        // float disney_factor = light_scatter * view_scatter * energy_factor;
-        // d *= disney_factor;
+        float roughness = 0.2;
+        float energy_bias = mix(0.0, 0.5, roughness);
+        float energy_factor = mix(1.0, 1.0/1.51, roughness);
+        float LdotH = dot(l, h);
+        float fd90 = energy_bias + 2.0 * LdotH * LdotH * roughness;
+        vec3 f0 = vec3(1.0);
+        float light_scatter = F_Schlick(f0, fd90, dot(n, l)).r;
+        float view_scatter = F_Schlick(f0, fd90, dot(n, v)).r;
+        float disney_factor = light_scatter * view_scatter * energy_factor;
+        d *= disney_factor / 3.14;
 
         vec3 diffuse_component;
         diffuse_component = d * diffuse_color.rgb * scene_light.intensity;
