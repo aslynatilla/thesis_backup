@@ -1,60 +1,33 @@
 #include "ies_mesh.h"
 
 namespace ies::adapter {
-    IES_Mesh::IES_Mesh() : convertible{nullptr} {}
-
-    IES_Mesh::IES_Mesh(const IES_Document& source_document) : convertible{&source_document} {
-        //  Load positions, normals, indices
+    IES_Mesh::IES_Mesh(const IES_Document& source_document){
         const auto& light_data = source_document.photometric_description.measured_data;
+        const auto& source_type = source_document.photometric_description.data_type;
         auto positions_grid = points_from_directions(std::begin(light_data.candelas_per_angle_pair),
                                                      directions_from_angles(light_data.vertical_angles,
                                                                             light_data.horizontal_angles));
 
-        const auto& source_type = source_document.photometric_description.data_type;
-        if(source_type == Photometric_Type::Type_A || source_type == Photometric_Type::Type_B) {
-            type_a_b::transform_grid(light_data, positions_grid);
-        } else if(source_type == Photometric_Type::Type_C) {
-            type_c::transform_grid(light_data, positions_grid);
-        }
-
-        indices = triangle_indices_from_grid(positions_grid.size(), positions_grid[0].size());
-
-        normals = calculate_normals(positions_grid);
-
-        positions.reserve(normals.size());
-        for(auto& row : positions_grid){
-            std::move(std::begin(row), std::end(row), std::back_inserter(positions));
-        }
+        compute_mesh_from(light_data, source_type, std::move(positions_grid));
     }
 
     IES_Mesh& IES_Mesh::convert_from(const IES_Document& source_document) {
-        convertible = &source_document;
         indices.clear();
         normals.clear();
         positions.clear();
         const auto& light_data = source_document.photometric_description.measured_data;
+        const auto& source_type = source_document.photometric_description.data_type;
         auto positions_grid = points_from_directions(std::begin(light_data.candelas_per_angle_pair),
                                                      directions_from_angles(light_data.vertical_angles,
                                                                             light_data.horizontal_angles));
-
-        const auto& source_type = source_document.photometric_description.data_type;
-        if(source_type == Photometric_Type::Type_A || source_type == Photometric_Type::Type_B) {
-            type_a_b::transform_grid(light_data, positions_grid);
-        } else if(source_type == Photometric_Type::Type_C) {
-            type_c::transform_grid(light_data, positions_grid);
-        }
-
-        indices = triangle_indices_from_grid(positions_grid.size(), positions_grid[0].size());
-
-        normals = calculate_normals(positions_grid);
-
-        positions.reserve(normals.size());
-        for(auto& row : positions_grid){
-            std::move(std::begin(row), std::end(row), std::back_inserter(positions));
-        }
-
+        compute_mesh_from(light_data, source_type, std::move(positions_grid));
         return *this;
     }
+
+    IES_Mesh IES_Mesh::interpolate_from(const IES_Document& document, const uint16_t interpolated_points_per_edge){
+        return IES_Mesh(document, interpolated_points_per_edge);
+    }
+
 
     std::vector<float> IES_Mesh::get_vertices() const {
         constexpr auto vertex_position_components = 3;
@@ -84,5 +57,33 @@ namespace ies::adapter {
         return std::vector(indices);
     }
 
+    IES_Mesh::IES_Mesh(const IES_Document& document, const uint16_t interpolated_points_per_edge) {
+        const auto& light_data = document.photometric_description.measured_data;
+        const auto& source_type = document.photometric_description.data_type;
+        auto positions_grid = points_from_directions(std::begin(light_data.candelas_per_angle_pair),
+                                                     directions_from_angles(light_data.vertical_angles,
+                                                                            light_data.horizontal_angles));
 
+        positions_grid = interpolate_grid(std::move(positions_grid), interpolated_points_per_edge);
+        compute_mesh_from(light_data, source_type, std::move(positions_grid));
+    }
+
+    void
+    IES_Mesh::compute_mesh_from(const Photometric_Angles& light_data, const Photometric_Type& light_type,
+                                vec_grid&& points) {
+        if(light_type == Photometric_Type::Type_A || light_type == Photometric_Type::Type_B) {
+            type_a_b::transform_grid(light_data, points);
+        } else if(light_type == Photometric_Type::Type_C) {
+            type_c::transform_grid(light_data, points);
+        }
+
+        indices = triangle_indices_from_grid(points.size(), points[0].size());
+
+        normals = calculate_normals(points);
+
+        positions.reserve(normals.size());
+        for(auto& row : points){
+            std::move(std::begin(row), std::end(row), std::back_inserter(positions));
+        }
+    }
 }
