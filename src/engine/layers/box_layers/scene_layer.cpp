@@ -42,8 +42,8 @@ namespace engine {
                                       LightAttenuationParameters{1.0f, 0.5f, 1.8f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
-            draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
-                                                     "resources/shaders/shadowmapped.frag");
+            draw_shader = shader::create_shader_from("resources/shaders/rsm_render.vert",
+                                                     "resources/shaders/rsm_render.frag");
             no_indirect_shader = shader::create_shader_from("resources/shaders/shadowmapped_no_indirect.vert",
                                                             "resources/shaders/shadowmapped_no_indirect.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
