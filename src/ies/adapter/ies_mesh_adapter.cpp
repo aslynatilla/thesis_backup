@@ -174,7 +174,7 @@ namespace ies::adapter {
         return normal;
     }
 
-    std::vector<glm::vec3> calculate_normals(const vec_grid & point_grid) {
+    std::vector<glm::vec3> calculate_normals(const vec3_grid & point_grid) {
         std::vector<glm::vec3> normals;
         const auto rows = point_grid.size();
         const auto columns = point_grid.at(0).size();
@@ -186,5 +186,19 @@ namespace ies::adapter {
             }
         }
         return normals;
+    }
+
+    vec2_grid cartesian_product(const std::vector<float>& first, const std::vector<float>& second) {
+        vec2_grid cartesian_product;
+        cartesian_product.reserve(second.size());
+        for(const auto y : second){
+            std::vector<glm::vec2> row;
+            row.reserve(first.size());
+            for(const auto x : first){
+                row.emplace_back(x, y);
+            }
+            cartesian_product.push_back(row);
+        }
+        return cartesian_product;
     }
 }

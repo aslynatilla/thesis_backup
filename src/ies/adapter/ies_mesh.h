@@ -42,7 +42,7 @@ namespace ies::adapter {
 
         void compute_mesh_from(const Photometric_Angles& light_data,
                                const Photometric_Type& light_type,
-                               vec_grid&& points);
+                               vec3_grid&& points);
 
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;

@@ -64,13 +64,14 @@ namespace ies::adapter {
                                                      directions_from_angles(light_data.vertical_angles,
                                                                             light_data.horizontal_angles));
 
-        positions_grid = interpolate_grid(std::move(positions_grid), interpolated_points_per_edge);
+        const auto angle_couples = cartesian_product(light_data.horizontal_angles, light_data.vertical_angles);
+        positions_grid = interpolate_grid(angle_couples, std::move(positions_grid), interpolated_points_per_edge);
         compute_mesh_from(light_data, source_type, std::move(positions_grid));
     }
 
     void
     IES_Mesh::compute_mesh_from(const Photometric_Angles& light_data, const Photometric_Type& light_type,
-                                vec_grid&& points) {
+                                vec3_grid&& points) {
         if(light_type == Photometric_Type::Type_A || light_type == Photometric_Type::Type_B) {
             type_a_b::transform_grid(light_data, points);
         } else if(light_type == Photometric_Type::Type_C) {
