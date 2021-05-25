@@ -88,4 +88,28 @@ namespace ies::adapter {
             std::move(std::begin(row), std::end(row), std::back_inserter(positions));
         }
     }
+
+    IES_Mesh IES_Mesh::debug_mesh() {
+        return IES_Mesh(true);
+    }
+
+    IES_Mesh::IES_Mesh([[maybe_unused]] bool debuggable) {
+        IES_Document d;
+        d.photometric_description.measured_data.vertical_angles = {0.0f, 90.0f};
+        d.photometric_description.measured_data.horizontal_angles = {0.0f, 90.0f, 180.0f};
+        d.photometric_description.data_type = Photometric_Type::Type_C;
+        d.photometric_description.measured_data.candelas_per_angle_pair ={
+                8.0f, 8.0f, 8.0f,
+                20.0f, 20.0f, 20.0f
+        };
+        const auto& light_data = d.photometric_description.measured_data;
+        const auto& source_type = d.photometric_description.data_type;
+        auto positions_grid = points_from_directions(std::begin(light_data.candelas_per_angle_pair),
+                                                     directions_from_angles(light_data.vertical_angles,
+                                                                            light_data.horizontal_angles));
+
+        const auto angle_couples = cartesian_product(light_data.horizontal_angles, light_data.vertical_angles);
+//        positions_grid = interpolate_grid(angle_couples, std::move(positions_grid), 1);
+        compute_mesh_from(light_data, source_type, std::move(positions_grid));
+    }
 }

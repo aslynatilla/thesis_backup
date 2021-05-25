@@ -32,6 +32,9 @@ namespace ies::adapter {
         static IES_Mesh interpolate_from(const IES_Document& document,
                                          uint16_t interpolated_points_per_edge);
 
+        static IES_Mesh debug_mesh();
+        explicit IES_Mesh(bool debuggable);
+
         [[nodiscard]] std::vector<float> get_vertices() const;
 
         [[nodiscard]] std::vector<unsigned int> get_indices() const noexcept;
