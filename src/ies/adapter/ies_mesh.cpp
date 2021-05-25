@@ -64,6 +64,7 @@ namespace ies::adapter {
                                                      directions_from_angles(light_data.vertical_angles,
                                                                             light_data.horizontal_angles));
 
+                                                        //Rows                      //Columns
         const auto angle_couples = cartesian_product(light_data.horizontal_angles, light_data.vertical_angles);
         positions_grid = interpolate_grid(angle_couples, std::move(positions_grid), interpolated_points_per_edge);
         compute_mesh_from(light_data, source_type, std::move(positions_grid));

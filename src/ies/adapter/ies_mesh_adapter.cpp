@@ -190,11 +190,11 @@ namespace ies::adapter {
 
     vec2_grid cartesian_product(const std::vector<float>& first, const std::vector<float>& second) {
         vec2_grid cartesian_product;
-        cartesian_product.reserve(second.size());
-        for(const auto y : second){
+        cartesian_product.reserve(first.size());
+        for(const auto y : first){
             std::vector<glm::vec2> row;
-            row.reserve(first.size());
-            for(const auto x : first){
+            row.reserve(second.size());
+            for(const auto x : second){
                 row.emplace_back(x, y);
             }
             cartesian_product.push_back(row);

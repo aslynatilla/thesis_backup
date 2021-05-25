@@ -53,7 +53,7 @@ namespace ies::adapter {
         void interpolated_block(BlockDescriptor block_info, unsigned short new_points,
                                 std::vector<glm::vec3>& block);
 
-        vec3_grid compose_interpolated_grid(GridDimension dimension, uint16_t new_points_per_edge, vec3_grid&& blocks);
+        vec3_grid compose_interpolated_grid(GridDimension dimension, unsigned new_points_per_edge, vec3_grid&& blocks);
     }
 }
 
