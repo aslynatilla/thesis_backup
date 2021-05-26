@@ -20,8 +20,8 @@ namespace ies::adapter {
                                 .p10 = angles[row][col + 1],
                                 .p11 = angles[row + 1][col + 1]},
                         .f_in_corners = {.p00 = points[row][col],
-                                .p01 = points[row + 1 ][col],
-                                .p10 = points[row][col + 1 ],
+                                .p01 = points[row + 1][col],
+                                .p10 = points[row][col + 1],
                                 .p11 = points[row + 1][col + 1]},
 
                 };
@@ -89,9 +89,11 @@ namespace ies::adapter::impl_details {
 
         const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points);
         for (auto i = 0; i < y_edge_points; ++i) {
-            auto y = block_info.block_corners.p00.y + step.y * i;
+            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p11.y
+                                              : block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
-                auto x = block_info.block_corners.p00.x + step.x * j;
+                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p11.x
+                                                  : block_info.block_corners.p00.x + step.x * j;
                 block.push_back(interpolator(glm::vec2(x, y)));
             }
         }
@@ -117,7 +119,8 @@ namespace ies::adapter::impl_details {
         for (auto i = 0; i < y_edge_points; ++i) {
             auto y = block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
-                auto x = block_info.block_corners.p00.x + step.x * j;
+                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p11.x
+                                                  : block_info.block_corners.p00.x + step.x * j;
                 block.push_back(interpolator(glm::vec2(x, y)));
             }
         }
@@ -141,7 +144,8 @@ namespace ies::adapter::impl_details {
 
         const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points);
         for (auto i = 0; i < y_edge_points; ++i) {
-            auto y = block_info.block_corners.p00.y + step.y * i;
+            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p11.y
+                                              : block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
                 auto x = block_info.block_corners.p00.x + step.x * j;
                 block.push_back(interpolator(glm::vec2(x, y)));
@@ -182,8 +186,8 @@ namespace ies::adapter::impl_details {
         result.reserve(resulting_rows_number);
         for (auto i = 0u; i < dimension.height - 1; ++i) {
             for (auto k = 0u; k < new_points_per_edge + 1; ++k) {
-            std::vector<glm::vec3> row;
-            row.reserve(resulting_columns_number);
+                std::vector<glm::vec3> row;
+                row.reserve(resulting_columns_number);
                 for (auto j = 0u; j < dimension.width - 1; ++j) {
                     const bool is_last_column = (j == dimension.width - 2);
                     const auto block_index = i * (dimension.width - 1) + j;
@@ -197,23 +201,26 @@ namespace ies::adapter::impl_details {
                                   std::back_inserter(row));
                     }
                 }
-            result.push_back(row);
+                result.push_back(row);
             }
         }
 
         // Handling last line
         std::vector<glm::vec3> row;
         row.reserve(resulting_columns_number);
-        for(auto j = 0u; j < dimension.width - 1; ++j){
+        for (auto j = 0u; j < dimension.width - 1; ++j) {
             const bool is_last_column = (j == dimension.width - 2);
             const auto block_index = (dimension.height - 2) * (dimension.width - 1) + j;
             if (is_last_column) {
-                std::move(blocks[block_index].begin() + static_cast<int>((sub_block_rows_number + 1) * sub_block_rows_number ),
-                          blocks[block_index].begin() + static_cast<int>((sub_block_rows_number + 1) * (sub_block_rows_number + 1)),
+                std::move(blocks[block_index].begin() +
+                          static_cast<int>((sub_block_rows_number + 1) * sub_block_rows_number ),
+                          blocks[block_index].begin() +
+                          static_cast<int>((sub_block_rows_number + 1) * (sub_block_rows_number + 1)),
                           std::back_inserter(row));
             } else {
                 std::move(blocks[block_index].begin() + static_cast<int>(sub_block_rows_number * sub_block_rows_number),
-                          blocks[block_index].begin() + static_cast<int>(sub_block_rows_number * (sub_block_rows_number + 1)),
+                          blocks[block_index].begin() +
+                          static_cast<int>(sub_block_rows_number * (sub_block_rows_number + 1)),
                           std::back_inserter(row));
             }
         }
