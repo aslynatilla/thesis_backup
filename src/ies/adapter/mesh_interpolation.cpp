@@ -4,14 +4,16 @@ namespace ies::adapter {
     vec3_grid interpolate_grid(const vec2_grid& angles, vec3_grid&& points, uint16_t new_points_per_edge) {
         using namespace impl_details;
         const auto dimensions = GridDimension::from(points);
-
-        //  Flattened blocks are the sub-grids, the areas we build an interpolated function over
+        const auto blocks_rows = dimensions.height - 1;
+        const auto blocks_columns = dimensions.width - 1;
+        //  Blocks are the sub-grids, the areas we build an interpolated function over
+        //  Notice that blocks are flattened; a 5-by-5 block is a 25-long vector
         vec3_grid grid_of_blocks;
-        grid_of_blocks.reserve((dimensions.height - 1) * (dimensions.width - 1));
-        for (auto row = 0u; row < dimensions.height - 1; ++row) {
-            for (auto col = 0u; col < dimensions.width - 1; ++col) {
-                const bool is_last_row = (row == dimensions.height - 2);
-                const bool is_last_column = (col == dimensions.width - 2);
+        grid_of_blocks.reserve(blocks_rows * blocks_columns);
+        for (auto row = 0u; row < blocks_rows; ++row) {
+            for (auto col = 0u; col < blocks_columns; ++col) {
+                const bool is_last_row = (row == blocks_rows - 1);
+                const bool is_last_column = (col == blocks_columns - 1);
                 auto block = reserve_block_space(is_last_row, is_last_column, new_points_per_edge);
 
                 BlockDescriptor block_description{
@@ -87,12 +89,12 @@ namespace ies::adapter::impl_details {
             return (term00 + term01 + term10 + term11) / denominator;
         };
 
-        const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points);
+        const auto step = block_info.compute_interpolation_step(x_edge_points - 1 , y_edge_points - 1);
         for (auto i = 0; i < y_edge_points; ++i) {
-            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p11.y
+            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p01.y
                                               : block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
-                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p11.x
+                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p10.x
                                                   : block_info.block_corners.p00.x + step.x * j;
                 block.push_back(interpolator(glm::vec2(x, y)));
             }
@@ -115,11 +117,11 @@ namespace ies::adapter::impl_details {
             return (term00 + term01 + term10 + term11) / denominator;
         };
 
-        const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points);
+        const auto step = block_info.compute_interpolation_step(x_edge_points - 1, y_edge_points);
         for (auto i = 0; i < y_edge_points; ++i) {
             auto y = block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
-                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p11.x
+                auto x = (j == x_edge_points - 1) ? block_info.block_corners.p10.x
                                                   : block_info.block_corners.p00.x + step.x * j;
                 block.push_back(interpolator(glm::vec2(x, y)));
             }
@@ -142,9 +144,9 @@ namespace ies::adapter::impl_details {
             return (term00 + term01 + term10 + term11) / denominator;
         };
 
-        const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points);
+        const auto step = block_info.compute_interpolation_step(x_edge_points, y_edge_points - 1);
         for (auto i = 0; i < y_edge_points; ++i) {
-            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p11.y
+            auto y = (i == y_edge_points - 1) ? block_info.block_corners.p01.y
                                               : block_info.block_corners.p00.y + step.y * i;
             for (auto j = 0; j < x_edge_points; ++j) {
                 auto x = block_info.block_corners.p00.x + step.x * j;
