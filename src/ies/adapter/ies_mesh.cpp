@@ -57,7 +57,7 @@ namespace ies::adapter {
         return std::vector(indices);
     }
 
-    IES_Mesh::IES_Mesh(const IES_Document& document, const uint16_t interpolated_points_per_edge) {
+    IES_Mesh::IES_Mesh(const IES_Document& document, const unsigned int interpolated_points_per_edge) {
         const auto& light_data = document.photometric_description.measured_data;
         const auto& source_type = document.photometric_description.data_type;
         auto positions_grid = points_from_directions(std::begin(light_data.candelas_per_angle_pair),

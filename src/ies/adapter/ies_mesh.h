@@ -38,7 +38,7 @@ namespace ies::adapter {
 
     private:
         IES_Mesh(const IES_Document& document,
-                 uint16_t interpolated_points_per_edge);
+                 const unsigned int interpolated_points_per_edge);
 
         void compute_mesh_from(const Photometric_Angles& light_data,
                                const Photometric_Type& light_type,

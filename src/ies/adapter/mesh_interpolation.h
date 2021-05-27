@@ -11,7 +11,7 @@ namespace ies::adapter {
     using vec2_grid = std::vector<std::vector<glm::vec2>>;
     using vec3_grid = std::vector<std::vector<glm::vec3>>;
 
-    vec3_grid interpolate_grid(const vec2_grid& angles, vec3_grid&& points, uint16_t new_points_per_edge);
+    vec3_grid interpolate_grid(const vec2_grid& domain_points, vec3_grid&& codomain_points, unsigned int new_points_per_edge);
 
 
     namespace impl_details {
@@ -30,30 +30,30 @@ namespace ies::adapter {
             T p11;
         };
 
-        struct BlockDescriptor {
-            Rect<glm::vec2> block_corners;
-            Rect<glm::vec3> f_in_corners;
+        struct GridQuad {
+            Rect<glm::vec2> vertices;
+            Rect<glm::vec3> f_in_vertex;
 
-            [[nodiscard]] glm::vec2 compute_interpolation_step(unsigned short points_per_x_edge,
-                                                 unsigned short points_per_y_edge) const;
+            [[nodiscard]] glm::vec2 compute_sampling_step(unsigned int steps_per_x_edge,
+                                                          unsigned int steps_per_y_edge) const;
         };
 
         std::vector<glm::vec3>
-        reserve_block_space(bool is_last_row_block, bool is_last_column_block, uint16_t new_points_per_edge);
+        create_block_and_reserve(bool is_last_row_block, bool is_last_column_block, unsigned int new_points_per_edge);
 
-        void last_interpolated_block(BlockDescriptor block_info, unsigned short new_points,
+        void interpolated_block_last(GridQuad block_info, unsigned int new_points,
                                      std::vector<glm::vec3>& block);
 
-        void interpolated_block_on_last_col(BlockDescriptor block_info, unsigned short new_points,
+        void interpolated_block_on_last_col(GridQuad block_info, unsigned int new_points,
                                             std::vector<glm::vec3>& block);
 
-        void interpolated_block_on_last_row(BlockDescriptor block_info, unsigned short new_points,
+        void interpolated_block_on_last_row(GridQuad block_info, unsigned int new_points,
                                             std::vector<glm::vec3>& block);
 
-        void interpolated_block(BlockDescriptor block_info, unsigned short new_points,
+        void interpolated_block(GridQuad block_info, unsigned int new_points,
                                 std::vector<glm::vec3>& block);
 
-        vec3_grid compose_interpolated_grid(GridDimension dimension, unsigned new_points_per_edge, vec3_grid&& blocks);
+        vec3_grid compose_interpolated_blocks_as_grid(GridDimension original_dimensions, unsigned new_points_per_edge, vec3_grid&& blocks);
     }
 }
 
