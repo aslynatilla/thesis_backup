@@ -62,6 +62,17 @@ namespace ies::adapter::impl_details {
                          (vertices.p01.y - vertices.p00.y) / vertical_steps_between_vertices);
     }
 
+    glm::vec3 GridQuad::bilinear_interpolation_in(const glm::vec2 point) const {
+        const auto& v = vertices;
+        const auto& f = f_in_vertex;
+        const float denominator = (v.p11.x - v.p00.x) * (v.p11.y - v.p00.y);
+        const auto term00 = f.p00 * (v.p11.x - point.x) * (v.p11.y - point.y);
+        const auto term10 = f.p10 * (point.x - v.p00.x) * (v.p11.y - point.y);
+        const auto term01 = f.p01 * (v.p11.x - point.x) * (point.y - v.p00.y);
+        const auto term11 = f.p11 * (point.x - v.p00.x) * (point.y - v.p00.y);
+        return (term00 + term01 + term10 + term11) / denominator;
+    }
+
     //   TODO: this might be handled differently if using a struct to represent the block better;
     //  semantically, these should be two different methods, maybe chained...
     //  consider composition over inheritance and a struct containing these vectors
@@ -88,17 +99,6 @@ namespace ies::adapter::impl_details {
         const unsigned int x_steps = new_points + 1;
         const unsigned int y_steps = new_points + 1;
 
-        auto interpolator = [&block_info](const glm::vec2 interpolation_point) -> glm::vec3 {
-            const auto& angles = block_info.vertices;
-            const auto& f = block_info.f_in_vertex;
-            const float denominator = (angles.p11.x - angles.p00.x) * (angles.p11.y - angles.p00.y);
-            const auto term00 = f.p00 * (angles.p11.x - interpolation_point.x) * (angles.p11.y - interpolation_point.y);
-            const auto term10 = f.p10 * (interpolation_point.x - angles.p00.x) * (angles.p11.y - interpolation_point.y);
-            const auto term01 = f.p01 * (angles.p11.x - interpolation_point.x) * (interpolation_point.y - angles.p00.y);
-            const auto term11 = f.p11 * (interpolation_point.x - angles.p00.x) * (interpolation_point.y - angles.p00.y);
-            return (term00 + term01 + term10 + term11) / denominator;
-        };
-
         const auto step = block_info.compute_sampling_step(x_steps, y_steps);
         for (auto i = 0u; i < y_edge_points; ++i) {
             auto y = (i == y_steps) ? block_info.vertices.p01.y
@@ -106,7 +106,7 @@ namespace ies::adapter::impl_details {
             for (auto j = 0u; j < x_edge_points; ++j) {
                 auto x = (j == x_steps) ? block_info.vertices.p10.x
                                         : block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(interpolator(glm::vec2(x, y)));
+                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
             }
         }
     }
@@ -118,24 +118,13 @@ namespace ies::adapter::impl_details {
         const unsigned int x_steps = new_points + 1;
         const unsigned int y_steps = new_points + 1;
 
-        auto interpolator = [&block_info](const glm::vec2 interpolation_point) -> glm::vec3 {
-            const auto& angles = block_info.vertices;
-            const auto& f = block_info.f_in_vertex;
-            const float denominator = (angles.p11.x - angles.p00.x) * (angles.p11.y - angles.p00.y);
-            const auto term00 = f.p00 * (angles.p11.x - interpolation_point.x) * (angles.p11.y - interpolation_point.y);
-            const auto term10 = f.p10 * (interpolation_point.x - angles.p00.x) * (angles.p11.y - interpolation_point.y);
-            const auto term01 = f.p01 * (angles.p11.x - interpolation_point.x) * (interpolation_point.y - angles.p00.y);
-            const auto term11 = f.p11 * (interpolation_point.x - angles.p00.x) * (interpolation_point.y - angles.p00.y);
-            return (term00 + term01 + term10 + term11) / denominator;
-        };
-
         const auto step = block_info.compute_sampling_step(x_steps, y_steps);
         for (auto i = 0u; i < y_edge_points; ++i) {
             auto y = block_info.vertices.p00.y + step.y * static_cast<float>(i);
             for (auto j = 0u; j < x_edge_points; ++j) {
                 auto x = (j == x_steps) ? block_info.vertices.p10.x
                                         : block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(interpolator(glm::vec2(x, y)));
+                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
             }
         }
     }
@@ -147,24 +136,13 @@ namespace ies::adapter::impl_details {
         const unsigned int x_steps = new_points + 1;
         const unsigned int y_steps = new_points + 1;
 
-        auto interpolator = [&block_info](const glm::vec2 interpolation_point) -> glm::vec3 {
-            const auto& angles = block_info.vertices;
-            const auto& f = block_info.f_in_vertex;
-            const float denominator = (angles.p11.x - angles.p00.x) * (angles.p11.y - angles.p00.y);
-            const auto term00 = f.p00 * (angles.p11.x - interpolation_point.x) * (angles.p11.y - interpolation_point.y);
-            const auto term10 = f.p10 * (interpolation_point.x - angles.p00.x) * (angles.p11.y - interpolation_point.y);
-            const auto term01 = f.p01 * (angles.p11.x - interpolation_point.x) * (interpolation_point.y - angles.p00.y);
-            const auto term11 = f.p11 * (interpolation_point.x - angles.p00.x) * (interpolation_point.y - angles.p00.y);
-            return (term00 + term01 + term10 + term11) / denominator;
-        };
-
         const auto step = block_info.compute_sampling_step(x_steps, y_steps);
         for (auto i = 0u; i < y_edge_points; ++i) {
             auto y = (i == y_steps) ? block_info.vertices.p01.y
                                     : block_info.vertices.p00.y + step.y * static_cast<float>(i);
             for (auto j = 0u; j < x_edge_points; ++j) {
                 auto x = block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(interpolator(glm::vec2(x, y)));
+                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
             }
         }
     }
@@ -174,23 +152,12 @@ namespace ies::adapter::impl_details {
         const unsigned int edge_points = new_points + 1;
         const unsigned int steps = new_points + 1;
 
-        auto interpolator = [&block_info](const glm::vec2 interpolation_point) -> glm::vec3 {
-            const auto& angles = block_info.vertices;
-            const auto& f = block_info.f_in_vertex;
-            const float denominator = (angles.p11.x - angles.p00.x) * (angles.p11.y - angles.p00.y);
-            const auto term00 = f.p00 * (angles.p11.x - interpolation_point.x) * (angles.p11.y - interpolation_point.y);
-            const auto term10 = f.p10 * (interpolation_point.x - angles.p00.x) * (angles.p11.y - interpolation_point.y);
-            const auto term01 = f.p01 * (angles.p11.x - interpolation_point.x) * (interpolation_point.y - angles.p00.y);
-            const auto term11 = f.p11 * (interpolation_point.x - angles.p00.x) * (interpolation_point.y - angles.p00.y);
-            return (term00 + term01 + term10 + term11) / denominator;
-        };
-
         const auto step = block_info.compute_sampling_step(steps, steps);
         for (auto i = 0u; i < edge_points; ++i) {
             auto y = block_info.vertices.p00.y + step.y * static_cast<float>(i);
             for (auto j = 0u; j < edge_points; ++j) {
                 auto x = block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(interpolator(glm::vec2(x, y)));
+                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
             }
         }
     }

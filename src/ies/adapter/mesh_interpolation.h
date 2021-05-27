@@ -36,6 +36,8 @@ namespace ies::adapter {
 
             [[nodiscard]] glm::vec2 compute_sampling_step(unsigned int steps_per_x_edge,
                                                           unsigned int steps_per_y_edge) const;
+
+            [[nodiscard]] glm::vec3 bilinear_interpolation_in(const glm::vec2 point) const;
         };
 
         std::vector<glm::vec3>
