@@ -11,7 +11,8 @@ namespace ies::adapter {
     using vec2_grid = std::vector<std::vector<glm::vec2>>;
     using vec3_grid = std::vector<std::vector<glm::vec3>>;
 
-    vec3_grid interpolate_grid(const vec2_grid& domain_points, vec3_grid&& codomain_points, unsigned int new_points_per_edge);
+    vec3_grid
+    interpolate_grid(const vec2_grid& domain_points, vec3_grid&& codomain_points, unsigned int new_points_per_edge);
 
 
     namespace impl_details {
@@ -34,14 +35,27 @@ namespace ies::adapter {
             Rect<glm::vec2> vertices;
             Rect<glm::vec3> f_in_vertex;
 
-            [[nodiscard]] glm::vec2 compute_sampling_step(unsigned int steps_per_x_edge,
-                                                          unsigned int steps_per_y_edge) const;
-
-            [[nodiscard]] glm::vec3 bilinear_interpolation_in(const glm::vec2 point) const;
+            [[nodiscard]] glm::vec3 bilinear_interpolation_in(glm::vec2 point) const;
         };
 
+        struct FloatRange {
+            float start;
+            float end;
+        };
+
+        [[nodiscard]] std::vector<float> compute_range(unsigned int samples_in_range,
+                                                       FloatRange range_endpoints,
+                                                       bool includes_range_end);
+
+        [[nodiscard]] float compute_sampling_step(unsigned int number_of_steps,
+                                                  FloatRange range_to_sample);
+
+        [[nodiscard]] std::vector<glm::vec2> flat_cartesian_product(const std::vector<float>& first_values,
+                                                                    const std::vector<float>& second_values);
+
         std::vector<glm::vec3>
-        create_block_and_reserve(bool is_last_row_block, bool is_last_column_block, unsigned int new_points_per_edge);
+        create_block_and_reserve(const unsigned int new_points_per_edge, const bool is_last_row_block,
+                                 const bool is_last_column_block);
 
         void interpolated_block_last(GridQuad block_info, unsigned int new_points,
                                      std::vector<glm::vec3>& block);
@@ -55,7 +69,8 @@ namespace ies::adapter {
         void interpolated_block(GridQuad block_info, unsigned int new_points,
                                 std::vector<glm::vec3>& block);
 
-        vec3_grid compose_interpolated_blocks_as_grid(GridDimension original_dimensions, unsigned new_points_per_edge, vec3_grid&& blocks);
+        vec3_grid compose_interpolated_blocks_as_grid(GridDimension original_dimensions, unsigned new_points_per_edge,
+                                                      vec3_grid&& blocks);
     }
 }
 

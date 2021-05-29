@@ -1,7 +1,8 @@
 #include "mesh_interpolation.h"
 
 namespace ies::adapter {
-    vec3_grid interpolate_grid(const vec2_grid& domain_points, vec3_grid&& codomain_points, unsigned int new_points_per_edge) {
+    vec3_grid
+    interpolate_grid(const vec2_grid& domain_points, vec3_grid&& codomain_points, unsigned int new_points_per_edge) {
         using namespace impl_details;
         const auto dimensions = GridDimension::from(codomain_points);
         const auto blocks_rows = dimensions.height - 1;
@@ -15,7 +16,7 @@ namespace ies::adapter {
             for (auto col = 0u; col < blocks_columns; ++col) {
                 const bool is_last_row = (row == blocks_rows - 1);
                 const bool is_last_column = (col == blocks_columns - 1);
-                auto block = create_block_and_reserve(is_last_row, is_last_column, new_points_per_edge);
+                auto block = create_block_and_reserve(new_points_per_edge, is_last_row, is_last_column);
 
                 GridQuad quad{
                         .vertices = {.p00 = domain_points[row][col],
@@ -52,16 +53,6 @@ namespace ies::adapter::impl_details {
                 .height = target_grid.size()};
     }
 
-    //step
-    glm::vec2
-    GridQuad::compute_sampling_step(const unsigned int steps_per_x_edge,
-                                    const unsigned int steps_per_y_edge) const {
-        const auto horizontal_steps_between_vertices = static_cast<float>(steps_per_x_edge);
-        const auto vertical_steps_between_vertices = static_cast<float>(steps_per_y_edge);
-        return glm::vec2((vertices.p10.x - vertices.p00.x) / horizontal_steps_between_vertices,
-                         (vertices.p01.y - vertices.p00.y) / vertical_steps_between_vertices);
-    }
-
     glm::vec3 GridQuad::bilinear_interpolation_in(const glm::vec2 point) const {
         const auto& v = vertices;
         const auto& f = f_in_vertex;
@@ -77,7 +68,9 @@ namespace ies::adapter::impl_details {
     //  semantically, these should be two different methods, maybe chained...
     //  consider composition over inheritance and a struct containing these vectors
     std::vector<glm::vec3>
-    create_block_and_reserve(const bool is_last_row_block, const bool is_last_column_block, const unsigned int new_points_per_edge) {
+    create_block_and_reserve(const unsigned int new_points_per_edge,
+                             const bool is_last_row_block,
+                             const bool is_last_column_block) {
         const unsigned int points_per_generic_edge = new_points_per_edge + 1;
         const unsigned int points_per_last_edge = new_points_per_edge + 2;
 
@@ -92,77 +85,93 @@ namespace ies::adapter::impl_details {
         return block;
     }
 
+    std::vector<glm::vec2> flat_cartesian_product(const std::vector<float>& first_values,
+                                                  const std::vector<float>& second_values) {
+        std::vector<glm::vec2> products;
+        products.reserve(second_values.size() * first_values.size());
+        for (const auto y : second_values) {
+            for (const auto x : first_values) {
+                products.emplace_back(x, y);
+            }
+        }
+        return products;
+    }
+
+    float compute_sampling_step(const unsigned int number_of_steps,
+                                const FloatRange range_to_sample) {
+        const auto steps_as_float = static_cast<float>(number_of_steps);
+        return (range_to_sample.end - range_to_sample.start) / steps_as_float;
+    }
+
+    std::vector<float>
+    compute_range(unsigned int samples_in_range, FloatRange range_endpoints, bool includes_range_end) {
+        std::vector<float> values;
+        float step = includes_range_end ? compute_sampling_step(samples_in_range - 1, range_endpoints)
+                                        : compute_sampling_step(samples_in_range, range_endpoints);
+        for (auto i = 0u; i < samples_in_range; ++i) {
+            if (includes_range_end && i == samples_in_range - 1) {
+                values.push_back(range_endpoints.end);
+            } else {
+                values.push_back(range_endpoints.start + step * static_cast<float>(i));
+            }
+        }
+        return values;
+    }
+
     void interpolated_block_last(GridQuad block_info, const unsigned int new_points,
                                  std::vector<glm::vec3>& block) {
         const unsigned int x_edge_points = new_points + 2;
         const unsigned int y_edge_points = new_points + 2;
-        const unsigned int x_steps = new_points + 1;
-        const unsigned int y_steps = new_points + 1;
-
-        const auto step = block_info.compute_sampling_step(x_steps, y_steps);
-        for (auto i = 0u; i < y_edge_points; ++i) {
-            auto y = (i == y_steps) ? block_info.vertices.p01.y
-                                    : block_info.vertices.p00.y + step.y * static_cast<float>(i);
-            for (auto j = 0u; j < x_edge_points; ++j) {
-                auto x = (j == x_steps) ? block_info.vertices.p10.x
-                                        : block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
-            }
-        }
+        const FloatRange x_range{block_info.vertices.p00.x, block_info.vertices.p10.x};
+        const FloatRange y_range{block_info.vertices.p00.y, block_info.vertices.p01.y};
+        const std::vector<float> xs = compute_range(x_edge_points, x_range, true);
+        const std::vector<float> ys = compute_range(y_edge_points, y_range, true);
+        const auto points = flat_cartesian_product(xs, ys);
+        std::transform(std::begin(points), std::end(points), std::back_inserter(block),
+                       [&block_info](const auto p) { return block_info.bilinear_interpolation_in(p); });
     }
+
 
     void interpolated_block_on_last_col(GridQuad block_info, const unsigned int new_points,
                                         std::vector<glm::vec3>& block) {
         const unsigned int x_edge_points = new_points + 2;
         const unsigned int y_edge_points = new_points + 1;
-        const unsigned int x_steps = new_points + 1;
-        const unsigned int y_steps = new_points + 1;
-
-        const auto step = block_info.compute_sampling_step(x_steps, y_steps);
-        for (auto i = 0u; i < y_edge_points; ++i) {
-            auto y = block_info.vertices.p00.y + step.y * static_cast<float>(i);
-            for (auto j = 0u; j < x_edge_points; ++j) {
-                auto x = (j == x_steps) ? block_info.vertices.p10.x
-                                        : block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
-            }
-        }
+        const FloatRange x_range{block_info.vertices.p00.x, block_info.vertices.p10.x};
+        const FloatRange y_range{block_info.vertices.p00.y, block_info.vertices.p01.y};
+        const std::vector<float> xs = compute_range(x_edge_points, x_range, true);
+        const std::vector<float> ys = compute_range(y_edge_points, y_range, false);
+        const auto points = flat_cartesian_product(xs, ys);
+        std::transform(std::begin(points), std::end(points), std::back_inserter(block),
+                       [&block_info](const auto p) { return block_info.bilinear_interpolation_in(p); });
     }
 
     void interpolated_block_on_last_row(GridQuad block_info, const unsigned int new_points,
                                         std::vector<glm::vec3>& block) {
         const unsigned int x_edge_points = new_points + 1;
         const unsigned int y_edge_points = new_points + 2;
-        const unsigned int x_steps = new_points + 1;
-        const unsigned int y_steps = new_points + 1;
-
-        const auto step = block_info.compute_sampling_step(x_steps, y_steps);
-        for (auto i = 0u; i < y_edge_points; ++i) {
-            auto y = (i == y_steps) ? block_info.vertices.p01.y
-                                    : block_info.vertices.p00.y + step.y * static_cast<float>(i);
-            for (auto j = 0u; j < x_edge_points; ++j) {
-                auto x = block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
-            }
-        }
+        const FloatRange x_range{block_info.vertices.p00.x, block_info.vertices.p10.x};
+        const FloatRange y_range{block_info.vertices.p00.y, block_info.vertices.p01.y};
+        const std::vector<float> xs = compute_range(x_edge_points, x_range, false);
+        const std::vector<float> ys = compute_range(y_edge_points, y_range, true);
+        const auto points = flat_cartesian_product(xs, ys);
+        std::transform(std::begin(points), std::end(points), std::back_inserter(block),
+                       [&block_info](const auto p) { return block_info.bilinear_interpolation_in(p); });
     }
 
     void interpolated_block(GridQuad block_info, const unsigned int new_points,
                             std::vector<glm::vec3>& block) {
         const unsigned int edge_points = new_points + 1;
-        const unsigned int steps = new_points + 1;
-
-        const auto step = block_info.compute_sampling_step(steps, steps);
-        for (auto i = 0u; i < edge_points; ++i) {
-            auto y = block_info.vertices.p00.y + step.y * static_cast<float>(i);
-            for (auto j = 0u; j < edge_points; ++j) {
-                auto x = block_info.vertices.p00.x + step.x * static_cast<float>(j);
-                block.push_back(block_info.bilinear_interpolation_in(glm::vec2(x, y)));
-            }
-        }
+        const FloatRange x_range{block_info.vertices.p00.x, block_info.vertices.p10.x};
+        const FloatRange y_range{block_info.vertices.p00.y, block_info.vertices.p01.y};
+        const std::vector<float> xs = compute_range(edge_points, x_range, false);
+        const std::vector<float> ys = compute_range(edge_points, y_range, false);
+        const auto points = flat_cartesian_product(xs, ys);
+        std::transform(std::begin(points), std::end(points), std::back_inserter(block),
+                       [&block_info](const auto p) { return block_info.bilinear_interpolation_in(p); });
     }
 
-    vec3_grid compose_interpolated_blocks_as_grid(GridDimension original_dimensions, unsigned new_points_per_edge, vec3_grid&& blocks) {
+    vec3_grid compose_interpolated_blocks_as_grid(GridDimension original_dimensions, unsigned new_points_per_edge,
+                                                  vec3_grid&& blocks) {
         vec3_grid result;
         const auto sub_block_rows_number = (new_points_per_edge + 1);
         const auto resulting_rows_number = (original_dimensions.height - 1) * sub_block_rows_number + 1;
