@@ -77,6 +77,7 @@ namespace engine {
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             mask_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+            fake_default_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             depth_texture = std::make_unique<OpenGL3_Cubemap>(GL_DEPTH_COMPONENT,
                                                               OpenGL3_TextureParameters(
                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
@@ -127,6 +128,26 @@ namespace engine {
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
 
+            fake_texture = std::make_unique<OpenGL3_Texture2D>(GL_SRGB8,
+                                                               OpenGL3_TextureParameters(
+                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                       {GL_NEAREST, GL_NEAREST,
+                                                                        GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                                        viewport_dimension[2],
+                                                                        viewport_dimension[3],
+                                                                        GL_RGB, GL_FLOAT, nullptr);
+
+            fake_depth = std::make_unique<OpenGL3_Texture2D>(GL_DEPTH_COMPONENT,
+                                                             OpenGL3_TextureParameters(
+                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                                     {GL_LINEAR, GL_LINEAR,
+                                                                      GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                                        viewport_dimension[2],
+                                                                        viewport_dimension[3],
+                                                             GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
 
             VPL_samples_per_fragment = 200;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
@@ -159,6 +180,12 @@ namespace engine {
             mask_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *ies_light_mask);
             glDrawBuffers(1, buffer_enums.get());
             mask_fbo->unbind_from(GL_FRAMEBUFFER);
+            fake_default_fbo->bind_as(GL_FRAMEBUFFER);
+            fake_default_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *fake_depth);
+            fake_default_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *fake_texture);
+            glDrawBuffers(1, buffer_enums.get());
+            fake_default_fbo->unbind_from();
+
 
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
@@ -349,7 +376,7 @@ namespace engine {
             }
             rsm_fbo->unbind_from(GL_FRAMEBUFFER);
 
-
+            fake_default_fbo->bind_as(GL_FRAMEBUFFER);
             //  Final pass for rendering the scene
             glViewport(0, 0, viewport_dimension[2], viewport_dimension[3]);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -365,6 +392,7 @@ namespace engine {
                                 : draw_scene(
                     glm::vec3(), camera_view_matrix, camera_projection_matrix, no_indirect_shader);
             glDisable(GL_FRAMEBUFFER_SRGB);
+            fake_default_fbo->unbind_from();
             
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

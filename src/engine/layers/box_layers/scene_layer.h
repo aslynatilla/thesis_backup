@@ -82,6 +82,9 @@ namespace engine {
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_fbo;
         std::unique_ptr<OpenGL3_FrameBuffer> mask_fbo;
+        std::unique_ptr<OpenGL3_FrameBuffer> fake_default_fbo;
+        std::unique_ptr<OpenGL3_Texture2D> fake_texture;
+        std::unique_ptr<OpenGL3_Texture2D> fake_depth;
         std::unique_ptr<OpenGL3_Cubemap> depth_texture;
         std::unique_ptr<OpenGL3_Cubemap> position_texture;
         std::unique_ptr<OpenGL3_Cubemap> normal_texture;
