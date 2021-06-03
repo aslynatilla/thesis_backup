@@ -87,8 +87,8 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
-    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
+    //return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+    return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
 }
 
 void main(){

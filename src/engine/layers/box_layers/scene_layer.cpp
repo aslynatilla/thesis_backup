@@ -107,7 +107,7 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB8,
+            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
                                                              OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -117,7 +117,7 @@ namespace engine {
                                                              texture_dimension[1],
                                                              GL_RGB, GL_FLOAT, nullptr);
 
-            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
+            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
                                                                OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -128,7 +128,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            VPL_samples_per_fragment = 200;
+            VPL_samples_per_fragment = 800;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
