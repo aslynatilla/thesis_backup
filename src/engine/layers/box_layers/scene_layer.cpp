@@ -2,7 +2,7 @@
 
 namespace engine {
 
-    SceneLayer::SceneLayer(std::weak_ptr<FlyCamera> application_camera)
+    SceneLayer::SceneLayer(std::weak_ptr<FlyCamera> application_camera, [[maybe_unused]] LayerCreationKey key)
             : view_camera(std::move(application_camera)) {}
 
     void SceneLayer::on_attach() {
@@ -128,7 +128,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            VPL_samples_per_fragment = 800;
+            VPL_samples_per_fragment = 400;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
@@ -513,6 +513,10 @@ namespace engine {
             draw_indirect_light = !draw_indirect_light;
         }
         return false;
+    }
+
+    std::unique_ptr<SceneLayer> SceneLayer::create_using(std::weak_ptr<FlyCamera> application_camera) {
+        return std::make_unique<SceneLayer>(std::move(application_camera), LayerCreationKey{});
     }
 }
 

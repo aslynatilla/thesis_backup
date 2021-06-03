@@ -14,17 +14,19 @@
 namespace engine {
     class GLFW_Window_Impl : public Window {
     public:
-        GLFW_Window_Impl(const WindowProperties& properties);
+        static GLFW_Window_Impl* convert_from(Window* abstract_window);
 
-        virtual ~GLFW_Window_Impl();
+        explicit GLFW_Window_Impl(const WindowProperties& properties);
+
+        virtual ~GLFW_Window_Impl() override;
 
         void on_update() override;
 
-        uint32_t get_width() const noexcept override;
+        [[nodiscard]] unsigned get_width() const noexcept override;
 
-        uint32_t get_height() const noexcept override;
+        [[nodiscard]] unsigned get_height() const noexcept override;
 
-        void *get_native_window() const noexcept override;
+        [[nodiscard]] void *get_native_window() const noexcept override;
 
         void set_event_callback(const CallbackFunction& callback) noexcept override;
 

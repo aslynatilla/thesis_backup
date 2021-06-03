@@ -5,6 +5,8 @@
 
 namespace engine{
     class Layer {
+    protected:
+        struct LayerCreationKey{};
     public:
         virtual ~Layer() = default;
 

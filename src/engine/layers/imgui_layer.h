@@ -11,7 +11,8 @@
 namespace engine {
     class ImGuiLayer : public Layer {
     public:
-        ImGuiLayer(GLFW_Window_Impl* main_window);
+        static std::unique_ptr<ImGuiLayer> from(GLFW_Window_Impl* main_window);
+        ImGuiLayer(GLFW_Window_Impl* main_window, LayerCreationKey key);
 
         void on_attach() override;
         void on_detach() override;

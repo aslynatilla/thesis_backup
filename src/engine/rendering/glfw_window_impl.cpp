@@ -178,6 +178,10 @@ namespace engine {
         MouseMovedEvent moving(static_cast<float>(x_coord), static_cast<float>(y_coord));
         target_window_data.callback_func(moving);
     }
+
+    GLFW_Window_Impl* GLFW_Window_Impl::convert_from(Window* abstract_window) {
+        return dynamic_cast<GLFW_Window_Impl*>(abstract_window);
+    }
 }
 
 

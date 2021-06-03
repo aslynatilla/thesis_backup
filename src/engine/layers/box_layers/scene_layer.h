@@ -28,8 +28,8 @@
 namespace engine {
     class SceneLayer : public Layer {
     public:
-        SceneLayer(std::weak_ptr<FlyCamera> application_camera);
-
+        SceneLayer(std::weak_ptr<FlyCamera> application_camera, LayerCreationKey key);
+        static std::unique_ptr<SceneLayer> create_using(std::weak_ptr<FlyCamera> application_camera);
         SceneLayer() = delete;
 
         SceneLayer(const SceneLayer& other) = delete;
