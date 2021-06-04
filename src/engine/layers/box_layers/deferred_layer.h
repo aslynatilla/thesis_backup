@@ -16,8 +16,8 @@
 namespace engine{
     class DeferredLayer : public Layer{
     public:
-        DeferredLayer(std::weak_ptr<FlyCamera> controlled_camera);
-
+        DeferredLayer(std::weak_ptr<FlyCamera> controlled_camera, LayerCreationKey key);
+        static std::unique_ptr<DeferredLayer> create_using(std::weak_ptr<FlyCamera> controlled_camera);
         DeferredLayer() = delete;
         DeferredLayer(const DeferredLayer& other) = delete;
         DeferredLayer(DeferredLayer&& other) = delete;

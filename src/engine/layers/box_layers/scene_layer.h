@@ -28,8 +28,8 @@
 namespace engine {
     class SceneLayer : public Layer {
     public:
-        SceneLayer(std::weak_ptr<FlyCamera> application_camera);
-
+        SceneLayer(std::weak_ptr<FlyCamera> application_camera, LayerCreationKey key);
+        static std::unique_ptr<SceneLayer> create_using(std::weak_ptr<FlyCamera> application_camera);
         SceneLayer() = delete;
 
         SceneLayer(const SceneLayer& other) = delete;
@@ -96,7 +96,7 @@ namespace engine {
         float indirect_intensity = 1.00f;
         float displacement_sphere_radius = 1.00f;
         float shadow_threshold = 0.15f;
-        float light_far_plane = 100.00f;
+        float light_far_plane = 200.00f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
         bool ies_light_wireframe = true;

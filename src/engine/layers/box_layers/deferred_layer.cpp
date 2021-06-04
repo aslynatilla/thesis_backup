@@ -1,7 +1,7 @@
 #include "deferred_layer.h"
 
 namespace engine {
-    DeferredLayer::DeferredLayer(std::weak_ptr<FlyCamera> controlled_camera)
+    DeferredLayer::DeferredLayer(std::weak_ptr<FlyCamera> controlled_camera, [[maybe_unused]] LayerCreationKey key)
             : camera(std::move(controlled_camera)) {}
 
     void DeferredLayer::on_attach() {
@@ -86,13 +86,13 @@ namespace engine {
             gbuffer_creation->set_mat4("projection_view", projection_view_matrix);
 
             gbuffer_creation->set_int("gbuff_position", 0);
-            gbuffer_positions_texture->make_active_in_slot(0);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(gbuffer_positions_texture->bound_type, gbuffer_positions_texture->id);
             gbuffer_creation->set_int("gbuff_normal", 1);
-            gbuffer_positions_texture->make_active_in_slot(1);
+            glActiveTexture(GL_TEXTURE0 + 1);
             glBindTexture(gbuffer_normals_texture->bound_type, gbuffer_normals_texture->id);
             gbuffer_creation->set_int("gbuff_diffuse", 2);
-            gbuffer_positions_texture->make_active_in_slot(2);
+            glActiveTexture(GL_TEXTURE0 + 2);
             glBindTexture(gbuffer_diffuse_texture->bound_type, gbuffer_diffuse_texture->id);
 
             for (const auto& o : objects) {
@@ -128,5 +128,9 @@ namespace engine {
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
         return scenes::load_scene_objects_from(path_to_scene, postprocessing_flags);
+    }
+
+    std::unique_ptr<DeferredLayer> DeferredLayer::create_using(std::weak_ptr<FlyCamera> controlled_camera) {
+        return std::make_unique<DeferredLayer>(controlled_camera, LayerCreationKey{});
     }
 }

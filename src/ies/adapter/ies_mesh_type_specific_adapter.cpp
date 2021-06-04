@@ -3,7 +3,7 @@
 namespace ies::adapter{
     //  Flip left, opposed to right as the direction of the x-axis
     //  Flipped elements are put before non-flipped ones
-    void flip_left(std::vector<std::vector<glm::vec3>>& point_grid){
+    void flip_left(vec3_grid & point_grid){
         const glm::vec3 flip_value { -1.0f, 1.0f, 1.0f };
 
         std::vector<std::vector<glm::vec3>> new_grid;
@@ -26,7 +26,7 @@ namespace ies::adapter{
 
     //  Flip back, opposed to forward as the direction of the z-axis
     //  Flipped elements are put before non-flipped ones
-    void flip_back(std::vector<std::vector<glm::vec3>>& point_grid){
+    void flip_back(vec3_grid & point_grid){
         const glm::vec3 flip_value { 1.0f, 1.0f, -1.0f };
         const auto                          rows_number = point_grid.size();
 
@@ -51,7 +51,7 @@ namespace ies::adapter{
 }
 
 namespace ies::adapter::type_a_b {
-    void transform_grid(const Photometric_Angles& light_data, std::vector<std::vector<glm::vec3>>& point_grid){
+    void transform_grid(const Photometric_Angles& light_data, vec3_grid & point_grid){
         if(light_data.horizontal_angles.front() == 0.0f && light_data.horizontal_angles.back() == 90.0f) {
             flip_left(point_grid);
             flip_back(point_grid);
@@ -64,7 +64,7 @@ namespace ies::adapter::type_a_b {
 }
 
 namespace ies::adapter::type_c {
-    void transform_grid(const Photometric_Angles& light_data, std::vector<std::vector<glm::vec3>>& point_grid){
+    void transform_grid(const Photometric_Angles& light_data, vec3_grid & point_grid){
         if (light_data.horizontal_angles.size() == 1 && light_data.horizontal_angles.front() == 0.0f) {
             // The luminaire is symmetric in all [vertical] photometric planes
             // It should be represented as some sort of cylinder

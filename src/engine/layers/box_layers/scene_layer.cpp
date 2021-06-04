@@ -2,7 +2,7 @@
 
 namespace engine {
 
-    SceneLayer::SceneLayer(std::weak_ptr<FlyCamera> application_camera)
+    SceneLayer::SceneLayer(std::weak_ptr<FlyCamera> application_camera, [[maybe_unused]] LayerCreationKey key)
             : view_camera(std::move(application_camera)) {}
 
     void SceneLayer::on_attach() {
@@ -42,8 +42,8 @@ namespace engine {
                                       LightAttenuationParameters{1.0f, 0.5f, 1.8f});
             scene_light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
-            draw_shader = shader::create_shader_from("resources/shaders/shadowmapped.vert",
-                                                     "resources/shaders/shadowmapped.frag");
+            draw_shader = shader::create_shader_from("resources/shaders/rsm_render.vert",
+                                                     "resources/shaders/rsm_render.frag");
             no_indirect_shader = shader::create_shader_from("resources/shaders/shadowmapped_no_indirect.vert",
                                                             "resources/shaders/shadowmapped_no_indirect.frag");
             rsm_generation_shader = shader::create_shader_from("resources/shaders/rsm.vert",
@@ -63,8 +63,8 @@ namespace engine {
             viewport_dimension[3] = static_cast<int>(viewport_float_dimension[3]);
 
             texture_dimension =
-                    {static_cast<int>(viewport_dimension[2] / 4),
-                     static_cast<int>(viewport_dimension[3]) / 4};
+                    {static_cast<int>(viewport_dimension[2] / 2),
+                     static_cast<int>(viewport_dimension[3]) / 2};
 
             light_transforms_strings = {
                     "light_transforms[0]",
@@ -107,7 +107,7 @@ namespace engine {
                                                                texture_dimension[0],
                                                                texture_dimension[1],
                                                                GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB8,
+            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
                                                              OpenGL3_TextureParameters(
                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -117,7 +117,7 @@ namespace engine {
                                                              texture_dimension[1],
                                                              GL_RGB, GL_FLOAT, nullptr);
 
-            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
+            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
                                                                OpenGL3_TextureParameters(
                                                                        {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
                                                                         GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
@@ -128,7 +128,7 @@ namespace engine {
                                                                GL_RGB, GL_FLOAT, nullptr);
 
 
-            VPL_samples_per_fragment = 100;
+            VPL_samples_per_fragment = 400;
             const auto samples = random_num::uniform_samples_on_unit_sphere(VPL_samples_per_fragment);
 
             //  TODO: consider using BufferTexture for this
@@ -173,7 +173,7 @@ namespace engine {
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
             document = parser.parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-            ies::adapter::IES_Mesh photometric_solid(document);
+            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
 
             const auto vertices = photometric_solid.get_vertices();
 
@@ -360,10 +360,12 @@ namespace engine {
                 draw_shader->set_bool(11, hide_direct_component);
             }
 
+            glEnable(GL_FRAMEBUFFER_SRGB);
             draw_indirect_light ? draw_scene(glm::vec3(), camera_view_matrix, camera_projection_matrix, draw_shader)
                                 : draw_scene(
                     glm::vec3(), camera_view_matrix, camera_projection_matrix, no_indirect_shader);
-
+            glDisable(GL_FRAMEBUFFER_SRGB);
+            
             if (ies_light_wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 wireframe_shader->use();
@@ -511,6 +513,10 @@ namespace engine {
             draw_indirect_light = !draw_indirect_light;
         }
         return false;
+    }
+
+    std::unique_ptr<SceneLayer> SceneLayer::create_using(std::weak_ptr<FlyCamera> application_camera) {
+        return std::make_unique<SceneLayer>(std::move(application_camera), LayerCreationKey{});
     }
 }
 

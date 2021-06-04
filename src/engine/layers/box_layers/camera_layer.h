@@ -16,7 +16,8 @@
 namespace engine{
     class CameraLayer : public Layer{
     public:
-        CameraLayer(std::shared_ptr<FlyCamera> application_camera);
+        static std::unique_ptr<CameraLayer> layer_for(std::shared_ptr<FlyCamera> camera);
+        CameraLayer(std::shared_ptr<FlyCamera> application_camera, LayerCreationKey key);
 
         CameraLayer() = delete;
         CameraLayer(const CameraLayer& other) = delete;

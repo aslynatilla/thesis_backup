@@ -17,7 +17,7 @@ public:
     virtual bool on_window_resized(engine::WindowResizedEvent& event) final override;
 
 private:
-    engine::ImGuiLayer* imgui;
+    std::unique_ptr<engine::ImGuiLayer> imgui;
 };
 
 

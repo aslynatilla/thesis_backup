@@ -58,7 +58,7 @@ float compute_shadow(vec3 light_to_frag, float light_distance){
     if (light_distance < depth + shadow_threshold){
         return 1.0;
     } else {
-        return 0.4;
+        return 0.0;
     }
 }
 
@@ -87,8 +87,8 @@ vec3 compute_indirect_illumination(vec3 light_to_frag, vec3 frag_normalized_norm
                     pow(distance_to_vpl, 4.0);
         indirect = indirect + result * weight;
     }
-    return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
-    // or return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
+    //return clamp(indirect * 12.566/(float(VPL_samples_per_fragment)), 0.0, 1.0);
+    return clamp(indirect, 0.0, 1.0)  * 12.566/(float(VPL_samples_per_fragment));
 }
 
 void main(){
@@ -129,9 +129,6 @@ void main(){
         diffuse_component *= is_active ? scaled_distance : 0.0;
     }
 
-    //  Ambient component
-    vec3 ambient_component = ambient_color.xyz * ambient_color.w;
-
     //  Specular component
     vec3 reflection_direction = reflect(-l, n);
     //  Beware of NaN when pow(0,0) - delete control and use the following line if you need performance
@@ -140,5 +137,5 @@ void main(){
     vec3 specular_component = specular_color.w * specular_color.xyz * specular_factor;
 
     FragColor = hide_direct_component ?   vec4(indirect_component, 1.0)
-                                        :   vec4((diffuse_component + specular_component) * shadow_factor + ambient_component + indirect_component, 1.0);
+                                        :   vec4((diffuse_component + specular_component) * shadow_factor + indirect_component, 1.0);
 }

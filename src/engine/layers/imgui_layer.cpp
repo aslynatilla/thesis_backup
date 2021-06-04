@@ -1,7 +1,7 @@
 #include "imgui_layer.h"
 
 namespace engine{
-    ImGuiLayer::ImGuiLayer(GLFW_Window_Impl* main_window) : app_window{main_window}, is_blocking_events{false} {}
+    ImGuiLayer::ImGuiLayer(GLFW_Window_Impl* main_window, [[maybe_unused]] LayerCreationKey key) : app_window{main_window}, is_blocking_events{false} {}
 
     void ImGuiLayer::on_attach() {
 
@@ -63,5 +63,9 @@ namespace engine{
             return static_cast<GLFWwindow*>(app_window->get_native_window());
         }
         return nullptr;
+    }
+
+    std::unique_ptr<ImGuiLayer> ImGuiLayer::from(GLFW_Window_Impl* main_window) {
+        return std::make_unique<ImGuiLayer>(main_window, LayerCreationKey{});
     }
 }
