@@ -49,8 +49,10 @@ namespace engine{
         std::shared_ptr<Shader> gbuffer_creation;
         std::shared_ptr<Shader> deferred_pass;
 
-        [[nodiscard]] std::vector<SceneObject> default_load_scene(const std::string& path_to_scene) const;
+        void create_gbuffer(glm::mat4 projection_view_matrix);
     };
+
+    [[nodiscard]] std::vector<SceneObject> default_load_scene(const std::string& path_to_scene);
 }
 
 #endif //DEFERRED_LAYER_H

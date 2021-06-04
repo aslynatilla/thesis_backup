@@ -82,26 +82,7 @@ namespace engine {
             gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            gbuffer_creation->use();
-            gbuffer_creation->set_mat4("projection_view", projection_view_matrix);
-
-            gbuffer_creation->set_int("gbuff_position", 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(gbuffer_positions_texture->bound_type, gbuffer_positions_texture->id);
-            gbuffer_creation->set_int("gbuff_normal", 1);
-            glActiveTexture(GL_TEXTURE0 + 1);
-            glBindTexture(gbuffer_normals_texture->bound_type, gbuffer_normals_texture->id);
-            gbuffer_creation->set_int("gbuff_diffuse", 2);
-            glActiveTexture(GL_TEXTURE0 + 2);
-            glBindTexture(gbuffer_diffuse_texture->bound_type, gbuffer_diffuse_texture->id);
-
-            for (const auto& o : objects) {
-                const auto& model_matrix = o.transform;
-                const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
-                gbuffer_creation->set_mat4("model", model_matrix);
-                gbuffer_creation->set_mat4("transposed_inversed_model", transposed_inversed_model_matrix);
-                OpenGL3_Renderer::draw(*(o.vao));
-            }
+            create_gbuffer(projection_view_matrix);
             gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
         }
 
@@ -119,11 +100,34 @@ namespace engine {
 //        glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, buffer);
     }
 
+    void DeferredLayer::create_gbuffer(glm::mat4 projection_view_matrix) {
+        gbuffer_creation->use();
+        gbuffer_creation->set_mat4("projection_view", projection_view_matrix);
+
+        gbuffer_creation->set_int("gbuff_position", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(gbuffer_positions_texture->bound_type, gbuffer_positions_texture->id);
+        gbuffer_creation->set_int("gbuff_normal", 1);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(gbuffer_normals_texture->bound_type, gbuffer_normals_texture->id);
+        gbuffer_creation->set_int("gbuff_diffuse", 2);
+        glActiveTexture(GL_TEXTURE0 + 2);
+        glBindTexture(gbuffer_diffuse_texture->bound_type, gbuffer_diffuse_texture->id);
+
+        for (const auto& o : objects) {
+            const auto& model_matrix = o.transform;
+            const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
+            gbuffer_creation->set_mat4("model", model_matrix);
+            gbuffer_creation->set_mat4("transposed_inversed_model", transposed_inversed_model_matrix);
+            OpenGL3_Renderer::draw(*(o.vao));
+        }
+    }
+
     void DeferredLayer::on_imgui_render() {
         Layer::on_imgui_render();
     }
 
-    std::vector<SceneObject> DeferredLayer::default_load_scene(const std::string& path_to_scene) const {
+    std::vector<SceneObject> default_load_scene(const std::string& path_to_scene){
         constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
