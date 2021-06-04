@@ -63,6 +63,16 @@ namespace engine {
                                                       "resources/shaders/deferred/gbuffer_creation.frag");
 //        deferred_pass = shader::create_shader_from("resources/shaders/deferred/deferred.vert",
 //                                                   "resources/shaders/deferred/deferred.frag");
+        quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
+                                                 "resources/shaders/deferred/quad_rendering.frag");
+
+        gbuffer_transformation = std::make_shared<UniformBuffer>((4 * 4 * 4) * 3, GL_DYNAMIC_DRAW);
+        gbuffer_transformation->bind_to_binding_point(0);
+        gbuffer_transformation->unbind_from_uniform_buffer_target();
+
+        material_buffer = std::make_shared<UniformBuffer>(16 + 4, GL_DYNAMIC_DRAW);
+        material_buffer->bind_to_binding_point(1);
+        material_buffer->unbind_from_uniform_buffer_target();
     }
 
     void DeferredLayer::on_detach() {
@@ -84,8 +94,14 @@ namespace engine {
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             create_gbuffer(projection_view_matrix);
             gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-        }
 
+            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            quad_render->use();
+            quad_render->set_int(0, 0);
+            gbuffer_positions_texture->bind_to_slot(0);
+            OpenGL3_Renderer::draw(quad.vao);
+        }
 //      Notes about how to bind to a certain uniform block.
 //        GLuint bindingPoint = 1, buffer, blockIndex;
 //        float myFloats[8] = {1.0, 0.0, 0.0, 1.0,   0.4, 0.0, 0.0, 1.0};
@@ -102,7 +118,6 @@ namespace engine {
 
     void DeferredLayer::create_gbuffer(glm::mat4 projection_view_matrix) {
         gbuffer_creation->use();
-        gbuffer_creation->set_mat4("projection_view", projection_view_matrix);
 
         gbuffer_creation->set_int("gbuff_position", 0);
         glActiveTexture(GL_TEXTURE0);
@@ -114,11 +129,19 @@ namespace engine {
         glActiveTexture(GL_TEXTURE0 + 2);
         glBindTexture(gbuffer_diffuse_texture->bound_type, gbuffer_diffuse_texture->id);
 
+        gbuffer_transformation->bind_to_uniform_buffer_target();
+        gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
         for (const auto& o : objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
-            gbuffer_creation->set_mat4("model", model_matrix);
-            gbuffer_creation->set_mat4("transposed_inversed_model", transposed_inversed_model_matrix);
+            gbuffer_transformation->bind_to_uniform_buffer_target();
+            gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(model_matrix));
+            gbuffer_transformation->copy_to_buffer(128, 64, glm::value_ptr(transposed_inversed_model_matrix));
+            gbuffer_transformation->unbind_from_uniform_buffer_target();
+            material_buffer->bind_to_uniform_buffer_target();
+            material_buffer->copy_to_buffer(0, 16, glm::value_ptr(o.material.data.diffuse_color));
+            material_buffer->copy_to_buffer(16, 4, &o.material.data.shininess);
+            material_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(*(o.vao));
         }
     }
@@ -131,7 +154,23 @@ namespace engine {
         constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
-        return scenes::load_scene_objects_from(path_to_scene, postprocessing_flags);
+        auto scene_objects = scenes::load_scene_objects_from(path_to_scene, postprocessing_flags);
+
+        //  This scaling is needed for the cornell_box_multimaterial.obj scene
+        //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
+        //  548.0f / 3.0f ~= 185.0f
+        const auto scaling_factor = 1.0f / 185.0f;
+        const auto scale_by = [](const float scale_factor, std::vector<SceneObject>& scene) {
+            for (auto&& object : scene) {
+                const auto T = object.transform;
+                const auto scene_scaling = glm::scale(T, glm::vec3(scale_factor));
+                const auto transposed_inverse_scene_scaling = glm::transpose(glm::inverse(scene_scaling));
+                object.transform = scene_scaling;
+                object.transpose_inverse_transform = transposed_inverse_scene_scaling;
+            }
+        };
+        scale_by(scaling_factor, scene_objects);
+        return scene_objects;
     }
 
     std::unique_ptr<DeferredLayer> DeferredLayer::create_using(std::weak_ptr<FlyCamera> controlled_camera) {

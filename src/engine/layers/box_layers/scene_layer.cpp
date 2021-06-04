@@ -206,24 +206,24 @@ namespace engine {
 
             //   16 bytes per matrix column, times 4 because they are mat4; times 4
             //  again because we got 4 matrices
-            matrices_buffer = std::make_shared<UniformBuffer>((4 * 4 * 4) * 4);
+            matrices_buffer = std::make_shared<UniformBuffer>((4 * 4 * 4) * 4, GL_DYNAMIC_DRAW);
             matrices_buffer->bind_to_binding_point(0);
             matrices_buffer->unbind_from_uniform_buffer_target();
 
             //   16 is the number of bytes per float times the number of floats in a vec4
             //   4 is the number of bytes of a float, and we need to use 3 floats, rounded to 4
             //  for the rules implied by std140 alignment
-            light_data_buffer = std::make_shared<UniformBuffer>((16 * 3) + (4 * 4));
+            light_data_buffer = std::make_shared<UniformBuffer>((16 * 3) + (4 * 4), GL_STATIC_DRAW);
             light_data_buffer->bind_to_binding_point(1);
             light_data_buffer->unbind_from_uniform_buffer_target();
 
             //   5 colors and 3 floats (rounded to 4)
-            material_buffer = std::make_shared<UniformBuffer>((16 * 5) + (4 * 4));
+            material_buffer = std::make_shared<UniformBuffer>((16 * 5) + (4 * 4), GL_DYNAMIC_DRAW);
             material_buffer->bind_to_binding_point(2);
             material_buffer->unbind_from_uniform_buffer_target();
 
             //  2 floats and 1 bool
-            common_data_buffer = std::make_shared<UniformBuffer>(4 * 3);
+            common_data_buffer = std::make_shared<UniformBuffer>(4 * 3, GL_STATIC_DRAW);
             common_data_buffer->bind_to_binding_point(3);
             material_buffer->unbind_from_uniform_buffer_target();
         }

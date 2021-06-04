@@ -3,9 +3,11 @@
 in vec3 vertex_position;
 in vec3 vertex_normal;
 
-uniform mat4 model;
-uniform mat4 transposed_inversed_model;
-uniform mat4 projection_view;               // with P left-multiplied by V, as in P * V
+layout(std140, binding = 0) uniform GBufferMatrices{
+    uniform mat4 projection_view;               // with P left-multiplied by V, as in P * V
+    uniform mat4 model;
+    uniform mat4 transposed_inversed_model;
+};
 
 //   This will be needed to write light-space positions on a cubemap;
 //  and this will need to be moved to a geometry shader

@@ -3,7 +3,7 @@
 in vec3 world_position;
 in vec3 world_normal;
 
-layout (std140) uniform MaterialProperties{
+layout (std140, binding = 1) uniform MaterialProperties{
     vec4 diffuse_color;
     float shininess;
 };
