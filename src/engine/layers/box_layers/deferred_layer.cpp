@@ -61,10 +61,10 @@ namespace engine {
 
         gbuffer_creation = shader::create_shader_from("resources/shaders/deferred/gbuffer_creation.vert",
                                                       "resources/shaders/deferred/gbuffer_creation.frag");
-//        deferred_pass = shader::create_shader_from("resources/shaders/deferred/deferred.vert",
-//                                                   "resources/shaders/deferred/deferred.frag");
         quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                  "resources/shaders/deferred/quad_rendering.frag");
+        deferred_direct = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
+                                                     "resources/shaders/deferred/deferred_direct.frag");
 
         gbuffer_transformation = std::make_shared<UniformBuffer>((4 * 4 * 4) * 3, GL_DYNAMIC_DRAW);
         gbuffer_transformation->bind_to_binding_point(0);
@@ -73,6 +73,14 @@ namespace engine {
         material_buffer = std::make_shared<UniformBuffer>(16 + 4, GL_DYNAMIC_DRAW);
         material_buffer->bind_to_binding_point(1);
         material_buffer->unbind_from_uniform_buffer_target();
+
+        light_buffer = std::make_shared<UniformBuffer>((16*5)+ (4*4), GL_DYNAMIC_DRAW);
+        light_buffer->bind_to_binding_point(2);
+        light_buffer->unbind_from_uniform_buffer_target();
+
+        common_buffer = std::make_shared<UniformBuffer>(3 * 4, GL_DYNAMIC_DRAW);
+        common_buffer->bind_to_binding_point(3);
+        common_buffer->unbind_from_uniform_buffer_target();
     }
 
     void DeferredLayer::on_detach() {
@@ -102,18 +110,6 @@ namespace engine {
             gbuffer_positions_texture->bind_to_slot(0);
             OpenGL3_Renderer::draw(quad.vao);
         }
-//      Notes about how to bind to a certain uniform block.
-//        GLuint bindingPoint = 1, buffer, blockIndex;
-//        float myFloats[8] = {1.0, 0.0, 0.0, 1.0,   0.4, 0.0, 0.0, 1.0};
-//
-//        blockIndex = glGetUniformBlockIndex(p, "ColorBlock");
-//        glUniformBlockBinding(p, blockIndex, bindingPoint);
-//
-//        glGenBuffers(1, &buffer);
-//        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-//
-//        glBufferData(GL_UNIFORM_BUFFER, sizeof(myFloats), myFloats, GL_DYNAMIC_DRAW);
-//        glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, buffer);
     }
 
     void DeferredLayer::create_gbuffer(glm::mat4 projection_view_matrix) {

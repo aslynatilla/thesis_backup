@@ -20,6 +20,6 @@ void main(){
     vec4 w_position = model * vec4(vertex_position, 1.0);
 
     world_position = w_position.xyz;
-    world_normal = mat3(transposed_inversed_model) * vertex_normal;
+    world_normal = normalize(mat3(transposed_inversed_model) * vertex_normal);
     gl_Position = projection_view * w_position;
 }

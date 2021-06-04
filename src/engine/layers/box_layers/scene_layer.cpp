@@ -225,7 +225,7 @@ namespace engine {
             //  2 floats and 1 bool
             common_data_buffer = std::make_shared<UniformBuffer>(4 * 3, GL_STATIC_DRAW);
             common_data_buffer->bind_to_binding_point(3);
-            material_buffer->unbind_from_uniform_buffer_target();
+            common_data_buffer->unbind_from_uniform_buffer_target();
         }
     }
 
