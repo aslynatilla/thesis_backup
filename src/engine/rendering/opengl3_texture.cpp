@@ -50,6 +50,35 @@ namespace engine{
         glBindTexture(bound_type, id);
     }
 
+    std::unique_ptr<OpenGL3_Texture2D>
+    OpenGL3_Texture2D::create_default_texture_linear(const GLenum texture_format,
+                                                     const GLenum data_format,
+                                                     const unsigned int tex_width,
+                                                     const unsigned int tex_height) {
+        return std::make_unique<OpenGL3_Texture2D>(texture_format,
+                                                   OpenGL3_TextureParameters(
+                                                           {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                            GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                           {GL_LINEAR, GL_LINEAR,
+                                                            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                   tex_width, tex_height,
+                                                   data_format, GL_FLOAT, nullptr);
+    }
+
+    std::unique_ptr<OpenGL3_Texture2D>
+    OpenGL3_Texture2D::create_default_texture_nearest(const GLenum texture_format,
+                                                      const GLenum data_format,
+                                                      const unsigned int tex_width,
+                                                      const unsigned int tex_height) {
+        return std::make_unique<OpenGL3_Texture2D>(texture_format,
+                                                   OpenGL3_TextureParameters(
+                                                           {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
+                                                            GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
+                                                           {GL_NEAREST, GL_NEAREST,
+                                                            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
+                                                   tex_width, tex_height,
+                                                   data_format, GL_FLOAT, nullptr);    }
+
 
     OpenGL3_Texture1D::OpenGL3_Texture1D(const GLenum image_format, const OpenGL3_TextureParameters& parameters,
                                          const unsigned int texture_width, const GLenum data_format,

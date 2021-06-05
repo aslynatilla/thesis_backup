@@ -30,13 +30,26 @@ namespace engine {
                                                        data_format, GL_FLOAT, nullptr);
         };
 
-        gbuffer_depth_texture = create_empty_texture_handle(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, target_resolution);
+        gbuffer_depth_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_DEPTH_COMPONENT,
+                                                                                 GL_DEPTH_COMPONENT,
+                                                                                 target_resolution[0],
+                                                                                 target_resolution[1]);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f)));
-        gbuffer_positions_texture = create_empty_texture_handle(GL_RGB32F, GL_RGB, target_resolution);
+        gbuffer_positions_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
+                                                                                     GL_RGB,
+                                                                                     target_resolution[0],
+                                                                                     target_resolution[1]);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
-        gbuffer_normals_texture = create_empty_texture_handle(GL_RGB32F, GL_RGB, target_resolution);
+        gbuffer_normals_texture =
+                OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
+                                                                                   GL_RGB,
+                                                                                   target_resolution[0],
+                                                                                   target_resolution[1]);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
-        gbuffer_diffuse_texture = create_empty_texture_handle(GL_RGB32F, GL_RGB, target_resolution);
+        gbuffer_diffuse_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
+                                                                                   GL_RGB,
+                                                                                   target_resolution[0],
+                                                                                   target_resolution[1]);
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
         gbuffer_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
         gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
