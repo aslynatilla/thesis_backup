@@ -58,7 +58,7 @@ namespace engine{
 
         bool moving_camera = false;
 
-        glm::vec<2, unsigned int> target_resolution;
+        glm::vec<2, int> target_resolution {0, 0};
 
         Point_Light light;
         std::vector<SceneObject> objects;

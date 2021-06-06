@@ -14,43 +14,56 @@ namespace engine {
         auto viewport_size = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
         std::transform(&viewport_size[2], &viewport_size[4], glm::value_ptr(target_resolution),
-                       [](const auto f) { return static_cast<unsigned int>(f); });
+                       [](const auto f) { return static_cast<int>(f); });
 
-        auto create_empty_texture_handle = [](const GLenum texture_format,
-                                              const GLenum data_format,
-                                              const glm::vec<2, unsigned int> texture_size)
-                -> std::unique_ptr<OpenGL3_Texture2D> {
-            return std::make_unique<OpenGL3_Texture2D>(texture_format,
-                                                       OpenGL3_TextureParameters(
-                                                               {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                               {GL_LINEAR, GL_LINEAR,
-                                                                GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                       texture_size[0], texture_size[1],
-                                                       data_format, GL_FLOAT, nullptr);
-        };
+        std::array<float, 4> white_border {1.0f, 1.0f, 1.0f, 1.0f};
+        std::array<float, 4> black_border {0.0f, 0.0f, 0.0f, 1.0f};
 
-        gbuffer_depth_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_DEPTH_COMPONENT,
-                                                                                 GL_DEPTH_COMPONENT,
-                                                                                 target_resolution[0],
-                                                                                 target_resolution[1]);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(1.0f)));
-        gbuffer_positions_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
-                                                                                     GL_RGB,
-                                                                                     target_resolution[0],
-                                                                                     target_resolution[1]);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
-        gbuffer_normals_texture =
-                OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
-                                                                                   GL_RGB,
-                                                                                   target_resolution[0],
-                                                                                   target_resolution[1]);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
-        gbuffer_diffuse_texture = OpenGL3_Texture2D::create_default_texture_linear(GL_RGB32F,
-                                                                                   GL_RGB,
-                                                                                   target_resolution[0],
-                                                                                   target_resolution[1]);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(0.0f)));
+        gbuffer_depth_texture = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_DEPTH_COMPONENT)
+                .with_data_format(GL_DEPTH_COMPONENT)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_minification()
+                .using_linear_magnification()
+                .using_clamping_to_borders()
+                .using_border_color(white_border)
+                .as_resource();
+
+
+        gbuffer_positions_texture = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB32F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_borders()
+                .using_border_color(black_border)
+                .as_resource();
+
+        gbuffer_normals_texture = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB32F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_borders()
+                .using_border_color(black_border)
+                .as_resource();
+
+        gbuffer_diffuse_texture = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB32F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_borders()
+                .using_border_color(black_border)
+                .as_resource();
+
         gbuffer_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
         gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
         gbuffer_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
@@ -129,14 +142,11 @@ namespace engine {
         gbuffer_creation->use();
 
         gbuffer_creation->set_int("gbuff_position", 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(gbuffer_positions_texture->bound_type, gbuffer_positions_texture->id);
+        gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_creation->set_int("gbuff_normal", 1);
-        glActiveTexture(GL_TEXTURE0 + 1);
-        glBindTexture(gbuffer_normals_texture->bound_type, gbuffer_normals_texture->id);
+        gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_creation->set_int("gbuff_diffuse", 2);
-        glActiveTexture(GL_TEXTURE0 + 2);
-        glBindTexture(gbuffer_diffuse_texture->bound_type, gbuffer_diffuse_texture->id);
+        gbuffer_diffuse_texture->bind_to_slot(2);
 
         gbuffer_transformation->bind_to_uniform_buffer_target();
         gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
@@ -183,6 +193,6 @@ namespace engine {
     }
 
     std::unique_ptr<DeferredLayer> DeferredLayer::create_using(std::weak_ptr<FlyCamera> controlled_camera) {
-        return std::make_unique<DeferredLayer>(controlled_camera, LayerCreationKey{});
+        return std::make_unique<DeferredLayer>(std::move(controlled_camera), LayerCreationKey{});
     }
 }

@@ -77,55 +77,52 @@ namespace engine {
 
             rsm_fbo = std::make_unique<OpenGL3_FrameBuffer>();
             mask_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-            depth_texture = std::make_unique<OpenGL3_Cubemap>(GL_DEPTH_COMPONENT,
-                                                              OpenGL3_TextureParameters(
-                                                                      {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                       GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                      {GL_LINEAR, GL_LINEAR,
-                                                                       GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                              texture_dimension[0],
-                                                              texture_dimension[1],
-                                                              GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
-            position_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
-                                                                 OpenGL3_TextureParameters(
-                                                                         {GL_TEXTURE_MIN_FILTER,
-                                                                          GL_TEXTURE_MAG_FILTER,
-                                                                          GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                         {GL_LINEAR, GL_LINEAR,
-                                                                          GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                                 texture_dimension[0],
-                                                                 texture_dimension[1],
-                                                                 GL_RGB, GL_FLOAT, nullptr);
-
-            normal_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB32F,
-                                                               OpenGL3_TextureParameters(
-                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                       {GL_LINEAR, GL_LINEAR,
-                                                                        GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                               texture_dimension[0],
-                                                               texture_dimension[1],
-                                                               GL_RGB, GL_FLOAT, nullptr);
-            flux_texture = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
-                                                             OpenGL3_TextureParameters(
-                                                                     {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                      GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                     {GL_LINEAR, GL_LINEAR,
-                                                                      GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                             texture_dimension[0],
-                                                             texture_dimension[1],
-                                                             GL_RGB, GL_FLOAT, nullptr);
-
-            ies_light_mask = std::make_unique<OpenGL3_Cubemap>(GL_RGB16F,
-                                                               OpenGL3_TextureParameters(
-                                                                       {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                        GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T},
-                                                                       {GL_LINEAR, GL_LINEAR,
-                                                                        GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER}),
-                                                               texture_dimension[0],
-                                                               texture_dimension[1],
-                                                               GL_RGB, GL_FLOAT, nullptr);
+            depth_texture = OpenGL3_Cubemap_Builder()
+                    .with_size(texture_dimension[0], texture_dimension[1])
+                    .with_texture_format(GL_DEPTH_COMPONENT)
+                    .with_data_format(GL_DEPTH_COMPONENT)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_clamping_to_borders()
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .as_resource();
+            position_texture = OpenGL3_Cubemap_Builder()
+                    .with_size(texture_dimension[0], texture_dimension[1])
+                    .with_texture_format(GL_RGB32F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .using_clamping_to_borders()
+                    .as_resource();
+            normal_texture = OpenGL3_Cubemap_Builder()
+                    .with_size(texture_dimension[0], texture_dimension[1])
+                    .with_texture_format(GL_RGB32F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .using_clamping_to_borders()
+                    .as_resource();
+            flux_texture = OpenGL3_Cubemap_Builder()
+                    .with_size(texture_dimension[0], texture_dimension[1])
+                    .with_texture_format(GL_RGB16F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .using_clamping_to_borders()
+                    .as_resource();
+            ies_light_mask = OpenGL3_Cubemap_Builder()
+                    .with_size(texture_dimension[0], texture_dimension[1])
+                    .with_texture_format(GL_RGB16F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .using_clamping_to_borders()
+                    .as_resource();
 
 
             VPL_samples_per_fragment = 400;
@@ -133,13 +130,15 @@ namespace engine {
 
             //  TODO: consider using BufferTexture for this
             //  see: https://www.khronos.org/opengl/wiki/Buffer_Texture
-            samples_texture = std::make_unique<OpenGL3_Texture1D>(GL_RGB32F,
-                                                                  OpenGL3_TextureParameters(
-                                                                          {GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER,
-                                                                           GL_TEXTURE_WRAP_S},
-                                                                          {GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE}),
-                                                                  VPL_samples_per_fragment,
-                                                                  GL_RGB, GL_FLOAT, samples.data());
+            samples_texture = OpenGL3_Texture1D_Builder()
+                    .with_size(VPL_samples_per_fragment)
+                    .with_texture_format(GL_RGB32F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_minification()
+                    .using_linear_magnification()
+                    .using_clamping_to_edge()
+                    .as_resource_with_data(samples.data());
 
             //  Reflective Shadow Map Framebuffer setup
             rsm_fbo->bind_as(GL_FRAMEBUFFER);
@@ -147,12 +146,14 @@ namespace engine {
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *position_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *normal_texture);
             rsm_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *flux_texture);
+
             //  Note: you need to specify which attachments the shader will be able to write to
             const auto buffer_enums = std::make_unique<GLenum[]>(3);
             buffer_enums[0] = GL_COLOR_ATTACHMENT0;
             buffer_enums[1] = GL_COLOR_ATTACHMENT1;
             buffer_enums[2] = GL_COLOR_ATTACHMENT2;
             glDrawBuffers(3, buffer_enums.get());
+            [[maybe_unused]] GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
             rsm_fbo->unbind_from();
             mask_fbo->bind_as(GL_FRAMEBUFFER);
             mask_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *depth_texture);
