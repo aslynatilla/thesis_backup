@@ -17,24 +17,7 @@ namespace engine {
                        [](const auto f) { return static_cast<int>(f); });
 
         gbuffer_setup();
-
-        direct_pass_output = OpenGL3_Texture2D_Builder()
-                .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-
-        direct_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-        direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
-        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                                          *gbuffer_depth_texture);
-        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                                          *direct_pass_output);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+        direct_pass_setup();
 
 
         glEnable(GL_DEPTH_TEST);
@@ -53,6 +36,26 @@ namespace engine {
                                                      "resources/shaders/deferred/deferred_direct.frag");
 
         uniform_buffers_setup();
+    }
+
+    void DeferredLayer::direct_pass_setup() {
+        direct_pass_output = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        direct_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
+        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                                     *gbuffer_depth_texture);
+        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                     *direct_pass_output);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::on_detach() {}
@@ -76,34 +79,7 @@ namespace engine {
             direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            {
-                deferred_direct->use();
-
-                deferred_direct->set_int(0, 0);
-                deferred_direct->set_int(1, 1);
-                deferred_direct->set_int(2, 2);
-                gbuffer_positions_texture->bind_to_slot(0);
-                gbuffer_normals_texture->bind_to_slot(1);
-                gbuffer_diffuse_texture->bind_to_slot(2);
-
-                common_buffer->bind_to_uniform_buffer_target();
-                common_buffer->copy_to_buffer(0, 12, glm::value_ptr(view_camera->position()));
-                common_buffer->unbind_from_uniform_buffer_target();
-
-                constexpr auto light_intensity = 1.0f;
-                constexpr auto light_color = glm::vec4(1.0f);
-                light_buffer->bind_to_uniform_buffer_target();
-                light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light.get_position_as_vec3()));
-                light_buffer->copy_to_buffer(16, 16, glm::value_ptr(light.get_forward()));
-                light_buffer->copy_to_buffer(32, 4, &light.attenuation.constant);
-                light_buffer->copy_to_buffer(36, 4, &light.attenuation.linear);
-                light_buffer->copy_to_buffer(40, 4, &light.attenuation.quadratic);
-                light_buffer->copy_to_buffer(44, 4, &light_intensity);
-                light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
-                light_buffer->unbind_from_uniform_buffer_target();
-
-                OpenGL3_Renderer::draw(quad.vao);
-            }
+            render_direct_lighting(view_camera);
             direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
 
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -139,6 +115,35 @@ namespace engine {
             material_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(*(o.vao));
         }
+    }
+
+    void DeferredLayer::render_direct_lighting(const std::shared_ptr<FlyCamera>& view_camera) {
+        deferred_direct->use();
+
+        deferred_direct->set_int(0, 0);
+        deferred_direct->set_int(1, 1);
+        deferred_direct->set_int(2, 2);
+        gbuffer_positions_texture->bind_to_slot(0);
+        gbuffer_normals_texture->bind_to_slot(1);
+        gbuffer_diffuse_texture->bind_to_slot(2);
+
+        common_buffer->bind_to_uniform_buffer_target();
+        common_buffer->copy_to_buffer(0, 12, glm::value_ptr(view_camera->position()));
+        common_buffer->unbind_from_uniform_buffer_target();
+
+        constexpr auto light_intensity = 1.0f;
+        constexpr auto light_color = glm::vec4(1.0f);
+        light_buffer->bind_to_uniform_buffer_target();
+        light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light.get_position_as_vec3()));
+        light_buffer->copy_to_buffer(16, 16, glm::value_ptr(light.get_forward()));
+        light_buffer->copy_to_buffer(32, 4, &light.attenuation.constant);
+        light_buffer->copy_to_buffer(36, 4, &light.attenuation.linear);
+        light_buffer->copy_to_buffer(40, 4, &light.attenuation.quadratic);
+        light_buffer->copy_to_buffer(44, 4, &light_intensity);
+        light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
+        light_buffer->unbind_from_uniform_buffer_target();
+
+        OpenGL3_Renderer::draw(quad.vao);
     }
 
     void DeferredLayer::on_imgui_render() {

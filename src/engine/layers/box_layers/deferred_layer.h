@@ -70,10 +70,17 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_normals_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
 
+        std::unique_ptr<OpenGL3_FrameBuffer> rsm_creation_fbo;
+        std::unique_ptr<OpenGL3_Cubemap> rsm_positions;
+        std::unique_ptr<OpenGL3_Cubemap> rsm_normals;
+        std::unique_ptr<OpenGL3_Cubemap> rsm_flux;
+        std::unique_ptr<OpenGL3_Cubemap> shadow_map;
+
         std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
         std::unique_ptr<OpenGL3_Texture2D> direct_pass_output;
 
         std::shared_ptr<Shader> gbuffer_creation;
+        std::shared_ptr<Shader> rsm_creation;
         std::shared_ptr<Shader> deferred_direct;
         std::shared_ptr<Shader> quad_render;
 
@@ -87,6 +94,10 @@ namespace engine{
         void gbuffer_setup();
 
         void uniform_buffers_setup();
+
+        void render_direct_lighting(const std::shared_ptr<FlyCamera>& view_camera);
+
+        void direct_pass_setup();
     };
 
 
