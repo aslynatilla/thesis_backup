@@ -16,9 +16,48 @@ namespace engine {
         std::transform(&viewport_size[2], &viewport_size[4], glm::value_ptr(target_resolution),
                        [](const auto f) { return static_cast<int>(f); });
 
-        gbuffer_setup();
+        std::array<GLenum, 3> color_attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+
+        gbuffer_setup(color_attachments);
         direct_pass_setup();
 
+        shadow_map = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
+                .with_texture_format(GL_DEPTH_COMPONENT)
+                .with_data_format(GL_DEPTH_COMPONENT)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_positions = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_normals = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_flux = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        rsm_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_positions);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normals);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_flux);
+        glDrawBuffers(3, color_attachments.data());
+        rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
@@ -34,28 +73,11 @@ namespace engine {
                                                  "resources/shaders/deferred/quad_rendering.frag");
         deferred_direct = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                      "resources/shaders/deferred/deferred_direct.frag");
+        rsm_creation = shader::create_shader_from("resources/shaders/deferred/rsm_creation.vert",
+                                                  "resources/shaders/deferred/rsm_creation.frag",
+                                                  "resources/shaders/deferred/rsm_creation.geom");
 
         uniform_buffers_setup();
-    }
-
-    void DeferredLayer::direct_pass_setup() {
-        direct_pass_output = OpenGL3_Texture2D_Builder()
-                .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-
-        direct_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-        direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
-        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                                     *gbuffer_depth_texture);
-        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                                     *direct_pass_output);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::on_detach() {}
@@ -177,7 +199,27 @@ namespace engine {
         return scene_objects;
     }
 
-    void DeferredLayer::gbuffer_setup() {
+    void DeferredLayer::direct_pass_setup() {
+        direct_pass_output = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        direct_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
+        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                                     *gbuffer_depth_texture);
+        direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                     *direct_pass_output);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
+    void DeferredLayer::gbuffer_setup(const std::array<GLenum, 3>& color_attachments) {
         std::array<float, 4> white_border {1.0f, 1.0f, 1.0f, 1.0f};
         std::array<float, 4> black_border {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -236,8 +278,7 @@ namespace engine {
                                                           *gbuffer_normals_texture);
         gbuffer_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
                                                           *gbuffer_diffuse_texture);
-        std::array<GLenum, 3> fbo_enums = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-        glDrawBuffers(3, &fbo_enums[0]);
+        glDrawBuffers(3, color_attachments.data());
         gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 

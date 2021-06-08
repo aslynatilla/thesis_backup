@@ -91,7 +91,7 @@ namespace engine{
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
 
-        void gbuffer_setup();
+        void gbuffer_setup(const std::array<GLenum, 3>& color_attachments);
 
         void uniform_buffers_setup();
 
