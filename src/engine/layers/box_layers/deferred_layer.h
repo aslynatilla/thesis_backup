@@ -73,7 +73,7 @@ namespace engine{
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_creation_fbo;
         std::unique_ptr<OpenGL3_Cubemap> rsm_positions;
         std::unique_ptr<OpenGL3_Cubemap> rsm_normals;
-        std::unique_ptr<OpenGL3_Cubemap> rsm_flux;
+        std::unique_ptr<OpenGL3_Cubemap> rsm_fluxes;
         std::unique_ptr<OpenGL3_Cubemap> shadow_map;
 
         std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
@@ -89,13 +89,15 @@ namespace engine{
         std::shared_ptr<UniformBuffer> light_buffer;
         std::shared_ptr<UniformBuffer> common_buffer;
 
+        float light_camera_far_plane = 10.0f;
+
         void create_gbuffer(glm::mat4 projection_view_matrix);
 
         void gbuffer_setup(const std::array<GLenum, 3>& color_attachments);
 
         void uniform_buffers_setup();
 
-        void render_direct_lighting(const std::shared_ptr<FlyCamera>& view_camera);
+        void render_direct_lighting();
 
         void direct_pass_setup();
     };

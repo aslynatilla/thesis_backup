@@ -20,7 +20,7 @@ layout(std140, binding = 2) uniform Light{
 } scene_light;
 
 layout(std140, binding = 3) uniform CommonData{
-    vec3 camera_position;
+    vec4 camera_position;
 };
 
 layout (location = 0) uniform sampler2D g_positions;
