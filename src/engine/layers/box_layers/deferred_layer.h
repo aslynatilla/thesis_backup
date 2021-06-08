@@ -70,6 +70,9 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_normals_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
 
+        std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
+        std::unique_ptr<OpenGL3_Texture2D> direct_pass_output;
+
         std::shared_ptr<Shader> gbuffer_creation;
         std::shared_ptr<Shader> deferred_direct;
         std::shared_ptr<Shader> quad_render;
@@ -80,6 +83,10 @@ namespace engine{
         std::shared_ptr<UniformBuffer> common_buffer;
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
+
+        void gbuffer_setup();
+
+        void uniform_buffers_setup();
     };
 
 

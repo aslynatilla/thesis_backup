@@ -33,10 +33,11 @@ void main(){
     vec3 diffuse_color = texture(g_diffuse, uv_coords).xyz;
 
     vec3 fragment_to_light = scene_light.position.xyz - world_position;
-    float distance_from_light = len(fragment_to_light);
+    float distance_from_light = length(fragment_to_light);
     vec3 l = normalize(fragment_to_light);
 
-    float shadow_factor = compute_shadow_factor(-l, distance_to_light);
+    float shadow_factor = 1.0;
+    //float shadow_factor = compute_shadow_factor(-l, distance_to_light);
 
     float attenuation_factor = 1.0/(scene_light.constant_attenuation +
                                     scene_light.linear_attenuation * distance_from_light +
