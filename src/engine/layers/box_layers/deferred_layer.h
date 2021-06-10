@@ -93,13 +93,22 @@ namespace engine{
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
 
-        void gbuffer_setup(const std::array<GLenum, 3>& color_attachments);
+        void gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments);
 
         void uniform_buffers_setup();
 
         void render_direct_lighting();
 
         void direct_pass_setup();
+
+        void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
+
+        bool on_camera_moved();
+
+        void update_rsm(const std::vector<glm::mat4>& light_transformations);
+
+        [[nodiscard]] std::vector<glm::mat4> compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
+                                                                          const glm::mat4& camera_projection_matrix) const;
     };
 
 

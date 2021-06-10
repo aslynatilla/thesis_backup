@@ -18,46 +18,9 @@ namespace engine {
 
         std::array<GLenum, 3> color_attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 
-        gbuffer_setup(color_attachments);
+        gbuffer_creation_setup(color_attachments);
+        rsm_creation_setup(color_attachments);
         direct_pass_setup();
-
-        shadow_map = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
-                .with_texture_format(GL_DEPTH_COMPONENT)
-                .with_data_format(GL_DEPTH_COMPONENT)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-        rsm_positions = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-        rsm_normals = OpenGL3_Cubemap_Builder().with_size(target_resolution[0]/2, target_resolution[1]/2)
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-        rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-
-        rsm_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-        rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_positions);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normals);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_fluxes);
-        glDrawBuffers(3, color_attachments.data());
-        rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
@@ -83,6 +46,10 @@ namespace engine {
     void DeferredLayer::on_detach() {}
 
     void DeferredLayer::on_event(Event& event) {
+//        EventHandler handler(event);
+//        handler.handle<CameraMovedEvent>([this](auto&& ...args) -> decltype(auto){
+//            this->on_camera_moved(std::forward<decltype(args)>(args)...);
+//        })
         event.handled = false;
     }
 
@@ -104,14 +71,13 @@ namespace engine {
                     CameraMode::Perspective);
 
             const auto light_projection_matrix = light_camera.get_projection_matrix();
-
-            //TODO: modify on event, when camera is moved
-            common_buffer->bind_to_uniform_buffer_target();
-            const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
-            common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
-            common_buffer->copy_to_buffer(16, 4, &light_camera_far_plane);
-            common_buffer->unbind_from_uniform_buffer_target();
             //  End setup
+
+            //   In order to make the camera "movable" while the event system is not ready to handle this,
+            //  we call the handling function here, forcing the update explicitly.
+            //   In this way, the direct pass and any other pass using this buffer can get the correct result
+            //  when the camera moves and the view should be updated.
+            on_camera_moved();
 
             gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -123,43 +89,9 @@ namespace engine {
             glViewport(0, 0, target_resolution[0]/2, target_resolution[1]/2);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            {
-                rsm_creation->use();
-
-                rsm_positions->bind_to_slot(0);
-                rsm_normals->bind_to_slot(1);
-                rsm_fluxes->bind_to_slot(2);
-
-                //TODO: extract here as compute_VP_transform_for_cubemap
-                std::vector<glm::mat4> VP_transformation;
-                VP_transformation.reserve(6);
-                for (auto i = 0u; i < 6; ++i) {
-                    VP_transformation.push_back(light_projection_matrix * glm::lookAt(
-                            light_position,
-                            light_position +
-                            OpenGL3_Cubemap::directions[i],
-                            OpenGL3_Cubemap::ups[i]));
-                }
-                // until here
-
-                for(int i = 0; i < 6; ++i){
-                    rsm_creation->set_mat4(0 + i, VP_transformation[i]);
-                }
-
-                for (const auto& o : objects) {
-                    const auto& model_matrix = o.transform;
-                    const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
-                    gbuffer_transformation->bind_to_uniform_buffer_target();
-                    gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(model_matrix));
-                    gbuffer_transformation->copy_to_buffer(128, 64, glm::value_ptr(transposed_inversed_model_matrix));
-                    gbuffer_transformation->unbind_from_uniform_buffer_target();
-                    material_buffer->bind_to_uniform_buffer_target();
-                    material_buffer->copy_to_buffer(0, 16, glm::value_ptr(o.material.data.diffuse_color));
-                    material_buffer->copy_to_buffer(16, 4, &o.material.data.shininess);
-                    material_buffer->unbind_from_uniform_buffer_target();
-                    OpenGL3_Renderer::draw(*(o.vao));
-                }
-            }
+            const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
+                                                                                     light_projection_matrix);
+            update_rsm(light_transforms);
             rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
             direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
@@ -189,6 +121,33 @@ namespace engine {
 
         gbuffer_transformation->bind_to_uniform_buffer_target();
         gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
+        for (const auto& o : objects) {
+            const auto& model_matrix = o.transform;
+            const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
+            gbuffer_transformation->bind_to_uniform_buffer_target();
+            gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(model_matrix));
+            gbuffer_transformation->copy_to_buffer(128, 64, glm::value_ptr(transposed_inversed_model_matrix));
+            gbuffer_transformation->unbind_from_uniform_buffer_target();
+            material_buffer->bind_to_uniform_buffer_target();
+            material_buffer->copy_to_buffer(0, 16, glm::value_ptr(o.material.data.diffuse_color));
+            material_buffer->copy_to_buffer(16, 4, &o.material.data.shininess);
+            material_buffer->unbind_from_uniform_buffer_target();
+            OpenGL3_Renderer::draw(*(o.vao));
+        }
+    }
+
+    void
+    DeferredLayer::update_rsm(const std::vector<glm::mat4>& light_transformations) {
+        rsm_creation->use();
+
+        rsm_positions->bind_to_slot(0);
+        rsm_normals->bind_to_slot(1);
+        rsm_fluxes->bind_to_slot(2);
+
+        for(int i = 0; i < 6; ++i){
+            rsm_creation->set_mat4(0 + i, light_transformations[i]);
+        }
+
         for (const auto& o : objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -280,7 +239,7 @@ namespace engine {
         direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
-    void DeferredLayer::gbuffer_setup(const std::array<GLenum, 3>& color_attachments) {
+    void DeferredLayer::gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments) {
         std::array<float, 4> white_border {1.0f, 1.0f, 1.0f, 1.0f};
         std::array<float, 4> black_border {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -343,6 +302,47 @@ namespace engine {
         gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
+
+    void DeferredLayer::rsm_creation_setup(std::array<GLenum, 3>& color_attachments) {
+        shadow_map = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_DEPTH_COMPONENT)
+                .with_data_format(GL_DEPTH_COMPONENT)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_positions = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_normals = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+        rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        rsm_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_positions);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normals);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_fluxes);
+        glDrawBuffers(3, color_attachments.data());
+        rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
     void DeferredLayer::uniform_buffers_setup() {
         gbuffer_transformation = std::make_shared<UniformBuffer>((4 * 4 * 4) * 3, GL_DYNAMIC_DRAW);
         gbuffer_transformation->bind_to_binding_point(0);
@@ -358,6 +358,36 @@ namespace engine {
 
         common_buffer = std::make_shared<UniformBuffer>((4 * 4) + 4, GL_DYNAMIC_DRAW);
         common_buffer->bind_to_binding_point(3);
+        common_buffer->bind_to_uniform_buffer_target();
+        const auto view_camera = camera.lock();
+        const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
+        common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
+        common_buffer->copy_to_buffer(16, 4, &light_camera_far_plane);
         common_buffer->unbind_from_uniform_buffer_target();
+    }
+
+
+    std::vector<glm::mat4>
+    DeferredLayer::compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
+                                                              const glm::mat4& camera_projection_matrix) const {
+        std::vector<glm::mat4> VP_transformation;
+        VP_transformation.reserve(6);
+        for (auto i = 0u; i < 6; ++i) {
+            VP_transformation.push_back(camera_projection_matrix * glm::lookAt(
+                    camera_position,
+                    camera_position +
+                    OpenGL3_Cubemap::directions[i],
+                    OpenGL3_Cubemap::ups[i]));
+        }
+        return VP_transformation;
+    }
+
+    bool DeferredLayer::on_camera_moved() {
+        common_buffer->bind_to_uniform_buffer_target();
+        const auto view_camera = camera.lock();
+        const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
+        common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
+        common_buffer->unbind_from_uniform_buffer_target();
+        return false;
     }
 }
