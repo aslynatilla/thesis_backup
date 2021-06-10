@@ -21,11 +21,26 @@ layout(std140, binding = 2) uniform Light{
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
+    float light_camera_far_plane;
+    float shadow_threshold;
 };
 
 layout (location = 0) uniform sampler2D g_positions;
 layout (location = 1) uniform sampler2D g_normals;
 layout (location = 2) uniform sampler2D g_diffuse;
+
+layout (location = 3) uniform samplerCube light_shadow_map;
+
+float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light){
+    float depth = texture(light_shadow_map, light_to_fragment).r;
+    depth *= light_camera_far_plane;
+
+    if(distance_from_light < depth + shadow_threshold){
+        return 1.0;
+    } else {
+        return 0.0;
+    }
+}
 
 void main(){
     vec3 world_position = texture(g_positions, uv_coords).xyz;
@@ -36,8 +51,7 @@ void main(){
     float distance_from_light = length(fragment_to_light);
     vec3 l = normalize(fragment_to_light);
 
-    float shadow_factor = 1.0;
-    //float shadow_factor = compute_shadow_factor(-l, distance_to_light);
+    float shadow_factor = compute_shadow_factor(-l, distance_from_light);
 
     float attenuation_factor = 1.0/(scene_light.constant_attenuation +
                                     scene_light.linear_attenuation * distance_from_light +

@@ -23,6 +23,7 @@ namespace engine {
         direct_pass_setup();
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
         glDepthMask(GL_TRUE);
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
@@ -169,9 +170,11 @@ namespace engine {
         deferred_direct->set_int(0, 0);
         deferred_direct->set_int(1, 1);
         deferred_direct->set_int(2, 2);
+        deferred_direct->set_int(3, 3);
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
+        shadow_map->bind_to_slot(3);
 
         constexpr auto light_intensity = 1.0f;
         constexpr auto light_color = glm::vec4(1.0f);
@@ -356,13 +359,14 @@ namespace engine {
         light_buffer->bind_to_binding_point(2);
         light_buffer->unbind_from_uniform_buffer_target();
 
-        common_buffer = std::make_shared<UniformBuffer>((4 * 4) + 4, GL_DYNAMIC_DRAW);
+        common_buffer = std::make_shared<UniformBuffer>((16 * 1) + (4 * 2), GL_DYNAMIC_DRAW);
         common_buffer->bind_to_binding_point(3);
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
         const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
         common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
         common_buffer->copy_to_buffer(16, 4, &light_camera_far_plane);
+        common_buffer->copy_to_buffer(20, 4, &shadow_threshold);
         common_buffer->unbind_from_uniform_buffer_target();
     }
 

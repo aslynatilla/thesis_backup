@@ -59,6 +59,7 @@ namespace engine{
         bool moving_camera = false;
 
         glm::vec<2, int> target_resolution {0, 0};
+        float shadow_threshold = 0.15f;
 
         Point_Light light;
         std::vector<SceneObject> objects;

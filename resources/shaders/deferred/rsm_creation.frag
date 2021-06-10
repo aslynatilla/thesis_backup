@@ -22,6 +22,7 @@ layout(std140, binding = 2) uniform Light{
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
     float light_camera_far_plane;
+    float shadow_threshold;
 };
 
 layout (location = 6) uniform samplerCube ies_masking_texture;
