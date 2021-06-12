@@ -23,6 +23,7 @@ layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
     float light_camera_far_plane;
     float shadow_threshold;
+    float distance_to_furthest_ies_vertex;
 };
 
 layout (location = 6) uniform samplerCube ies_masking_texture;
@@ -47,7 +48,7 @@ void main(){
     float is_emitting_light_along_l = ies_mask_data.b;
     float intensity_modifier = ies_mask_data.g;
 
-    //  Temporarily disabling this line so that we can render without a IES mask
-    //  fragment_fluxes = vec4(computed_flux.xyz * intensity_modifier * is_emitting_along_l, 1.0);
-    fragment_fluxes = computed_flux;
+    //  Temporarily disabling this line allows to render without a IES mask
+    fragment_fluxes = vec4(computed_flux.xyz * intensity_modifier * is_emitting_light_along_l, 1.0);
+    //  fragment_fluxes = computed_flux;
 }

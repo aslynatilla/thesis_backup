@@ -12,6 +12,9 @@
 #include "../../scene_management/scene_loading.h"
 #include "../../scene_management/point_light.h"
 
+#include "../../../ies/ies_default_parser.h"
+#include "../../../ies/adapter/ies_mesh.h"
+
 #include <glm/glm.hpp>
 
 namespace engine{
@@ -60,6 +63,8 @@ namespace engine{
 
         glm::vec<2, int> target_resolution {0, 0};
         float shadow_threshold = 0.15f;
+        float max_distance_to_ies_vertex = 1.0f;
+        VertexArray ies_light_vao;
 
         Point_Light light;
         std::vector<SceneObject> objects;
@@ -71,6 +76,9 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_normals_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
 
+        std::unique_ptr<OpenGL3_FrameBuffer> mask_creation_fbo;
+        std::unique_ptr<OpenGL3_Cubemap> light_mask;
+
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_creation_fbo;
         std::unique_ptr<OpenGL3_Cubemap> rsm_positions;
         std::unique_ptr<OpenGL3_Cubemap> rsm_normals;
@@ -80,8 +88,9 @@ namespace engine{
         std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
         std::unique_ptr<OpenGL3_Texture2D> direct_pass_output;
 
-        std::shared_ptr<Shader> gbuffer_creation;
-        std::shared_ptr<Shader> rsm_creation;
+        std::shared_ptr<Shader> gbuffer_creation;   //  Should update when camera moves or scene changes
+        std::shared_ptr<Shader> mask_creation;      //  Should update when light moves or scene changes
+        std::shared_ptr<Shader> rsm_creation;       //  Should update when light moves or scene changes
         std::shared_ptr<Shader> deferred_direct;
         std::shared_ptr<Shader> quad_render;
 
