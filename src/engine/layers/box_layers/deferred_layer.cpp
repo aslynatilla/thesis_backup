@@ -74,7 +74,7 @@ namespace engine {
                                               light_data.position + light_data.direction,
                                               light.get_up()},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, light_camera_far_plane},
+                    CameraPlanes{0.001f, light_camera_far_plane},
                     CameraMode::Perspective);
 
             const auto light_projection_matrix = light_camera.get_projection_matrix();
@@ -174,6 +174,9 @@ namespace engine {
         rsm_positions->bind_to_slot(0);
         rsm_normals->bind_to_slot(1);
         rsm_fluxes->bind_to_slot(2);
+
+        light_mask->bind_to_slot(3);
+        rsm_creation->set_int(6, 3);
 
         for(int i = 0; i < 6; ++i){
             rsm_creation->set_mat4(0 + i, light_transformations[i]);
@@ -418,7 +421,8 @@ namespace engine {
         common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
         common_buffer->copy_to_buffer(16, 4, &light_camera_far_plane);
         common_buffer->copy_to_buffer(20, 4, &shadow_threshold);
-        common_buffer->copy_to_buffer(24, 4, &max_distance_to_ies_vertex);
+        const auto ies_solid_scale = max_distance_to_ies_vertex * scale_modifier;
+        common_buffer->copy_to_buffer(24, 4, &ies_solid_scale);
         common_buffer->unbind_from_uniform_buffer_target();
     }
 
@@ -446,7 +450,7 @@ namespace engine {
         ies_light_model_matrix = ies_light_model_matrix * light_orientation;
         ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
                                              glm::vec3(1.0f, 0.0f, 0.0f));
-        ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(0.00200f));
+        ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
         return ies_light_model_matrix;
     }
 

@@ -64,6 +64,8 @@ namespace engine{
         glm::vec<2, int> target_resolution {0, 0};
         float shadow_threshold = 0.15f;
         float max_distance_to_ies_vertex = 1.0f;
+        float light_camera_far_plane = 100.0f;
+        float scale_modifier = 0.0010f;
         VertexArray ies_light_vao;
 
         Point_Light light;
@@ -99,7 +101,6 @@ namespace engine{
         std::shared_ptr<UniformBuffer> light_buffer;
         std::shared_ptr<UniformBuffer> common_buffer;
 
-        float light_camera_far_plane = 10.0f;
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
         void render_direct_lighting();
@@ -110,7 +111,6 @@ namespace engine{
         void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
         void direct_pass_setup();
         void uniform_buffers_setup();
-
 
         [[nodiscard]] std::vector<glm::mat4> compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
                                                                           const glm::mat4& camera_projection_matrix) const;
