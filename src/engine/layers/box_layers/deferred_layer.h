@@ -102,23 +102,27 @@ namespace engine{
         float light_camera_far_plane = 10.0f;
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
+        void render_direct_lighting();
+        void update_rsm(const std::vector<glm::mat4>& light_transformations);
 
         void gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments);
-
+        void ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments);
+        void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
+        void direct_pass_setup();
         void uniform_buffers_setup();
 
-        void render_direct_lighting();
-
-        void direct_pass_setup();
-
-        void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
-
-        bool on_camera_moved();
-
-        void update_rsm(const std::vector<glm::mat4>& light_transformations);
 
         [[nodiscard]] std::vector<glm::mat4> compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
                                                                           const glm::mat4& camera_projection_matrix) const;
+
+        [[nodiscard]] glm::mat4 compute_light_model_matrix(const glm::vec3& light_position,
+                                                           const glm::mat4& light_orientation) const;
+
+        //TODO: refactor this better, so that it can be a free function
+        void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data);
+        bool on_camera_moved();
+
+        void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
     };
 
 

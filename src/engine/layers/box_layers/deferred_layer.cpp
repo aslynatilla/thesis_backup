@@ -19,36 +19,8 @@ namespace engine {
         std::array<GLenum, 3> color_attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 
         gbuffer_creation_setup(color_attachments);
-
-        //ies_mask_creation_setup();
-        shadow_map = OpenGL3_Cubemap_Builder()
-                .with_size(target_resolution[0]/2, target_resolution[1]/2)
-                .with_texture_format(GL_DEPTH_COMPONENT)
-                .with_data_format(GL_DEPTH_COMPONENT)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-
-        light_mask = OpenGL3_Cubemap_Builder()
-                .with_size(target_resolution[0]/2, target_resolution[1]/2)
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .using_clamping_to_borders()
-                .as_resource();
-
-        mask_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
-        mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
-        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *light_mask);
-        glDrawBuffers(1, color_attachments.data());
-        mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-        //  end of ies mask setup
-
-        rsm_creation_setup(color_attachments);
+        ies_mask_creation_setup(color_attachments);     // ies_mask_creation_setup generates a texture that
+        rsm_creation_setup(color_attachments);          // rsm_creation_setup uses to generate the RSM
         direct_pass_setup();
 
         glEnable(GL_DEPTH_TEST);
@@ -74,37 +46,7 @@ namespace engine {
                                                    "resources/shaders/deferred/rsm_creation.geom");
 
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
-        auto document = ies::IES_Default_Parser()
-                .parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-        //ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
-        const auto photometric_solid = ies::adapter::IES_Mesh(document);
-
-        const auto vertices = photometric_solid.get_vertices();
-
-        max_distance_to_ies_vertex = [](const std::vector<float>& vs) -> float {
-            float result = 0.0f;
-            for (auto i = 0u; i < vs.size() / 3; ++i) {
-                const glm::vec3 p(vs[3 * i + 0],
-                                  vs[3 * i + 1],
-                                  vs[3 * i + 2]);
-                const auto p_to_origin = glm::length(p);
-                if (result < p_to_origin) {
-                    result = p_to_origin;
-                }
-            }
-            return result;
-        }(vertices);
-
-        auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
-                                                  vertices.data());
-        vbo->set_buffer_layout(VertexBufferLayout({
-                                                          VertexBufferElement(ShaderDataType::Float3,
-                                                                              "position"),
-                                                          VertexBufferElement(ShaderDataType::Float3,
-                                                                              "normal")}));
-        ies_light_vao.set_vbo(std::move(vbo));
-        ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
-
+        load_IES_light_as_VAO(path_to_IES_data);
         uniform_buffers_setup();
     }
 
@@ -139,14 +81,8 @@ namespace engine {
             const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
                                                                                      light_projection_matrix);
 
-            //  TODO: Can be extracted in a separate function
-            auto ies_light_model_matrix = glm::mat4(1.0f);
-            ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
-            ies_light_model_matrix = ies_light_model_matrix * light_orientation;
-            ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
-                                glm::vec3(1.0f, 0.0f, 0.0f));
-            ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(0.00200f));
-            //  End setup
+            const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
+                                                                           light_orientation);
 
             //   In order to make the camera "movable" while the event system is not ready to handle this,
             //  we call the handling function here, forcing the update explicitly.
@@ -165,17 +101,7 @@ namespace engine {
             glCullFace(GL_FRONT);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            {
-                mask_creation->use();
-                for (unsigned int i = 0u; i < 6; ++i) {
-                    mask_creation->set_mat4(0 + i,
-                                            light_transforms[i]);
-                }
-                gbuffer_transformation->bind_to_uniform_buffer_target();
-                gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_light_model_matrix));
-                gbuffer_transformation->unbind_from_uniform_buffer_target();
-                OpenGL3_Renderer::draw(ies_light_vao);
-            }
+            update_light_mask(light_transforms, ies_light_model_matrix);
             mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
             rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
@@ -226,6 +152,19 @@ namespace engine {
             material_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(*(o.vao));
         }
+    }
+
+    void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms,
+                                          const glm::mat4& ies_light_model_matrix) {
+        mask_creation->use();
+        for (unsigned int i = 0u; i < 6; ++i) {
+            mask_creation->set_mat4(0 + i,
+                                    light_transforms[i]);
+        }
+        gbuffer_transformation->bind_to_uniform_buffer_target();
+        gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_light_model_matrix));
+        gbuffer_transformation->unbind_from_uniform_buffer_target();
+        OpenGL3_Renderer::draw(ies_light_vao);
     }
 
     void
@@ -430,6 +369,34 @@ namespace engine {
         rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
+    void DeferredLayer::ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments) {
+        shadow_map = OpenGL3_Cubemap_Builder()
+                .with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_DEPTH_COMPONENT)
+                .with_data_format(GL_DEPTH_COMPONENT)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        light_mask = OpenGL3_Cubemap_Builder()
+                .with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_borders()
+                .as_resource();
+
+        mask_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *light_mask);
+        glDrawBuffers(1, color_attachments.data());
+        mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
     void DeferredLayer::uniform_buffers_setup() {
         gbuffer_transformation = std::make_shared<UniformBuffer>((4 * 4 * 4) * 3, GL_DYNAMIC_DRAW);
         gbuffer_transformation->bind_to_binding_point(0);
@@ -469,6 +436,51 @@ namespace engine {
                     OpenGL3_Cubemap::ups[i]));
         }
         return VP_transformation;
+    }
+
+    glm::mat4
+    DeferredLayer::compute_light_model_matrix(const glm::vec3& light_position,
+                                              const glm::mat4& light_orientation) const {
+        auto ies_light_model_matrix = glm::mat4(1.0f);
+        ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
+        ies_light_model_matrix = ies_light_model_matrix * light_orientation;
+        ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
+                                             glm::vec3(1.0f, 0.0f, 0.0f));
+        ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(0.00200f));
+        return ies_light_model_matrix;
+    }
+
+    void DeferredLayer::load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data) {
+        auto document = ies::IES_Default_Parser()
+                .parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
+        //ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+        const auto photometric_solid = ies::adapter::IES_Mesh(document);
+
+        const auto vertices = photometric_solid.get_vertices();
+
+        max_distance_to_ies_vertex = [](const std::vector<float>& vs) -> float {
+            float result = 0.0f;
+            for (auto i = 0u; i < vs.size() / 3; ++i) {
+                const glm::vec3 p(vs[3 * i + 0],
+                                  vs[3 * i + 1],
+                                  vs[3 * i + 2]);
+                const auto p_to_origin = glm::length(p);
+                if (result < p_to_origin) {
+                    result = p_to_origin;
+                }
+            }
+            return result;
+        }(vertices);
+
+        auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
+                                                  vertices.data());
+        vbo->set_buffer_layout(VertexBufferLayout({
+                                                          VertexBufferElement(ShaderDataType::Float3,
+                                                                              "position"),
+                                                          VertexBufferElement(ShaderDataType::Float3,
+                                                                              "normal")}));
+        ies_light_vao.set_vbo(std::move(vbo));
+        ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
     }
 
     bool DeferredLayer::on_camera_moved() {
