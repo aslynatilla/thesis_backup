@@ -15,6 +15,8 @@
 #include "../../../ies/ies_default_parser.h"
 #include "../../../ies/adapter/ies_mesh.h"
 
+#include "../../../utility/random_numbers.h"
+
 #include <glm/glm.hpp>
 
 namespace engine{
@@ -73,7 +75,7 @@ namespace engine{
         RenderingQuad quad;
 
         std::unique_ptr<OpenGL3_FrameBuffer> gbuffer_creation_fbo;
-        std::unique_ptr<OpenGL3_Texture2D> gbuffer_depth_texture;
+        std::unique_ptr<OpenGL3_Texture2D> gbuffer_depth_texture;           //TODO: this might be unnecessary
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_positions_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_normals_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
@@ -87,13 +89,20 @@ namespace engine{
         std::unique_ptr<OpenGL3_Cubemap> rsm_fluxes;
         std::unique_ptr<OpenGL3_Cubemap> shadow_map;
 
+        std::unique_ptr<OpenGL3_Texture2D> temp_depth_buffer;
+
         std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
         std::unique_ptr<OpenGL3_Texture2D> direct_pass_output;
+
+        std::unique_ptr<OpenGL3_FrameBuffer> indirect_pass_fbo;
+        std::unique_ptr<OpenGL3_Texture1D> offsets_texture;
+        std::unique_ptr<OpenGL3_Texture2D> indirect_pass_output;
 
         std::shared_ptr<Shader> gbuffer_creation;   //  Should update when camera moves or scene changes
         std::shared_ptr<Shader> mask_creation;      //  Should update when light moves or scene changes
         std::shared_ptr<Shader> rsm_creation;       //  Should update when light moves or scene changes
         std::shared_ptr<Shader> deferred_direct;
+        std::shared_ptr<Shader> deferred_indirect;
         std::shared_ptr<Shader> quad_render;
 
         std::shared_ptr<UniformBuffer> gbuffer_transformation;
@@ -123,6 +132,8 @@ namespace engine{
         bool on_camera_moved();
 
         void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
+
+        void indirect_pass_setup();
     };
 
 

@@ -8,7 +8,7 @@ namespace engine {
         objects = default_load_scene("resources/cornell_box_multimaterial.obj");
 
         light = Point_Light(glm::vec4(1.5f, 2.6f, 1.5f, 1.0f),
-                LightAttenuationParameters{1.0f, 0.5f, 1.8f});
+                            LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
         auto viewport_size = std::make_unique<float[]>(4);
@@ -16,12 +16,24 @@ namespace engine {
         std::transform(&viewport_size[2], &viewport_size[4], glm::value_ptr(target_resolution),
                        [](const auto f) { return static_cast<int>(f); });
 
-        std::array<GLenum, 3> color_attachments {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        std::array<GLenum, 3> color_attachments{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+
+        temp_depth_buffer = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_DEPTH_COMPONENT)
+                .with_data_format(GL_DEPTH_COMPONENT)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_minification()
+                .using_linear_magnification()
+                .using_clamping_to_borders()
+                .using_border_color({1.0f, 1.0f, 1.0f, 1.0f})
+                .as_resource();
 
         gbuffer_creation_setup(color_attachments);
         ies_mask_creation_setup(color_attachments);     // ies_mask_creation_setup generates a texture that
         rsm_creation_setup(color_attachments);          // rsm_creation_setup uses to generate the RSM
         direct_pass_setup();
+        indirect_pass_setup();
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -44,6 +56,8 @@ namespace engine {
         mask_creation = shader::create_shader_from("resources/shaders/deferred/rsm_creation.vert",
                                                    "resources/shaders/deferred/ies_mask_creation.frag",
                                                    "resources/shaders/deferred/rsm_creation.geom");
+        deferred_indirect = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
+                                                       "resources/shaders/deferred/deferred_indirect.frag");
 
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
         load_IES_light_as_VAO(path_to_IES_data);
@@ -97,7 +111,7 @@ namespace engine {
             gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
             mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, target_resolution[0]/2, target_resolution[1]/2);
+            glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
             glCullFace(GL_FRONT);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -105,7 +119,7 @@ namespace engine {
             mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
 
             rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, target_resolution[0]/2, target_resolution[1]/2);
+            glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
             glCullFace(GL_BACK);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -119,11 +133,35 @@ namespace engine {
             render_direct_lighting();
             direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
 
+            indirect_pass_fbo->bind_as(GL_FRAMEBUFFER);
+            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            {
+                deferred_indirect->use();
+
+                deferred_indirect->set_int(0, 0);
+                deferred_indirect->set_int(1, 1);
+                deferred_indirect->set_int(2, 2);
+                deferred_indirect->set_int(3, 3);
+                deferred_indirect->set_int(4, 4);
+                deferred_indirect->set_int(5, 5);
+                deferred_indirect->set_int(10, 400);    //TODO: This is the number of samples; refactor this.
+                deferred_indirect->set_float(11, 2.0f);    //TODO: displacement radius; refactor this.
+                gbuffer_positions_texture->bind_to_slot(0);
+                gbuffer_normals_texture->bind_to_slot(1);
+                rsm_positions->bind_to_slot(2);
+                rsm_normals->bind_to_slot(3);
+                rsm_fluxes->bind_to_slot(4);
+                offsets_texture->bind_to_slot(5);
+                OpenGL3_Renderer::draw(quad.vao);
+            }
+            indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
+
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             quad_render->use();
             quad_render->set_int(0, 0);
-            direct_pass_output->bind_to_slot(0);
+            indirect_pass_output->bind_to_slot(0);
             glEnable(GL_FRAMEBUFFER_SRGB);
             OpenGL3_Renderer::draw(quad.vao);
             glDisable(GL_FRAMEBUFFER_SRGB);
@@ -178,7 +216,7 @@ namespace engine {
         light_mask->bind_to_slot(3);
         rsm_creation->set_int(6, 3);
 
-        for(int i = 0; i < 6; ++i){
+        for (int i = 0; i < 6; ++i) {
             rsm_creation->set_mat4(0 + i, light_transformations[i]);
         }
 
@@ -232,7 +270,7 @@ namespace engine {
         return std::make_unique<DeferredLayer>(std::move(controlled_camera), LayerCreationKey{});
     }
 
-    std::vector<SceneObject> default_load_scene(const std::string& path_to_scene){
+    std::vector<SceneObject> default_load_scene(const std::string& path_to_scene) {
         constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
@@ -255,6 +293,38 @@ namespace engine {
         return scene_objects;
     }
 
+
+    void DeferredLayer::indirect_pass_setup() {
+        indirect_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+
+        indirect_pass_output = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGB16F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .as_resource();
+
+        const auto offsets = random_num::uniform_samples_on_unit_sphere(400);
+
+        offsets_texture = OpenGL3_Texture1D_Builder()
+                .with_size(400)
+                .with_texture_format(GL_RGB32F)
+                .with_data_format(GL_RGB)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_edge()
+                .as_resource_with_data(offsets.data());
+
+        indirect_pass_fbo->bind_as(GL_FRAMEBUFFER);
+        indirect_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *temp_depth_buffer);
+        indirect_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *indirect_pass_output);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
     void DeferredLayer::direct_pass_setup() {
         direct_pass_output = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
@@ -268,7 +338,7 @@ namespace engine {
         direct_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();
         direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
         direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                                     *gbuffer_depth_texture);
+                                                     *temp_depth_buffer);
         direct_pass_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                                      *direct_pass_output);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -276,8 +346,8 @@ namespace engine {
     }
 
     void DeferredLayer::gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments) {
-        std::array<float, 4> white_border {1.0f, 1.0f, 1.0f, 1.0f};
-        std::array<float, 4> black_border {0.0f, 0.0f, 0.0f, 1.0f};
+        std::array<float, 4> white_border{1.0f, 1.0f, 1.0f, 1.0f};
+        std::array<float, 4> black_border{0.0f, 0.0f, 0.0f, 1.0f};
 
         gbuffer_depth_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
