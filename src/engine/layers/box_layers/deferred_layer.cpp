@@ -104,6 +104,10 @@ namespace engine {
             //  when the camera moves and the view should be updated.
             on_camera_moved();
 
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_DEPTH_TEST);
+
             gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -139,12 +143,18 @@ namespace engine {
             render_indirect_lighting();
             indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
 
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glDisable(GL_DEPTH_TEST);
+
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             quad_render->use();
             quad_render->set_int(0, 0);
-            indirect_pass_output->bind_to_slot(0);
             glEnable(GL_FRAMEBUFFER_SRGB);
+            direct_pass_output->bind_to_slot(0);
+            OpenGL3_Renderer::draw(quad.vao);
+            indirect_pass_output->bind_to_slot(0);
             OpenGL3_Renderer::draw(quad.vao);
             glDisable(GL_FRAMEBUFFER_SRGB);
         }
