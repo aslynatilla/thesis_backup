@@ -68,8 +68,10 @@ namespace engine{
         float max_distance_to_ies_vertex = 1.0f;
         float light_camera_far_plane = 100.0f;
         float scale_modifier = 0.0010f;
-        VertexArray ies_light_vao;
+        int offsets_number = 400;
+        float offset_displacement_radius = 2.0f;
 
+        VertexArray ies_light_vao;
         Point_Light light;
         std::vector<SceneObject> objects;
         RenderingQuad quad;
@@ -112,18 +114,20 @@ namespace engine{
 
 
         void create_gbuffer(glm::mat4 projection_view_matrix);
-        void render_direct_lighting();
         void update_rsm(const std::vector<glm::mat4>& light_transformations);
+        void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
+        void render_direct_lighting();
+        void render_indirect_lighting() const;
 
         void gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments);
         void ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments);
         void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
         void direct_pass_setup();
+        void indirect_pass_setup();
         void uniform_buffers_setup();
 
         [[nodiscard]] std::vector<glm::mat4> compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
                                                                           const glm::mat4& camera_projection_matrix) const;
-
         [[nodiscard]] glm::mat4 compute_light_model_matrix(const glm::vec3& light_position,
                                                            const glm::mat4& light_orientation) const;
 
@@ -131,9 +135,7 @@ namespace engine{
         void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data);
         bool on_camera_moved();
 
-        void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
 
-        void indirect_pass_setup();
     };
 
 

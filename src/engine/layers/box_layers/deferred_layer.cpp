@@ -136,25 +136,7 @@ namespace engine {
             indirect_pass_fbo->bind_as(GL_FRAMEBUFFER);
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
             OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            {
-                deferred_indirect->use();
-
-                deferred_indirect->set_int(0, 0);
-                deferred_indirect->set_int(1, 1);
-                deferred_indirect->set_int(2, 2);
-                deferred_indirect->set_int(3, 3);
-                deferred_indirect->set_int(4, 4);
-                deferred_indirect->set_int(5, 5);
-                deferred_indirect->set_int(10, 400);    //TODO: This is the number of samples; refactor this.
-                deferred_indirect->set_float(11, 2.0f);    //TODO: displacement radius; refactor this.
-                gbuffer_positions_texture->bind_to_slot(0);
-                gbuffer_normals_texture->bind_to_slot(1);
-                rsm_positions->bind_to_slot(2);
-                rsm_normals->bind_to_slot(3);
-                rsm_fluxes->bind_to_slot(4);
-                offsets_texture->bind_to_slot(5);
-                OpenGL3_Renderer::draw(quad.vao);
-            }
+            render_indirect_lighting();
             indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
 
             OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -262,6 +244,26 @@ namespace engine {
         OpenGL3_Renderer::draw(quad.vao);
     }
 
+    void DeferredLayer::render_indirect_lighting() const {
+        deferred_indirect->use();
+
+        deferred_indirect->set_int(0, 0);
+        deferred_indirect->set_int(1, 1);
+        deferred_indirect->set_int(2, 2);
+        deferred_indirect->set_int(3, 3);
+        deferred_indirect->set_int(4, 4);
+        deferred_indirect->set_int(5, 5);
+        deferred_indirect->set_int(10, offsets_number);
+        deferred_indirect->set_float(11, offset_displacement_radius);
+        gbuffer_positions_texture->bind_to_slot(0);
+        gbuffer_normals_texture->bind_to_slot(1);
+        rsm_positions->bind_to_slot(2);
+        rsm_normals->bind_to_slot(3);
+        rsm_fluxes->bind_to_slot(4);
+        offsets_texture->bind_to_slot(5);
+        OpenGL3_Renderer::draw(quad.vao);
+    }
+
     void DeferredLayer::on_imgui_render() {
         Layer::on_imgui_render();
     }
@@ -306,10 +308,10 @@ namespace engine {
                 .using_linear_minification()
                 .as_resource();
 
-        const auto offsets = random_num::uniform_samples_on_unit_sphere(400);
+        const auto offsets = random_num::uniform_samples_on_unit_sphere(offsets_number);
 
         offsets_texture = OpenGL3_Texture1D_Builder()
-                .with_size(400)
+                .with_size(offsets_number)
                 .with_texture_format(GL_RGB32F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
