@@ -118,6 +118,7 @@ namespace engine{
         void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
         void render_direct_lighting();
         void render_indirect_lighting() const;
+        void sum_lighting_components() const;
 
         void gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments);
         void ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments);
@@ -134,8 +135,6 @@ namespace engine{
         //TODO: refactor this better, so that it can be a free function
         void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data);
         bool on_camera_moved();
-
-
     };
 
 

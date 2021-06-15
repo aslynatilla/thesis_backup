@@ -108,59 +108,26 @@ namespace engine {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_DEPTH_TEST);
 
-            gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             create_gbuffer(projection_view_matrix);
-            gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-
-            mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
-            glCullFace(GL_FRONT);
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             update_light_mask(light_transforms, ies_light_model_matrix);
-            mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-
-            rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
-            glCullFace(GL_BACK);
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             update_rsm(light_transforms);
-            rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-
-            direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
-            glViewport(0, 0, target_resolution[0], target_resolution[1]);
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             render_direct_lighting();
-            direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
-
-            indirect_pass_fbo->bind_as(GL_FRAMEBUFFER);
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             render_indirect_lighting();
-            indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
 
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_ONE, GL_ONE);
             glDisable(GL_DEPTH_TEST);
 
-            OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-            OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            quad_render->use();
-            quad_render->set_int(0, 0);
             glEnable(GL_FRAMEBUFFER_SRGB);
-            direct_pass_output->bind_to_slot(0);
-            OpenGL3_Renderer::draw(quad.vao);
-            indirect_pass_output->bind_to_slot(0);
-            OpenGL3_Renderer::draw(quad.vao);
+            sum_lighting_components();
             glDisable(GL_FRAMEBUFFER_SRGB);
         }
     }
 
     void DeferredLayer::create_gbuffer(glm::mat4 projection_view_matrix) {
+        gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gbuffer_creation->use();
 
         gbuffer_positions_texture->bind_to_slot(0);
@@ -182,10 +149,16 @@ namespace engine {
             material_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(*(o.vao));
         }
+        gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms,
                                           const glm::mat4& ies_light_model_matrix) {
+        mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
+        glCullFace(GL_FRONT);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mask_creation->use();
         for (unsigned int i = 0u; i < 6; ++i) {
             mask_creation->set_mat4(0 + i,
@@ -195,16 +168,21 @@ namespace engine {
         gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_light_model_matrix));
         gbuffer_transformation->unbind_from_uniform_buffer_target();
         OpenGL3_Renderer::draw(ies_light_vao);
+        mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void
     DeferredLayer::update_rsm(const std::vector<glm::mat4>& light_transformations) {
-        rsm_creation->use();
+        rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
+        glCullFace(GL_BACK);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        rsm_creation->use();
         rsm_positions->bind_to_slot(0);
         rsm_normals->bind_to_slot(1);
         rsm_fluxes->bind_to_slot(2);
-
         light_mask->bind_to_slot(3);
         rsm_creation->set_int(6, 3);
 
@@ -225,11 +203,16 @@ namespace engine {
             material_buffer->unbind_from_uniform_buffer_target();
             OpenGL3_Renderer::draw(*(o.vao));
         }
+        rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::render_direct_lighting() {
-        deferred_direct->use();
+        direct_pass_fbo->bind_as(GL_FRAMEBUFFER);
+        glViewport(0, 0, target_resolution[0], target_resolution[1]);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        deferred_direct->use();
         deferred_direct->set_int(0, 0);
         deferred_direct->set_int(1, 1);
         deferred_direct->set_int(2, 2);
@@ -252,9 +235,13 @@ namespace engine {
         light_buffer->unbind_from_uniform_buffer_target();
 
         OpenGL3_Renderer::draw(quad.vao);
+        direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::render_indirect_lighting() const {
+        indirect_pass_fbo->bind_as(GL_FRAMEBUFFER);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         deferred_indirect->use();
 
         deferred_indirect->set_int(0, 0);
@@ -273,6 +260,18 @@ namespace engine {
         rsm_normals->bind_to_slot(4);
         rsm_fluxes->bind_to_slot(5);
         offsets_texture->bind_to_slot(6);
+        OpenGL3_Renderer::draw(quad.vao);
+        indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
+    void DeferredLayer::sum_lighting_components() const {
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        quad_render->use();
+        quad_render->set_int(0, 0);
+        direct_pass_output->bind_to_slot(0);
+        OpenGL3_Renderer::draw(quad.vao);
+        indirect_pass_output->bind_to_slot(0);
         OpenGL3_Renderer::draw(quad.vao);
     }
 
