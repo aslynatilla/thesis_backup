@@ -16,10 +16,11 @@ layout(std140, binding = 2) uniform Light{
 
 layout (location = 0) uniform sampler2D g_positions;
 layout (location = 1) uniform sampler2D g_normals;
-layout (location = 2) uniform samplerCube rsm_position_map;
-layout (location = 3) uniform samplerCube rsm_normal_map;
-layout (location = 4) uniform samplerCube rsm_flux_map;
-layout (location = 5) uniform sampler1D sampling_offsets;
+layout (location = 2) uniform sampler2D g_diffuse_colors;
+layout (location = 3) uniform samplerCube rsm_position_map;
+layout (location = 4) uniform samplerCube rsm_normal_map;
+layout (location = 5) uniform samplerCube rsm_flux_map;
+layout (location = 6) uniform sampler1D sampling_offsets;
 
 layout (location = 10) uniform int samples_per_fragment;
 layout (location = 11) uniform float displacement_sphere_radius;
@@ -31,6 +32,8 @@ void main(){
     vec3 fragment_to_light = scene_light.position.xyz - world_position;
     float distance_from_light = length(fragment_to_light);
     vec3 l = normalize(fragment_to_light);
+
+    vec3 diffuse_color = texture(g_diffuse_colors, uv_coords).xyz;
 
     vec3 indirect_component = vec3(0.0);
 
@@ -58,6 +61,7 @@ void main(){
                         (d2 * d2);
         indirect_component += result * weight;
     }
+    indirect_component = clamp(indirect_component, 0.0, 1.0) * 12.566/(float(samples_per_fragment)) * diffuse_color;
 
-    indirect_lighting = vec4(clamp(indirect_component, 0.0, 1.0) * 12.566/(float(samples_per_fragment)), 1.0);
+    indirect_lighting = vec4(indirect_component, 1.0);
 }

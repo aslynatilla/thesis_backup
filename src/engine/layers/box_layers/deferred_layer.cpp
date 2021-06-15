@@ -263,14 +263,16 @@ namespace engine {
         deferred_indirect->set_int(3, 3);
         deferred_indirect->set_int(4, 4);
         deferred_indirect->set_int(5, 5);
+        deferred_indirect->set_int(6, 6);
         deferred_indirect->set_int(10, offsets_number);
         deferred_indirect->set_float(11, offset_displacement_radius);
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
-        rsm_positions->bind_to_slot(2);
-        rsm_normals->bind_to_slot(3);
-        rsm_fluxes->bind_to_slot(4);
-        offsets_texture->bind_to_slot(5);
+        gbuffer_diffuse_texture->bind_to_slot(2);
+        rsm_positions->bind_to_slot(3);
+        rsm_normals->bind_to_slot(4);
+        rsm_fluxes->bind_to_slot(5);
+        offsets_texture->bind_to_slot(6);
         OpenGL3_Renderer::draw(quad.vao);
     }
 
