@@ -217,10 +217,12 @@ namespace engine {
         deferred_direct->set_int(1, 1);
         deferred_direct->set_int(2, 2);
         deferred_direct->set_int(3, 3);
+        deferred_direct->set_int(4, 4);
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
         shadow_map->bind_to_slot(3);
+        light_mask->bind_to_slot(4);
 
         constexpr auto light_intensity = 1.0f;
         constexpr auto light_color = glm::vec4(1.0f);

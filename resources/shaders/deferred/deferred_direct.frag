@@ -30,6 +30,7 @@ layout (location = 1) uniform sampler2D g_normals;
 layout (location = 2) uniform sampler2D g_diffuse;
 
 layout (location = 3) uniform samplerCube light_shadow_map;
+layout (location = 4) uniform samplerCube ies_masking_texture;
 
 float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light){
     float depth = texture(light_shadow_map, light_to_fragment).r;
@@ -60,6 +61,11 @@ void main(){
     float d = max(dot(n, l), 0.0);
     d = d * attenuation_factor;
     vec3 diffuse_component = d * diffuse_color * scene_light.intensity;
+
+    vec3 mask_value = texture(ies_masking_texture, -l).rgb;
+    float multiplier = mask_value.r;
+    bool is_active = (mask_value.b == 1.0);
+    diffuse_component *= is_active ? multiplier : 0.0;
 
     direct_lighting = vec4(diffuse_component * shadow_factor, 1.0);
 }
