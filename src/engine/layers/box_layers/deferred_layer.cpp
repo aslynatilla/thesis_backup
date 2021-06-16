@@ -67,10 +67,10 @@ namespace engine {
     void DeferredLayer::on_detach() {}
 
     void DeferredLayer::on_event(Event& event) {
-//        EventHandler handler(event);
-//        handler.handle<CameraMovedEvent>([this](auto&& ...args) -> decltype(auto){
-//            this->on_camera_moved(std::forward<decltype(args)>(args)...);
-//        })
+        EventHandler handler(event);
+        handler.handle<CameraMovedEvent>([this]([[maybe_unused]] auto&& ...args) -> decltype(auto){
+            return this->on_camera_moved();
+        });
         event.handled = false;
     }
 

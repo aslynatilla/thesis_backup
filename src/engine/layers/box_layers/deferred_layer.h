@@ -3,6 +3,8 @@
 
 #include "../layer.h"
 
+#include "../../events/scene_event.h"
+
 #include "../../rendering/renderer.h"
 #include "../../rendering/opengl3_framebuffer.h"
 #include "../../rendering/opengl3_texture.h"

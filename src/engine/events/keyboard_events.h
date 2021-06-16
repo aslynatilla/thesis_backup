@@ -6,7 +6,7 @@
 namespace engine {
     class KeyPressedEvent : public EventImpl<EventType::KeyPressed> {
     public:
-        explicit KeyPressedEvent(const int pressed_key, const bool is_repeated);
+        explicit KeyPressedEvent(int pressed_key, bool is_repeated);
 
         [[nodiscard]] int get_keycode() const;
         [[nodiscard]] bool is_pressed_repeatedly() const;
@@ -18,7 +18,7 @@ namespace engine {
 
     class KeyReleasedEvent : public EventImpl<EventType::KeyReleased> {
     public:
-        explicit KeyReleasedEvent(const int pressed_key);
+        explicit KeyReleasedEvent(int pressed_key);
 
         [[nodiscard]] int get_keycode() const;
 
@@ -28,7 +28,7 @@ namespace engine {
 
     class KeyTypedEvent : public EventImpl<EventType::InputKeyTyped> {
     public:
-        explicit KeyTypedEvent(const unsigned int typed_key);
+        explicit KeyTypedEvent(unsigned int typed_key);
 
         [[nodiscard]] unsigned int get_key_typed() const;
     private:
