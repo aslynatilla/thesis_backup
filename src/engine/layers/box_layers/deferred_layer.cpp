@@ -48,6 +48,8 @@ namespace engine {
                                                       "resources/shaders/deferred/gbuffer_creation.frag");
         quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                  "resources/shaders/deferred/quad_rendering.frag");
+        sum_quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
+                                                 "resources/shaders/deferred/sum_quad_rendering.frag");
         deferred_direct = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                      "resources/shaders/deferred/deferred_direct.frag");
         rsm_creation = shader::create_shader_from("resources/shaders/deferred/rsm_creation.vert",
@@ -113,10 +115,6 @@ namespace engine {
             update_rsm(light_transforms);
             render_direct_lighting();
             render_indirect_lighting();
-
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc(GL_ONE, GL_ONE);
-            glDisable(GL_DEPTH_TEST);
 
             glEnable(GL_FRAMEBUFFER_SRGB);
             sum_lighting_components();
@@ -269,11 +267,11 @@ namespace engine {
     void DeferredLayer::sum_lighting_components() const {
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        quad_render->use();
-        quad_render->set_int(0, 0);
+        sum_quad_render->use();
+        sum_quad_render->set_int(0, 0);
+        sum_quad_render->set_int(1, 1);
         direct_pass_output->bind_to_slot(0);
-        OpenGL3_Renderer::draw(quad.vao);
-        indirect_pass_output->bind_to_slot(0);
+        indirect_pass_output->bind_to_slot(1);
         OpenGL3_Renderer::draw(quad.vao);
     }
 

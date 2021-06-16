@@ -106,6 +106,7 @@ namespace engine{
         std::shared_ptr<Shader> deferred_direct;
         std::shared_ptr<Shader> deferred_indirect;
         std::shared_ptr<Shader> quad_render;
+        std::shared_ptr<Shader> sum_quad_render;
 
         std::shared_ptr<UniformBuffer> gbuffer_transformation;
         std::shared_ptr<UniformBuffer> material_buffer;

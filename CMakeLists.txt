@@ -74,6 +74,7 @@ install_file_to_bin(resources/shaders/deferred deferred_direct.frag)
 install_file_to_bin(resources/shaders/deferred deferred_indirect.frag)
 install_file_to_bin(resources/shaders/deferred quad_rendering.vert)
 install_file_to_bin(resources/shaders/deferred quad_rendering.frag)
+install_file_to_bin(resources/shaders/deferred sum_quad_rendering.frag)
 
 #   Copy cornell box scene to resources
 install_file_to_bin(resources cornell_box_multimaterial.obj)
