@@ -61,6 +61,7 @@ namespace engine{
         }
 
         view_camera->translate(translation_vector);
+
         return false;
     }
 

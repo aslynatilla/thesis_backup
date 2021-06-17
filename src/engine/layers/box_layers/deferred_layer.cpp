@@ -62,6 +62,7 @@ namespace engine {
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
         load_IES_light_as_VAO(path_to_IES_data);
         uniform_buffers_setup();
+        on_camera_moved();
     }
 
     void DeferredLayer::on_detach() {}
@@ -79,7 +80,6 @@ namespace engine {
         if (auto view_camera = camera.lock()) {
 
             //Setup
-            const auto projection_view_matrix = view_camera->projection_matrix() * view_camera->view_matrix();
             const auto light_data = light.get_representative_data();
             const auto light_position = glm::vec3(light_data.position);
             const auto light_orientation = glm::mat4_cast(light.get_orientation());
@@ -98,17 +98,11 @@ namespace engine {
             const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
                                                                            light_orientation);
 
-            //   In order to make the camera "movable" while the event system is not ready to handle this,
-            //  we call the handling function here, forcing the update explicitly.
-            //   In this way, the direct pass and any other pass using this buffer can get the correct result
-            //  when the camera moves and the view should be updated.
-            on_camera_moved();
-
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_DEPTH_TEST);
 
-            create_gbuffer(projection_view_matrix);
+            create_gbuffer();
             update_light_mask(light_transforms, ies_light_model_matrix);
             update_rsm(light_transforms);
             render_direct_lighting();
@@ -124,7 +118,7 @@ namespace engine {
         }
     }
 
-    void DeferredLayer::create_gbuffer(glm::mat4 projection_view_matrix) {
+    void DeferredLayer::create_gbuffer() {
         gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -134,8 +128,8 @@ namespace engine {
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
 
-        gbuffer_transformation->bind_to_uniform_buffer_target();
-        gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
+//        gbuffer_transformation->bind_to_uniform_buffer_target();
+//        gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
         for (const auto& o : objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -576,8 +570,13 @@ namespace engine {
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
         const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
+        const auto projection_view_matrix = view_camera->projection_matrix() * view_camera->view_matrix();
+
         common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
         common_buffer->unbind_from_uniform_buffer_target();
+        gbuffer_transformation->bind_to_uniform_buffer_target();
+        gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
+        gbuffer_transformation->unbind_from_uniform_buffer_target();
         return false;
     }
 }

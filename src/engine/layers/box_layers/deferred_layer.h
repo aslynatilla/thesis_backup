@@ -115,7 +115,7 @@ namespace engine{
         std::shared_ptr<UniformBuffer> common_buffer;
 
 
-        void create_gbuffer(glm::mat4 projection_view_matrix);
+        void create_gbuffer();
         void update_rsm(const std::vector<glm::mat4>& light_transformations);
         void update_light_mask(const std::vector<glm::mat4>& light_transforms, const glm::mat4& ies_light_model_matrix);
         void render_direct_lighting();
