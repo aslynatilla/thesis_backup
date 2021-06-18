@@ -6,6 +6,7 @@
 #include "../../events/window_events.h"
 #include "../../events/keyboard_events.h"
 #include "../../events/mouse_events.h"
+#include "../../events/scene_events.h"
 #include "../../rendering/fly_camera.h"
 
 #include <GLFW/glfw3.h>
@@ -16,7 +17,12 @@
 namespace engine{
     class CameraLayer : public Layer{
     public:
-        static std::unique_ptr<CameraLayer> layer_for(std::shared_ptr<FlyCamera> camera);
+        template<typename FnCallback>
+        static std::unique_ptr<CameraLayer> layer_for(std::shared_ptr<FlyCamera> camera, FnCallback event_pump_callback){
+            auto layer = std::make_unique<CameraLayer>(std::move(camera), LayerCreationKey{});
+            layer->event_pump = event_pump_callback;
+            return layer;
+        }
         CameraLayer(std::shared_ptr<FlyCamera> application_camera, LayerCreationKey key);
 
         CameraLayer() = delete;
@@ -38,6 +44,7 @@ namespace engine{
         bool on_mouse_button_released(MouseButtonReleasedEvent event);
 
         std::shared_ptr<FlyCamera> view_camera;
+        std::function<void(std::unique_ptr<Event>)> event_pump;
 
         bool is_camera_rotating = false;
 

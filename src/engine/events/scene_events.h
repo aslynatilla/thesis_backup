@@ -1,5 +1,5 @@
-#ifndef SCENE_EVENT_H
-#define SCENE_EVENT_H
+#ifndef SCENE_EVENTS_H
+#define SCENE_EVENTS_H
 
 #include "event.h"
 
@@ -14,4 +14,4 @@ namespace engine {
         std::string to_string() const override;
     };
 }
-#endif //SCENE_EVENT_H
+#endif //SCENE_EVENTS_H

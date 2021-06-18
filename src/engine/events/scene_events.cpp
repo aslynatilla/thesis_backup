@@ -1,4 +1,4 @@
-#include "scene_event.h"
+#include "scene_events.h"
 
 std::string engine::CameraMovedEvent::to_string() const {
     return std::string("Camera Moved Event");

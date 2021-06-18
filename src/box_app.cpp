@@ -15,7 +15,10 @@ BoxApp::BoxApp() : Application("Cornell Box App")
         CameraMode::Perspective);
     std::weak_ptr ptr_to_camera(first_person_camera);
 
-    layers.push_layer(CameraLayer::layer_for(first_person_camera));
+    layers.push_layer(CameraLayer::layer_for(first_person_camera, [this](auto ptr) {
+        push_event(std::move(ptr));
+    }));
+
     layers.push_layer(DeferredLayer::create_using(ptr_to_camera));
 
     const auto glfw_window_pointer = GLFW_Window_Impl::convert_from(main_window.get());
@@ -45,6 +48,10 @@ void BoxApp::run()
         auto time = static_cast<float>(glfwGetTime());
         float delta_time = time - last_frame_time;
         last_frame_time = time;
+        while(!received_events.empty()){
+            on_event(*received_events.front());
+            received_events.pop();
+        }
 
         for (auto &layer : layers)
         {
@@ -71,4 +78,8 @@ bool BoxApp::on_window_closed(engine::WindowClosedEvent &event)
 bool BoxApp::on_window_resized(engine::WindowResizedEvent &event)
 {
     return Application::on_window_resized(event);
+}
+
+void BoxApp::push_event(std::unique_ptr<engine::Event> event) {
+    received_events.push(std::move(event));
 }

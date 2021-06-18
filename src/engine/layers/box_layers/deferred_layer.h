@@ -3,7 +3,7 @@
 
 #include "../layer.h"
 
-#include "../../events/scene_event.h"
+#include "../../events/scene_events.h"
 
 #include "../../rendering/renderer.h"
 #include "../../rendering/opengl3_framebuffer.h"
