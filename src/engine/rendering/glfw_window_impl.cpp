@@ -29,8 +29,8 @@ namespace engine {
         return window;
     }
 
-    void GLFW_Window_Impl::set_event_callback(const Window::CallbackFunction& callback) noexcept {
-        data.callback_func = callback;
+    void GLFW_Window_Impl::link_to_event_queue(const Window::EventQueueAccess& push_function) noexcept {
+        data.event_pump_function = push_function;
     }
 
     void GLFW_Window_Impl::initialize(const WindowProperties& properties) {
@@ -89,16 +89,14 @@ namespace engine {
         target_window_data.width = new_width;
         target_window_data.height = new_height;
 
-        WindowResizedEvent resizing_event(static_cast<uint16_t>(new_width), static_cast<uint16_t>(new_height));
-        target_window_data.callback_func(resizing_event);
+        target_window_data.event_pump_function(std::make_unique<WindowResizedEvent>(new_width, new_height));
     }
 
     void GLFW_Window_Impl::window_close_callback(GLFWwindow *target_window) {
         GLFW_Window_Data& target_window_data =
                 *(static_cast<GLFW_Window_Data *>(glfwGetWindowUserPointer(target_window)));
 
-        WindowClosedEvent closing_event;
-        target_window_data.callback_func(closing_event);
+        target_window_data.event_pump_function(std::make_unique<WindowClosedEvent>());
     }
 
     void GLFW_Window_Impl::key_callback(GLFWwindow *target_window,
@@ -111,23 +109,19 @@ namespace engine {
 
         switch (action) {
             case GLFW_PRESS: {
-                KeyPressedEvent press(key, false);
-                target_window_data.callback_func(press);
+                target_window_data.event_pump_function(std::make_unique<KeyPressedEvent>(key, false));
 
                 if(key == GLFW_KEY_ESCAPE){
-                    WindowClosedEvent close_window;
-                    target_window_data.callback_func(close_window);
+                    target_window_data.event_pump_function(std::make_unique<WindowClosedEvent>());
                 }
                 break;
             }
             case GLFW_RELEASE: {
-                KeyReleasedEvent release(key);
-                target_window_data.callback_func(release);
+                target_window_data.event_pump_function(std::make_unique<KeyReleasedEvent>(key));
                 break;
             }
             case GLFW_REPEAT: {
-                KeyPressedEvent held_down(key, true);
-                target_window_data.callback_func(held_down);
+                target_window_data.event_pump_function(std::make_unique<KeyPressedEvent>(key, true));
                 break;
             }
         }
@@ -137,8 +131,7 @@ namespace engine {
         GLFW_Window_Data& target_window_data =
                 *(static_cast<GLFW_Window_Data *>(glfwGetWindowUserPointer(target_window)));
 
-        KeyTypedEvent typed(key);
-        target_window_data.callback_func(typed);
+        target_window_data.event_pump_function(std::make_unique<KeyTypedEvent>(key));
     }
 
     void GLFW_Window_Impl::mouse_button_callback(GLFWwindow *target_window,
@@ -149,13 +142,11 @@ namespace engine {
 
         switch (action) {
             case GLFW_PRESS: {
-                MouseButtonPressedEvent button_press(button);
-                target_window_data.callback_func(button_press);
+                target_window_data.event_pump_function(std::make_unique<MouseButtonPressedEvent>(button));
                 break;
             }
             case GLFW_RELEASE: {
-                MouseButtonReleasedEvent button_release(button);
-                target_window_data.callback_func(button_release);
+                target_window_data.event_pump_function(std::make_unique<MouseButtonReleasedEvent>(button));
                 break;
             }
         }
@@ -166,8 +157,9 @@ namespace engine {
         GLFW_Window_Data& target_window_data =
                 *(static_cast<GLFW_Window_Data *>(glfwGetWindowUserPointer(target_window)));
 
-        MouseScrolledEvent scrolling(static_cast<float>(x_scroll), static_cast<float>(y_scroll));
-        target_window_data.callback_func(scrolling);
+        target_window_data.event_pump_function(std::make_unique<MouseScrolledEvent>(
+                static_cast<float>(x_scroll), static_cast<float>(y_scroll))
+                );
     }
 
     void GLFW_Window_Impl::cursor_position_callback(GLFWwindow *target_window,
@@ -175,8 +167,9 @@ namespace engine {
         GLFW_Window_Data& target_window_data =
                 *(static_cast<GLFW_Window_Data *>(glfwGetWindowUserPointer(target_window)));
 
-        MouseMovedEvent moving(static_cast<float>(x_coord), static_cast<float>(y_coord));
-        target_window_data.callback_func(moving);
+        target_window_data.event_pump_function(std::make_unique<MouseMovedEvent>(
+                static_cast<float>(x_coord), static_cast<float>(y_coord)
+                ));
     }
 
     GLFW_Window_Impl* GLFW_Window_Impl::convert_from(Window* abstract_window) {

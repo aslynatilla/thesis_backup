@@ -79,7 +79,3 @@ bool BoxApp::on_window_resized(engine::WindowResizedEvent &event)
 {
     return Application::on_window_resized(event);
 }
-
-void BoxApp::push_event(std::unique_ptr<engine::Event> event) {
-    received_events.push(std::move(event));
-}

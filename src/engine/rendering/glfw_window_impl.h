@@ -28,7 +28,7 @@ namespace engine {
 
         [[nodiscard]] void *get_native_window() const noexcept override;
 
-        void set_event_callback(const CallbackFunction& callback) noexcept override;
+        void link_to_event_queue(const EventQueueAccess& push_function) noexcept override;
 
     private:
         virtual void initialize(const WindowProperties& properties);
@@ -57,7 +57,7 @@ namespace engine {
             uint32_t width;
             uint32_t height;
 
-            CallbackFunction callback_func;
+            EventQueueAccess event_pump_function;
         };
 
         GLFW_Window_Data data;

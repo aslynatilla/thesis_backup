@@ -18,12 +18,8 @@ public:
     virtual bool on_window_closed([[maybe_unused]] engine::WindowClosedEvent& event) final override;
     virtual bool on_window_resized(engine::WindowResizedEvent& event) final override;
 
-    void push_event(std::unique_ptr<engine::Event> event);
-
 private:
     std::unique_ptr<engine::ImGuiLayer> imgui;
-
-    std::queue<std::unique_ptr<engine::Event>> received_events;
 };
 
 

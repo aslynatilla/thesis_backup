@@ -6,14 +6,14 @@ namespace engine {
         return std::string("Window Closed Event");
     }
 
-    WindowResizedEvent::WindowResizedEvent(uint16_t width, uint16_t height)
+    WindowResizedEvent::WindowResizedEvent(unsigned width, unsigned height)
             : new_width{width}, new_height{height} {}
 
-    uint16_t WindowResizedEvent::get_target_width() const {
+    unsigned WindowResizedEvent::get_target_width() const {
         return new_width;
     }
 
-    uint16_t WindowResizedEvent::get_target_height() const {
+    unsigned WindowResizedEvent::get_target_height() const {
         return new_height;
     }
 

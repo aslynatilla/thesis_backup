@@ -10,6 +10,7 @@
 #include <fmt/core.h>
 #include <fmt/color.h>
 #include <utility>
+#include <queue>
 
 class Application {
 public:
@@ -20,6 +21,7 @@ public:
     virtual void run();
 
     static Application& reference();
+    void push_event(std::unique_ptr<engine::Event> event);
 
 protected:
     virtual bool on_window_closed([[maybe_unused]] engine::WindowClosedEvent& event);
@@ -31,6 +33,9 @@ protected:
     float last_frame_time;
 
     std::unique_ptr<engine::Window> main_window;
+
+    std::queue<std::unique_ptr<engine::Event>> received_events;
+
     engine::LayerContainer layers;
 
     static Application* instance;
