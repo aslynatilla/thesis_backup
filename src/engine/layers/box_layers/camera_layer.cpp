@@ -61,6 +61,8 @@ namespace engine{
         }
 
         view_camera->translate(translation_vector);
+        event_pump(std::make_unique<CameraMovedEvent>());
+
         return false;
     }
 
@@ -71,6 +73,7 @@ namespace engine{
         if (is_camera_rotating) {
             view_camera->rotate_horizontally(-(x - previous_mouse_position.x) * scaled_speed);
             view_camera->rotate_vertically(-(y - previous_mouse_position.y) * scaled_speed);
+            event_pump(std::make_unique<CameraMovedEvent>());
         }
         previous_mouse_position.x = x;
         previous_mouse_position.y = y;
@@ -89,9 +92,5 @@ namespace engine{
             is_camera_rotating = false;
         }
         return false;
-    }
-
-    std::unique_ptr<CameraLayer> CameraLayer::layer_for(std::shared_ptr<FlyCamera> camera) {
-        return std::make_unique<CameraLayer>(std::move(camera), LayerCreationKey{});
     }
 }

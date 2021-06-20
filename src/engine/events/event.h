@@ -12,7 +12,9 @@ namespace engine {
         MouseMoved, MouseScrolled, MouseButtonPressed, MouseButtonReleased,
         KeyPressed, KeyReleased, InputKeyTyped,
 
-        CameraReposition
+        CameraMoved,
+
+        SceneChanged
     };
 
     class Event {

@@ -12,7 +12,7 @@ Application::Application(const std::string& app_name) {
 
     using namespace engine;
     main_window = Window::create(WindowProperties(app_name, 800, 800));
-    main_window->set_event_callback([this](auto&& event) { return on_event(event); });
+    main_window->link_to_event_queue([this](auto ptr_to_event) { push_event(std::move(ptr_to_event)); });
     OpenGL3_Renderer::initialize();
     running = true;
 }
@@ -46,6 +46,11 @@ void Application::run() {
         float delta_time = time - last_frame_time;
         last_frame_time = time;
 
+        while(!received_events.empty()){
+            on_event(*received_events.front());
+            received_events.pop();
+        }
+
         for (auto& layer : layers) {
             layer->update(delta_time);
         }
@@ -66,4 +71,8 @@ bool Application::on_window_closed([[maybe_unused]] engine::WindowClosedEvent& e
 bool Application::on_window_resized(engine::WindowResizedEvent& event) {
     engine::OpenGL3_Renderer::set_viewport(0, 0, event.get_target_width(), event.get_target_height());
     return false;
+}
+
+void Application::push_event(std::unique_ptr<engine::Event> event) {
+    received_events.push(std::move(event));
 }

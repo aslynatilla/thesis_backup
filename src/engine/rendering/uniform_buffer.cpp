@@ -1,17 +1,17 @@
 #include "uniform_buffer.h"
 
 namespace engine {
-    UniformBuffer::UniformBuffer(const int buffer_size, const void* buffer_initial_data) {
+    UniformBuffer::UniformBuffer(const int buffer_size, const void* buffer_initial_data, const GLint usage_pattern = GL_STATIC_DRAW) : id(0){
         glGenBuffers(1, &id);
         glBindBuffer(GL_UNIFORM_BUFFER, id);
-        glBufferData(GL_UNIFORM_BUFFER, buffer_size, buffer_initial_data, GL_STATIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, buffer_size, buffer_initial_data, usage_pattern);
         size = buffer_size;
     }
 
-    UniformBuffer::UniformBuffer(const int buffer_size) {
+    UniformBuffer::UniformBuffer(const int buffer_size, const GLint usage_pattern = GL_STATIC_DRAW) : id(0){
         glGenBuffers(1, &id);
         glBindBuffer(GL_UNIFORM_BUFFER, id);
-        glBufferData(GL_UNIFORM_BUFFER, buffer_size, nullptr, GL_STATIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, buffer_size, nullptr, usage_pattern);
         size = buffer_size;
     }
 
