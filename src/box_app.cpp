@@ -15,11 +15,13 @@ BoxApp::BoxApp() : Application("Cornell Box App")
         CameraMode::Perspective);
     std::weak_ptr ptr_to_camera(first_person_camera);
 
-    layers.push_layer(CameraLayer::layer_for(first_person_camera, [this](auto ptr) {
-        push_event(std::move(ptr));
+    layers.push_layer(CameraLayer::layer_for(first_person_camera, [this](auto ptr_to_queue) {
+        push_event(std::move(ptr_to_queue));
     }));
 
-    layers.push_layer(DeferredLayer::create_using(ptr_to_camera));
+    layers.push_layer(DeferredLayer::create_using(ptr_to_camera, [this](auto ptr_to_queue) {
+        push_event(std::move(ptr_to_queue));
+    }));
 
     const auto glfw_window_pointer = GLFW_Window_Impl::convert_from(main_window.get());
     imgui = ImGuiLayer::from(glfw_window_pointer);
@@ -35,8 +37,7 @@ BoxApp::~BoxApp()
 void BoxApp::on_event(engine::Event &event)
 {
     Application::on_event(event);
-    if (!event.handled)
-    {
+    if (!event.handled){
         imgui->on_event(event);
     }
 }
@@ -53,15 +54,13 @@ void BoxApp::run()
             received_events.pop();
         }
 
-        for (auto &layer : layers)
-        {
+        for (auto &layer : layers){
             layer->update(delta_time);
         }
         imgui->update(delta_time);
 
         imgui->begin();
-        for (auto &layer : layers)
-        {
+        for (auto &layer : layers){
             layer->on_imgui_render();
         }
         imgui->end();

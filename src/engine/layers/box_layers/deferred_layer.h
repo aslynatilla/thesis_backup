@@ -19,6 +19,7 @@
 
 #include "../../../utility/random_numbers.h"
 
+#include <imgui/imgui.h>
 #include <glm/glm.hpp>
 
 namespace engine{
@@ -47,7 +48,14 @@ namespace engine{
     class DeferredLayer : public Layer{
     public:
         DeferredLayer(std::weak_ptr<FlyCamera> controlled_camera, LayerCreationKey key);
-        static std::unique_ptr<DeferredLayer> create_using(std::weak_ptr<FlyCamera> controlled_camera);
+
+        template<class FnCallback>
+        static std::unique_ptr<DeferredLayer> create_using(std::weak_ptr<FlyCamera> controlled_camera, FnCallback event_pump_callback){
+            auto layer = std::make_unique<DeferredLayer>(std::move(controlled_camera), LayerCreationKey{});
+            layer->event_pump = event_pump_callback;
+            return layer;
+        }
+
         DeferredLayer() = delete;
         DeferredLayer(const DeferredLayer& other) = delete;
         DeferredLayer(DeferredLayer&& other) = delete;
@@ -62,6 +70,7 @@ namespace engine{
 
     private:
         std::weak_ptr<FlyCamera> camera;
+        std::function<void(std::unique_ptr<Event>)> event_pump;
 
         bool moving_camera = false;
 

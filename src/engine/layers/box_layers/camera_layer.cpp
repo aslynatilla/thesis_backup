@@ -93,8 +93,4 @@ namespace engine{
         }
         return false;
     }
-//
-//    std::unique_ptr<CameraLayer> CameraLayer::layer_for(std::shared_ptr<FlyCamera> camera) {
-//        return std::make_unique<CameraLayer>(std::move(camera), LayerCreationKey{});
-//    }
 }

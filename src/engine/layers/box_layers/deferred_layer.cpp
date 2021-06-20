@@ -272,11 +272,11 @@ namespace engine {
     }
 
     void DeferredLayer::on_imgui_render() {
-        Layer::on_imgui_render();
-    }
-
-    std::unique_ptr<DeferredLayer> DeferredLayer::create_using(std::weak_ptr<FlyCamera> controlled_camera) {
-        return std::make_unique<DeferredLayer>(std::move(controlled_camera), LayerCreationKey{});
+        glm::vec4 light_position = light.get_position();
+        if(ImGui::SliderFloat("Horizontal position", glm::value_ptr(light_position), -3.0f, 6.0f, "%.3f", ImGuiSliderFlags_None)){
+            light.translate_to(light_position);
+            event_pump(std::make_unique<SceneChangedEvent>());
+        }
     }
 
     std::vector<SceneObject> default_load_scene(const std::string& path_to_scene) {
