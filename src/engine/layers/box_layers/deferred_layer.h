@@ -72,8 +72,6 @@ namespace engine{
         std::weak_ptr<FlyCamera> camera;
         std::function<void(std::unique_ptr<Event>)> event_pump;
 
-        bool moving_camera = false;
-
         glm::vec<2, int> target_resolution {0, 0};
         float shadow_threshold = 0.15f;
         float max_distance_to_ies_vertex = 1.0f;
@@ -111,6 +109,8 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture1D> offsets_texture;
         std::unique_ptr<OpenGL3_Texture2D> indirect_pass_output;
 
+        bool camera_moved = true;
+        bool scene_changed = true;
         std::shared_ptr<Shader> gbuffer_creation;   //  Should update when camera moves or scene changes
         std::shared_ptr<Shader> mask_creation;      //  Should update when light moves or scene changes
         std::shared_ptr<Shader> rsm_creation;       //  Should update when light moves or scene changes
@@ -145,7 +145,8 @@ namespace engine{
 
         //TODO: refactor this better, so that it can be a free function
         void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data);
-        bool on_camera_moved();
+        void update_camera_related_buffers();
+        void update_scene_buffers_and_representations();
     };
 
 

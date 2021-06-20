@@ -62,15 +62,21 @@ namespace engine {
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
         load_IES_light_as_VAO(path_to_IES_data);
         uniform_buffers_setup();
-        on_camera_moved();
+//        update(0.1f);
     }
 
     void DeferredLayer::on_detach() {}
 
     void DeferredLayer::on_event(Event& event) {
         EventHandler handler(event);
-        handler.handle<CameraMovedEvent>([this]([[maybe_unused]] auto&& ...args) -> decltype(auto){
-            return this->on_camera_moved();
+        handler.handle<CameraMovedEvent>([this]([[maybe_unused]] auto&& ...args) -> decltype(auto) {
+            camera_moved = true;
+            return false;
+        });
+
+        handler.handle<SceneChangedEvent>([this]([[maybe_unused]] auto&& ...args) -> decltype(auto) {
+            scene_changed = true;
+            return false;
         });
         event.handled = false;
     }
@@ -79,32 +85,22 @@ namespace engine {
         [[maybe_unused]] float timestep = delta_time;
         if (auto view_camera = camera.lock()) {
 
-            //Setup
-            const auto light_data = light.get_representative_data();
-            const auto light_position = glm::vec3(light_data.position);
-            const auto light_orientation = glm::mat4_cast(light.get_orientation());
-            const auto light_camera = Camera(
-                    CameraGeometricDefinition{light_data.position,
-                                              light_data.position + light_data.direction,
-                                              light.get_up()},
-                    90.0f, 1.0f,
-                    CameraPlanes{0.001f, light_camera_far_plane},
-                    CameraMode::Perspective);
-
-            const auto light_projection_matrix = light_camera.get_projection_matrix();
-            const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
-                                                                                     light_projection_matrix);
-
-            const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
-                                                                           light_orientation);
-
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_DEPTH_TEST);
 
-            create_gbuffer();
-            update_light_mask(light_transforms, ies_light_model_matrix);
-            update_rsm(light_transforms);
+            if (scene_changed) {
+                update_camera_related_buffers();
+                update_scene_buffers_and_representations();
+                create_gbuffer();
+                scene_changed = false;
+                camera_moved = false;
+            } else if (camera_moved) {
+                update_camera_related_buffers();
+                create_gbuffer();
+                camera_moved = false;
+            }
+
             render_direct_lighting();
             render_indirect_lighting();
 
@@ -120,6 +116,7 @@ namespace engine {
 
     void DeferredLayer::create_gbuffer() {
         gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        glViewport(0, 0, target_resolution[0], target_resolution[1]);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gbuffer_creation->use();
@@ -128,8 +125,6 @@ namespace engine {
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
 
-//        gbuffer_transformation->bind_to_uniform_buffer_target();
-//        gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
         for (const auto& o : objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -218,18 +213,6 @@ namespace engine {
         shadow_map->bind_to_slot(3);
         light_mask->bind_to_slot(4);
 
-        constexpr auto light_intensity = 1.0f;
-        constexpr auto light_color = glm::vec4(1.0f);
-        light_buffer->bind_to_uniform_buffer_target();
-        light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light.get_position_as_vec3()));
-        light_buffer->copy_to_buffer(16, 16, glm::value_ptr(light.get_forward()));
-        light_buffer->copy_to_buffer(32, 4, &light.attenuation.constant);
-        light_buffer->copy_to_buffer(36, 4, &light.attenuation.linear);
-        light_buffer->copy_to_buffer(40, 4, &light.attenuation.quadratic);
-        light_buffer->copy_to_buffer(44, 4, &light_intensity);
-        light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
-        light_buffer->unbind_from_uniform_buffer_target();
-
         OpenGL3_Renderer::draw(quad.vao);
         direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
@@ -273,7 +256,8 @@ namespace engine {
 
     void DeferredLayer::on_imgui_render() {
         glm::vec4 light_position = light.get_position();
-        if(ImGui::SliderFloat("Horizontal position", glm::value_ptr(light_position), -3.0f, 6.0f, "%.3f", ImGuiSliderFlags_None)){
+        if (ImGui::SliderFloat("Horizontal position", glm::value_ptr(light_position), -3.0f, 6.0f, "%.3f",
+                               ImGuiSliderFlags_None)) {
             light.translate_to(light_position);
             event_pump(std::make_unique<SceneChangedEvent>());
         }
@@ -566,7 +550,7 @@ namespace engine {
         ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
     }
 
-    bool DeferredLayer::on_camera_moved() {
+    void DeferredLayer::update_camera_related_buffers() {
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
         const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
@@ -577,6 +561,41 @@ namespace engine {
         gbuffer_transformation->bind_to_uniform_buffer_target();
         gbuffer_transformation->copy_to_buffer(0, 64, glm::value_ptr(projection_view_matrix));
         gbuffer_transformation->unbind_from_uniform_buffer_target();
-        return false;
+    }
+
+    void DeferredLayer::update_scene_buffers_and_representations() {
+        constexpr auto light_intensity = 1.0f;
+        constexpr auto light_color = glm::vec4(1.0f);
+
+        const auto light_data = light.get_representative_data();
+        const auto light_position = glm::vec3(light_data.position);
+        const auto light_orientation = glm::mat4_cast(light.get_orientation());
+        const auto light_camera = Camera(
+                CameraGeometricDefinition{light_data.position,
+                                          light_data.position + light_data.direction,
+                                          light.get_up()},
+                90.0f, 1.0f,
+                CameraPlanes{0.001f, light_camera_far_plane},
+                CameraMode::Perspective);
+
+        const auto light_projection_matrix = light_camera.get_projection_matrix();
+        const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
+                                                                                 light_projection_matrix);
+
+        const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
+                                                                       light_orientation);
+
+        light_buffer->bind_to_uniform_buffer_target();
+        light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light_data.position));
+        light_buffer->copy_to_buffer(16, 16, glm::value_ptr(light_data.direction));
+        light_buffer->copy_to_buffer(32, 4, &light.attenuation.constant);
+        light_buffer->copy_to_buffer(36, 4, &light.attenuation.linear);
+        light_buffer->copy_to_buffer(40, 4, &light.attenuation.quadratic);
+        light_buffer->copy_to_buffer(44, 4, &light_intensity);
+        light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
+        light_buffer->unbind_from_uniform_buffer_target();
+
+        update_light_mask(light_transforms, ies_light_model_matrix);
+        update_rsm(light_transforms);
     }
 }
