@@ -13,8 +13,8 @@ namespace engine {
             scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
                                                             ai_postprocess_flags);
 
-            angel = scenes::load_scene_objects_from("resources/Winged_Victory.obj",
-                                                    ai_postprocess_flags);
+//            angel = scenes::load_scene_objects_from("resources/Winged_Victory.obj",
+//                                                    ai_postprocess_flags);
 
             //  This scaling is needed for the cornell_box_multimaterial.obj scene
             //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
@@ -173,7 +173,8 @@ namespace engine {
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
             document = parser.parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+//            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh(document);
 
             const auto vertices = photometric_solid.get_vertices();
 
@@ -259,7 +260,7 @@ namespace engine {
                                               light_data.position + light_data.direction,
                                               scene_light.get_up()},
                     90.0f, 1.0f,
-                    CameraPlanes{0.1f, light_far_plane},
+                    CameraPlanes{0.001f, light_far_plane},
                     CameraMode::Perspective);
 
             const auto light_projection_matrix = light_camera.get_projection_matrix();
