@@ -520,8 +520,8 @@ namespace engine {
     void DeferredLayer::load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data) {
         auto document = ies::IES_Default_Parser()
                 .parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-        //ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
-        const auto photometric_solid = ies::adapter::IES_Mesh(document);
+        ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+//        const auto photometric_solid = ies::adapter::IES_Mesh(document);
 
         const auto vertices = photometric_solid.get_vertices();
 

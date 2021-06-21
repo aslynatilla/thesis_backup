@@ -174,8 +174,8 @@ namespace engine {
             //TODO: refactor as IES_Loader class or as a free function
             const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
             document = parser.parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-//            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
-            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh(document);
+            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+//            ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh(document);
 
             const auto vertices = photometric_solid.get_vertices();
 

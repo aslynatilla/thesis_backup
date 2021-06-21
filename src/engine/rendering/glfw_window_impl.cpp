@@ -59,7 +59,7 @@ namespace engine {
         context = RenderingContext::create(window);
         context->initialize();
         glfwSetWindowUserPointer(window, &data);
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         glfwSetWindowSizeCallback(window, window_resize_callback);
         glfwSetWindowCloseCallback(window, window_close_callback);
