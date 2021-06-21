@@ -516,10 +516,6 @@ namespace engine {
         }
         return false;
     }
-
-    std::unique_ptr<SceneLayer> SceneLayer::create_using(std::weak_ptr<FlyCamera> application_camera) {
-        return std::make_unique<SceneLayer>(std::move(application_camera), LayerCreationKey{});
-    }
 }
 
 

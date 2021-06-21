@@ -29,7 +29,14 @@ namespace engine {
     class SceneLayer : public Layer {
     public:
         SceneLayer(std::weak_ptr<FlyCamera> application_camera, LayerCreationKey key);
-        static std::unique_ptr<SceneLayer> create_using(std::weak_ptr<FlyCamera> application_camera);
+
+        template <typename FnCallback>
+        static std::unique_ptr<SceneLayer> create_using(std::weak_ptr<FlyCamera> application_camera, FnCallback event_pump_callback){
+            auto layer = std::make_unique<SceneLayer>(application_camera, LayerCreationKey{});
+            layer->event_pump = event_pump_callback;
+            return layer;
+        }
+
         SceneLayer() = delete;
 
         SceneLayer(const SceneLayer& other) = delete;
@@ -68,6 +75,7 @@ namespace engine {
                                          const glm::mat4 projection_matrix) const;
 
         std::weak_ptr<FlyCamera> view_camera;
+        std::function<void(std::unique_ptr<Event>)> event_pump;
 
         Point_Light scene_light;
 
@@ -94,12 +102,12 @@ namespace engine {
         float light_intensity = 1.00f;
         glm::vec4 light_color = glm::vec4(1.0f);
         float indirect_intensity = 1.00f;
-        float displacement_sphere_radius = 1.00f;
+        float displacement_sphere_radius = 2.00f;
         float shadow_threshold = 0.15f;
         float light_far_plane = 200.00f;
         bool hide_direct_component = false;
         bool draw_indirect_light = true;
-        bool ies_light_wireframe = true;
+        bool ies_light_wireframe = false;
         glm::vec4 wireframe_color = glm::vec4(0.20f, 1.00f, 1.00f, 0.10f);
         bool is_using_ies_masking = true;
 
