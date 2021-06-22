@@ -268,6 +268,11 @@ namespace engine {
             light.set_rotation(light_angles);
             event_pump(std::make_unique<SceneChangedEvent>());
         }
+        if(ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier, 0.00001f, 2.0f, "%.5f",
+                           ImGuiSliderFlags_Logarithmic)){
+            event_pump(std::make_unique<SceneChangedEvent>());
+        }
+        ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex * scale_modifier);
         ImGui::End();
     }
 
@@ -546,6 +551,8 @@ namespace engine {
             }
             return result;
         }(vertices);
+
+        scale_modifier = 1.5f / max_distance_to_ies_vertex;
 
         auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
                                                   vertices.data());
