@@ -22,6 +22,7 @@ BoxApp::BoxApp() : Application("Cornell Box App")
     layers.push_layer(DeferredLayer::create_using(ptr_to_camera, [this](auto ptr_to_queue) {
         push_event(std::move(ptr_to_queue));
     }));
+
 //    layers.push_layer(SceneLayer::create_using(ptr_to_camera, [this](auto ptr_to_queue) {
 //        push_event(std::move(ptr_to_queue));
 //    }));

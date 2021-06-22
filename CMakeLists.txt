@@ -97,5 +97,5 @@ if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-    target_compile_options(cornell_box PRIVATE /WX /W4 /w44265 /w44061 /w44062 /permissive- /Wv:18 /wd4201)
+    target_compile_options(cornell_box PRIVATE /WX /W4 /w44265 /w44061 /w44062 /permissive- /Wv:18 /wd4201 /w44800)
 endif ()

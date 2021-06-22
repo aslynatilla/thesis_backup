@@ -19,11 +19,11 @@ namespace ies::string_view_manipulation {
     }
 
     bool has_leading_space(const std::string_view& view) {
-        return isspace(view[0]);
+        return static_cast<bool>(isspace(view[0]));
     }
 
     bool has_trailing_space(const std::string_view& view) {
-        return isspace(view[view.size() - 1]);
+        return static_cast<bool>(isspace(view[view.size() - 1]));
     }
 
     bool has_leading_square_brackets(const std::string_view& view) {
