@@ -15,6 +15,7 @@ namespace engine {
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
         std::transform(&viewport_size[2], &viewport_size[4], glm::value_ptr(target_resolution),
                        [](const auto f) { return static_cast<int>(f); });
+        texture_resolution = glm::vec2{target_resolution[0] / 2, target_resolution[1] / 2};
 
         std::array<GLenum, 3> color_attachments{GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 
@@ -144,7 +145,7 @@ namespace engine {
     void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms,
                                           const glm::mat4& ies_light_model_matrix) {
         mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
+        glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_FRONT);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -163,7 +164,7 @@ namespace engine {
     void
     DeferredLayer::update_rsm(const std::vector<glm::mat4>& light_transformations) {
         rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        glViewport(0, 0, target_resolution[0] / 2, target_resolution[1] / 2);
+        glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_BACK);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -403,21 +404,21 @@ namespace engine {
 
 
     void DeferredLayer::rsm_creation_setup(std::array<GLenum, 3>& color_attachments) {
-        rsm_positions = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+        rsm_positions = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
                 .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
                 .using_linear_minification()
                 .as_resource();
-        rsm_normals = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+        rsm_normals = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
                 .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
                 .using_linear_minification()
                 .as_resource();
-        rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+        rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
                 .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
@@ -437,7 +438,7 @@ namespace engine {
 
     void DeferredLayer::ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments) {
         shadow_map = OpenGL3_Cubemap_Builder()
-                .with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_size(texture_resolution[0], texture_resolution[1])
                 .with_texture_format(GL_DEPTH_COMPONENT)
                 .with_data_format(GL_DEPTH_COMPONENT)
                 .using_underlying_data_type(GL_FLOAT)
@@ -446,7 +447,7 @@ namespace engine {
                 .as_resource();
 
         light_mask = OpenGL3_Cubemap_Builder()
-                .with_size(target_resolution[0] / 2, target_resolution[1] / 2)
+                .with_size(texture_resolution[0], texture_resolution[1])
                 .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)

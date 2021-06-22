@@ -73,6 +73,7 @@ namespace engine{
         std::function<void(std::unique_ptr<Event>)> event_pump;
 
         glm::vec<2, int> target_resolution {0, 0};
+        glm::vec<2, int> texture_resolution {0, 0};
         float shadow_threshold = 0.15f;
         float max_distance_to_ies_vertex = 1.0f;
         float light_camera_far_plane = 100.0f;
