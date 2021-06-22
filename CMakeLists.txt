@@ -66,6 +66,7 @@ install_file_to_bin(resources/shaders depth_mask.frag)
 
 install_file_to_bin(resources/shaders/deferred gbuffer_creation.vert)
 install_file_to_bin(resources/shaders/deferred gbuffer_creation.frag)
+install_file_to_bin(resources/shaders/deferred wireframe_to_gbuffer.frag)
 install_file_to_bin(resources/shaders/deferred rsm_creation.vert)
 install_file_to_bin(resources/shaders/deferred rsm_creation.frag)
 install_file_to_bin(resources/shaders/deferred rsm_creation.geom)

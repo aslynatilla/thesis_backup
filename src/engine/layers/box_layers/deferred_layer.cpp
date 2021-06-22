@@ -47,6 +47,8 @@ namespace engine {
 
         gbuffer_creation = shader::create_shader_from("resources/shaders/deferred/gbuffer_creation.vert",
                                                       "resources/shaders/deferred/gbuffer_creation.frag");
+        wireframe_drawer = shader::create_shader_from("resources/shaders/deferred/gbuffer_creation.vert",
+                                                      "resources/shaders/deferred/wireframe_to_gbuffer.frag");
         quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                  "resources/shaders/deferred/quad_rendering.frag");
         deferred_direct = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
@@ -63,7 +65,6 @@ namespace engine {
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
         load_IES_light_as_VAO(path_to_IES_data);
         uniform_buffers_setup();
-//        update(0.1f);
     }
 
     void DeferredLayer::on_detach() {}
@@ -94,11 +95,46 @@ namespace engine {
                 update_camera_related_buffers();
                 update_scene_buffers_and_representations();
                 create_gbuffer();
+                //  conditionally, draw_wireframe()
+                if (draw_wireframe_in_scene){
+                    gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                    glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                    wireframe_drawer->use();
+                    gbuffer_diffuse_texture->bind_to_slot(2);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    gbuffer_transformation->bind_to_uniform_buffer_target();
+                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrix));
+                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(ies_inverse_transposed_matrix));
+                    gbuffer_transformation->unbind_from_uniform_buffer_target();
+                    material_buffer->bind_to_uniform_buffer_target();
+                    material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
+                    material_buffer->unbind_from_uniform_buffer_target();
+                    OpenGL3_Renderer::draw(ies_light_vao);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+                }
                 scene_changed = false;
                 camera_moved = false;
             } else if (camera_moved) {
                 update_camera_related_buffers();
                 create_gbuffer();
+                if (draw_wireframe_in_scene){
+                    gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                    glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                    wireframe_drawer->use();
+                    gbuffer_diffuse_texture->bind_to_slot(2);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                    gbuffer_transformation->bind_to_uniform_buffer_target();
+                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrix));
+                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(ies_inverse_transposed_matrix));
+                    gbuffer_transformation->unbind_from_uniform_buffer_target();
+                    material_buffer->bind_to_uniform_buffer_target();
+                    material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
+                    material_buffer->unbind_from_uniform_buffer_target();
+                    OpenGL3_Renderer::draw(ies_light_vao);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+                }
                 camera_moved = false;
             }
 
@@ -142,8 +178,7 @@ namespace engine {
         gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
-    void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms,
-                                          const glm::mat4& ies_light_model_matrix) {
+    void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms) {
         mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
         glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_FRONT);
@@ -155,7 +190,7 @@ namespace engine {
                                     light_transforms[i]);
         }
         gbuffer_transformation->bind_to_uniform_buffer_target();
-        gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_light_model_matrix));
+        gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_model_matrix));
         gbuffer_transformation->unbind_from_uniform_buffer_target();
         OpenGL3_Renderer::draw(ies_light_vao);
         mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
@@ -597,8 +632,9 @@ namespace engine {
         const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
                                                                                  light_projection_matrix);
 
-        const auto ies_light_model_matrix = compute_light_model_matrix(light_position,
-                                                                       light_orientation);
+        ies_model_matrix = compute_light_model_matrix(light_position,
+                                                      light_orientation);
+        ies_inverse_transposed_matrix = glm::transpose(glm::inverse(ies_model_matrix));
 
         light_buffer->bind_to_uniform_buffer_target();
         light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light_data.position));
@@ -610,7 +646,7 @@ namespace engine {
         light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
         light_buffer->unbind_from_uniform_buffer_target();
 
-        update_light_mask(light_transforms, ies_light_model_matrix);
+        update_light_mask(light_transforms);
         update_rsm(light_transforms);
     }
 }
