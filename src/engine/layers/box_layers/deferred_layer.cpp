@@ -308,6 +308,14 @@ namespace engine {
             event_pump(std::make_unique<SceneChangedEvent>());
         }
         ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex * scale_modifier);
+        if(ImGui::Checkbox("Show Photometric Solid", &draw_wireframe_in_scene)){
+            event_pump(std::make_unique<SceneChangedEvent>());
+        }
+        if(draw_wireframe_in_scene){
+            if(ImGui::ColorEdit4("Wireframe color", glm::value_ptr(wireframe_color))){
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+        }
         ImGui::End();
     }
 
