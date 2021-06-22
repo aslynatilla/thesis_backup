@@ -257,11 +257,18 @@ namespace engine {
 
     void DeferredLayer::on_imgui_render() {
         glm::vec4 light_position = light.get_position();
-        if (ImGui::SliderFloat("Horizontal position", glm::value_ptr(light_position), -3.0f, 6.0f, "%.3f",
-                               ImGuiSliderFlags_None)) {
+        glm::vec3 light_angles = light.get_rotation_in_degrees();
+
+        ImGui::Begin("Light controls");
+        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.05f,  -0.5f, 3.5f, "%.3f")) {
             light.translate_to(light_position);
             event_pump(std::make_unique<SceneChangedEvent>());
         }
+        if (ImGui::DragFloat3("Light's Rotation Angles", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")) {
+            light.set_rotation(light_angles);
+            event_pump(std::make_unique<SceneChangedEvent>());
+        }
+        ImGui::End();
     }
 
     std::vector<SceneObject> default_load_scene(const std::string& path_to_scene) {
