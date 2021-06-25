@@ -5,9 +5,14 @@ namespace engine {
             : camera(std::move(controlled_camera)) {}
 
     void DeferredLayer::on_attach() {
-        objects = default_load_scene("resources/cornell_box_multimaterial.obj");
+//        objects = default_load_scene("resources/cornell_box_multimaterial.obj");
 
-        light = Point_Light(glm::vec4(1.5f, 2.6f, 1.5f, 1.0f),
+        constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
+                                                      aiProcess_Triangulate |
+                                                      aiProcess_ValidateDataStructure;
+        objects = scenes::load_scene_objects_from("resources/sponza/small_sponza.obj", postprocessing_flags);
+
+        light = Point_Light(glm::vec4(0.0f, 1.5f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
