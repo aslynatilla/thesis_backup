@@ -5,7 +5,8 @@ namespace engine{
         vao{std::make_unique<VertexArray>()},
         transform{glm::identity<glm::mat4>()},
         transpose_inverse_transform{glm::identity<glm::mat4>()},
-        material{}
+        material{},
+        texture_index{-1}
         {}
 
     void SceneObject::set_transform_matrix(aiMatrix4x4 model_matrix){

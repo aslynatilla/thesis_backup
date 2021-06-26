@@ -99,6 +99,10 @@ namespace engine::scenes{
         obj.vao->set_vbo(std::move(vbo));
         obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
         obj.material = convert_assimp_material(assimp_material);
+        aiString diffuse_texture_path{};
+        const auto result = assimp_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_texture_path);
+        const auto success = (result == 0);
+
         return obj;
     }
 
@@ -143,4 +147,6 @@ namespace engine::scenes{
         }
         return objects;
     }
+
+
 }

@@ -3,6 +3,8 @@
 
 #include "scene_object.h"
 
+#include "stb_image.h"
+
 namespace engine::scenes{
     void copy_vertices(const aiMesh* source,
                        std::vector<float>& destination);
@@ -17,8 +19,10 @@ namespace engine::scenes{
                                                 const aiNode* node,
                                                 const aiMatrix4x4& parent_transform);
     std::vector<SceneObject> load_scene_objects_from(const std::string& path_to_scene,
-                                                     const unsigned int assimp_postprocess_flags);
+                                                     unsigned int assimp_postprocess_flags);
 }
+
+std::vector<unsigned char> load_texture(std::string_view texture_path);
 
 
 #endif //SCENE_LOADING_H

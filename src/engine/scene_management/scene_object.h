@@ -25,6 +25,7 @@ namespace engine{
         glm::mat4 transform;
         glm::mat4 transpose_inverse_transform;
         Material material;
+        int texture_index;
     };
 }
 
