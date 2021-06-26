@@ -6,8 +6,8 @@ BoxApp::BoxApp() : Application("Cornell Box App")
 
     std::shared_ptr first_person_camera = std::make_shared<FlyCamera>(
         glm::vec3{0.5f, 0.2f, 0.0f},
-        glm::radians(0.0f),
         glm::radians(-90.0f),
+        glm::radians(0.0f),
         CameraProjectionParameters{
             .aspect_ratio = 1.0f,
             .field_of_view = 45.0f,

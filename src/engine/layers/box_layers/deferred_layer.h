@@ -154,9 +154,6 @@ namespace engine{
         void update_camera_related_buffers();
         void update_scene_buffers_and_representations();
     };
-
-
-    [[nodiscard]] std::vector<SceneObject> default_load_scene(const std::string& path_to_scene);
 }
 
 #endif //DEFERRED_LAYER_H

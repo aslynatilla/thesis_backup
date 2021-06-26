@@ -5,12 +5,11 @@ namespace engine {
             : camera(std::move(controlled_camera)) {}
 
     void DeferredLayer::on_attach() {
-//        objects = default_load_scene("resources/cornell_box_multimaterial.obj");
-
         constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
-        objects = scenes::load_scene_objects_from("resources/sponza/small_sponza.obj", postprocessing_flags);
+        const auto path_to_sponza = files::make_path_absolute("resources/sponza/small_sponza.obj");
+        objects = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags).objects;
 
         light = Point_Light(glm::vec4(0.0f, 1.5f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
@@ -323,30 +322,6 @@ namespace engine {
         }
         ImGui::End();
     }
-
-    std::vector<SceneObject> default_load_scene(const std::string& path_to_scene) {
-        constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
-                                                      aiProcess_Triangulate |
-                                                      aiProcess_ValidateDataStructure;
-        auto scene_objects = scenes::load_scene_objects_from(path_to_scene, postprocessing_flags);
-
-        //  This scaling is needed for the cornell_box_multimaterial.obj scene
-        //  The scene has a maximum height of 548.0f; to take it in the range [0, 3] we divide by:
-        //  548.0f / 3.0f ~= 185.0f
-        const auto scaling_factor = 1.0f / 185.0f;
-        const auto scale_by = [](const float scale_factor, std::vector<SceneObject>& scene) {
-            for (auto&& object : scene) {
-                const auto T = object.transform;
-                const auto scene_scaling = glm::scale(T, glm::vec3(scale_factor));
-                const auto transposed_inverse_scene_scaling = glm::transpose(glm::inverse(scene_scaling));
-                object.transform = scene_scaling;
-                object.transpose_inverse_transform = transposed_inverse_scene_scaling;
-            }
-        };
-        scale_by(scaling_factor, scene_objects);
-        return scene_objects;
-    }
-
 
     void DeferredLayer::indirect_pass_setup() {
         indirect_pass_fbo = std::make_unique<OpenGL3_FrameBuffer>();

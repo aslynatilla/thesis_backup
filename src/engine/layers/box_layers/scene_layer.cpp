@@ -10,8 +10,9 @@ namespace engine {
             constexpr unsigned int ai_postprocess_flags = aiProcess_GenNormals |
                                                           aiProcess_Triangulate |
                                                           aiProcess_ValidateDataStructure;
-            scene_objects = scenes::load_scene_objects_from("resources/cornell_box_multimaterial.obj",
-                                                            ai_postprocess_flags);
+
+            const auto path_to_box = files::make_path_absolute("resources/cornell_box_multimaterial.obj");
+            scene_objects = scenes::SceneLoader::load_scene_from(path_to_box, ai_postprocess_flags).objects;
 
 //            angel = scenes::load_scene_objects_from("resources/Winged_Victory.obj",
 //                                                    ai_postprocess_flags);
