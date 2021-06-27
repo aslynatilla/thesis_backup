@@ -110,8 +110,21 @@ namespace engine::scenes {
         auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
                                                   vertices.data());
 
+        VertexBufferLayout layout = compute_vertex_buffer_layout(mesh);
+        vbo->set_buffer_layout(layout);
+
+        SceneObject obj;
+        obj.set_transform_matrix(aiMatrix4x4(mesh_transform));
+        obj.vao->set_vbo(std::move(vbo));
+        obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
+        obj.material = convert_assimp_material(assimp_material);
+
+        return obj;
+    }
+
+    VertexBufferLayout compute_vertex_buffer_layout(const aiMesh* target_mesh) {
         VertexBufferLayout layout;
-        if(mesh->HasTextureCoords(0)) {
+        if(target_mesh->HasTextureCoords(0)) {
             layout = VertexBufferLayout({
                 VertexBufferElement(ShaderDataType::Float3, "position"),
                 VertexBufferElement(ShaderDataType::Float3, "normal"),
@@ -123,16 +136,7 @@ namespace engine::scenes {
                                                 VertexBufferElement(ShaderDataType::Float3, "normal")
             });
         }
-
-        vbo->set_buffer_layout(layout);
-
-        SceneObject obj;
-        obj.set_transform_matrix(aiMatrix4x4(mesh_transform));
-        obj.vao->set_vbo(std::move(vbo));
-        obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
-        obj.material = convert_assimp_material(assimp_material);
-
-        return obj;
+        return layout;
     }
 
     std::vector<float> extract_vertex_data(int vertices_number,
