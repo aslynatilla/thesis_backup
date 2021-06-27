@@ -98,21 +98,33 @@ namespace engine::scenes {
                                           const aiMatrix4x4& mesh_transform) {
         const unsigned int material_index = mesh->mMaterialIndex;
         const aiMaterial* assimp_material = source_scene->mMaterials[material_index];
-
+//        if(aiString diffuse_texture_path{}; mesh->HasTextureCoords(0) &&
+//        assimp_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_texture_path) == aiReturn_SUCCESS){
+//            get_vertex_data()
+//        }
         //TODO: check if it has uv coordinates and a diffuse texture, then load vertex data
-//        aiString diffuse_texture_path{};
-//        const auto result = assimp_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_texture_path);
-//        const auto success = (result == 0);
+
         std::vector<float> vertices = get_vertex_data(mesh);
         std::vector<unsigned int> indices = get_indices(mesh);
 
         auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
                                                   vertices.data());
-        vbo->set_buffer_layout(VertexBufferLayout({
-                                                          VertexBufferElement(ShaderDataType::Float3,
-                                                                              "position"),
-                                                          VertexBufferElement(ShaderDataType::Float3,
-                                                                              "normal")}));
+
+        VertexBufferLayout layout;
+        if(mesh->HasTextureCoords(0)) {
+            layout = VertexBufferLayout({
+                VertexBufferElement(ShaderDataType::Float3, "position"),
+                VertexBufferElement(ShaderDataType::Float3, "normal"),
+                VertexBufferElement(ShaderDataType::Float2, "uv")
+            });
+        } else {
+            layout = VertexBufferLayout({
+                                                VertexBufferElement(ShaderDataType::Float3, "position"),
+                                                VertexBufferElement(ShaderDataType::Float3, "normal")
+            });
+        }
+
+        vbo->set_buffer_layout(layout);
 
         SceneObject obj;
         obj.set_transform_matrix(aiMatrix4x4(mesh_transform));
@@ -123,20 +135,38 @@ namespace engine::scenes {
         return obj;
     }
 
-    std::vector<float> get_vertex_data(const aiMesh* source) {
+    std::vector<float> extract_vertex_data(int vertices_number,
+                                           aiVector3D* positions,
+                                           aiVector3D* normals){
         std::vector<float> data;
-        for (auto i = 0u; i < source->mNumVertices; ++i) {
-            const auto& position = source->mVertices[i];
-            const auto& normal = source->mNormals[i];
-            //TODO: add uv coords here
-            data.push_back(position.x);
-            data.push_back(position.y);
-            data.push_back(position.z);
-            data.push_back(normal.x);
-            data.push_back(normal.y);
-            data.push_back(normal.z);
+        for(auto i = 0; i < vertices_number; ++i){
+            std::copy_n(&(positions[i].x), 3, std::back_inserter(data));
+            std::copy_n(&(normals[i].x), 3, std::back_inserter(data));
         }
         return data;
+    }
+
+    std::vector<float> extract_vertex_data(int vertices_number,
+                                           aiVector3D* positions,
+                                           aiVector3D* normals,
+                                           aiVector3D* uv_coords){
+        std::vector<float> data;
+        for(auto i = 0; i < vertices_number; ++i){
+            std::copy_n(&(positions[i].x), 3, std::back_inserter(data));
+            std::copy_n(&(normals[i].x), 3, std::back_inserter(data));
+            std::copy_n(&(uv_coords[i].x), 2, std::back_inserter(data));
+        }
+        return data;
+    }
+
+    std::vector<float> get_vertex_data(const aiMesh* source) {
+        if(source->HasTextureCoords(0)) {
+            return extract_vertex_data(source->mNumVertices,
+                                       source->mVertices, source->mNormals, source->mTextureCoords[0]);
+        } else {
+            return extract_vertex_data(source->mNumVertices,
+                                       source->mVertices, source->mNormals);
+        }
     }
 
     std::vector<unsigned int> get_indices(const aiMesh* source) {
