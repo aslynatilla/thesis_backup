@@ -34,11 +34,18 @@ namespace engine::scenes{
         std::vector<TextureResource> scene_textures;
     };
 
-    std::vector<unsigned char> load_texture(std::string_view texture_path);
-    VertexBufferLayout compute_vertex_buffer_layout(const aiMesh* target_mesh);
-    std::vector<float> extract_vertex_data(int vertices_number, aiVector3D* positions, aiVector3D* normals);
-    std::vector<float> extract_vertex_data(int vertices_number, aiVector3D* positions, aiVector3D* normals, aiVector3D* uv_coords);
-    std::vector<float> get_vertex_data(const aiMesh* source);
-    std::vector<unsigned int> get_indices(const aiMesh* source);
+    struct TextureLoadResult{
+        std::vector<unsigned char> data;
+        int width;
+        int height;
+        int components_per_pixel;
+    };
+
+    [[nodiscard]] TextureLoadResult load_texture(std::string_view texture_path);
+    [[nodiscard]] VertexBufferLayout compute_vertex_buffer_layout(const aiMesh* target_mesh);
+    [[nodiscard]] std::vector<float> extract_vertex_data(int vertices_number, aiVector3D* positions, aiVector3D* normals);
+    [[nodiscard]] std::vector<float> extract_vertex_data(int vertices_number, aiVector3D* positions, aiVector3D* normals, aiVector3D* uv_coords);
+    [[nodiscard]] std::vector<float> get_vertex_data(const aiMesh* source);
+    [[nodiscard]] std::vector<unsigned int> get_indices(const aiMesh* source);
 }
 #endif //SCENE_LOADING_H

@@ -98,11 +98,13 @@ namespace engine::scenes {
                                           const aiMatrix4x4& mesh_transform) {
         const unsigned int material_index = mesh->mMaterialIndex;
         const aiMaterial* assimp_material = source_scene->mMaterials[material_index];
-//        if(aiString diffuse_texture_path{}; mesh->HasTextureCoords(0) &&
-//        assimp_material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuse_texture_path) == aiReturn_SUCCESS){
-//            get_vertex_data()
-//        }
-        //TODO: check if it has uv coordinates and a diffuse texture, then load vertex data
+
+        if (aiString diffuse_texture_path{}; mesh->HasTextureCoords(0) &&
+                                             assimp_material->GetTexture(aiTextureType_DIFFUSE, 0,
+                                                                         &diffuse_texture_path) == aiReturn_SUCCESS) {
+            auto load_result = load_texture(diffuse_texture_path.data);
+            //TODO: create a texture object and push it to the texture container
+        }
 
         std::vector<float> vertices = get_vertex_data(mesh);
         std::vector<unsigned int> indices = get_indices(mesh);
@@ -118,32 +120,32 @@ namespace engine::scenes {
         obj.vao->set_vbo(std::move(vbo));
         obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
         obj.material = convert_assimp_material(assimp_material);
-
+        //TODO: bind the texture object computed to this object's material
         return obj;
     }
 
     VertexBufferLayout compute_vertex_buffer_layout(const aiMesh* target_mesh) {
         VertexBufferLayout layout;
-        if(target_mesh->HasTextureCoords(0)) {
-            layout = VertexBufferLayout({
-                VertexBufferElement(ShaderDataType::Float3, "position"),
-                VertexBufferElement(ShaderDataType::Float3, "normal"),
-                VertexBufferElement(ShaderDataType::Float2, "uv")
-            });
+        if (target_mesh->HasTextureCoords(0)) {
+            layout = VertexBufferLayout(
+                    {VertexBufferElement(ShaderDataType::Float3, "position"),
+                     VertexBufferElement(ShaderDataType::Float3, "normal"),
+                     VertexBufferElement(ShaderDataType::Float2, "uv")
+                    });
         } else {
-            layout = VertexBufferLayout({
-                                                VertexBufferElement(ShaderDataType::Float3, "position"),
-                                                VertexBufferElement(ShaderDataType::Float3, "normal")
-            });
+            layout = VertexBufferLayout(
+                    {VertexBufferElement(ShaderDataType::Float3, "position"),
+                     VertexBufferElement(ShaderDataType::Float3, "normal")}
+            );
         }
         return layout;
     }
 
     std::vector<float> extract_vertex_data(int vertices_number,
                                            aiVector3D* positions,
-                                           aiVector3D* normals){
+                                           aiVector3D* normals) {
         std::vector<float> data;
-        for(auto i = 0; i < vertices_number; ++i){
+        for (auto i = 0; i < vertices_number; ++i) {
             std::copy_n(&(positions[i].x), 3, std::back_inserter(data));
             std::copy_n(&(normals[i].x), 3, std::back_inserter(data));
         }
@@ -153,9 +155,9 @@ namespace engine::scenes {
     std::vector<float> extract_vertex_data(int vertices_number,
                                            aiVector3D* positions,
                                            aiVector3D* normals,
-                                           aiVector3D* uv_coords){
+                                           aiVector3D* uv_coords) {
         std::vector<float> data;
-        for(auto i = 0; i < vertices_number; ++i){
+        for (auto i = 0; i < vertices_number; ++i) {
             std::copy_n(&(positions[i].x), 3, std::back_inserter(data));
             std::copy_n(&(normals[i].x), 3, std::back_inserter(data));
             std::copy_n(&(uv_coords[i].x), 2, std::back_inserter(data));
@@ -164,7 +166,7 @@ namespace engine::scenes {
     }
 
     std::vector<float> get_vertex_data(const aiMesh* source) {
-        if(source->HasTextureCoords(0)) {
+        if (source->HasTextureCoords(0)) {
             return extract_vertex_data(source->mNumVertices,
                                        source->mVertices, source->mNormals, source->mTextureCoords[0]);
         } else {
@@ -182,5 +184,16 @@ namespace engine::scenes {
             }
         }
         return indices;
+    }
+
+    TextureLoadResult load_texture(std::string_view texture_path) {
+        TextureLoadResult result;
+        auto tex = stbi_load(texture_path.data(), &result.width, &result.height, &result.components_per_pixel, 0);
+        if(tex != nullptr) {
+            const auto pixel_num = result.width * result.height;
+            std::copy_n(tex, pixel_num, std::back_inserter(result.data));
+            stbi_image_free(tex);
+        }
+        return result;
     }
 }
