@@ -55,7 +55,10 @@ namespace engine::scenes {
 
     SceneLoader::SceneLoader(std::filesystem::path scene_path, unsigned int flags)
             : path_to_scene(std::move(scene_path)),
-              assimp_postprocessing_flags(flags) {}
+              assimp_postprocessing_flags(flags) {
+
+        scene_directory = path_to_scene.parent_path();
+    }
 
     SceneData SceneLoader::process_scene() {
         Assimp::Importer scene_importer;
@@ -102,7 +105,9 @@ namespace engine::scenes {
         if (aiString diffuse_texture_path{}; mesh->HasTextureCoords(0) &&
                                              assimp_material->GetTexture(aiTextureType_DIFFUSE, 0,
                                                                          &diffuse_texture_path) == aiReturn_SUCCESS) {
-            auto load_result = load_texture(diffuse_texture_path.data);
+            std::filesystem::path abs_path_to_texture = scene_directory.append(diffuse_texture_path.data);
+            abs_path_to_texture = files::make_path_absolute(abs_path_to_texture.string());
+            auto load_result = load_texture(abs_path_to_texture.string());
             //TODO: create a texture object and push it to the texture container
         }
 

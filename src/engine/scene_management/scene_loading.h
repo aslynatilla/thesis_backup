@@ -29,6 +29,7 @@ namespace engine::scenes{
                                  const aiMatrix4x4& mesh_transform);
 
         std::filesystem::path path_to_scene;
+        std::filesystem::path scene_directory;
         unsigned int assimp_postprocessing_flags;
         std::vector<SceneObject> scene_objects;
         std::vector<TextureResource> scene_textures;
