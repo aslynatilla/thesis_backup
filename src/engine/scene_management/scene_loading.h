@@ -26,9 +26,8 @@ namespace engine::scenes{
         void process_scene_node(const aiScene* scene,
                                 const aiNode* node,
                                 const aiMatrix4x4& parent_transform);
-        SceneObject process_mesh(const aiScene* source_scene,
-                                 const aiMesh* mesh,
-                                 const aiMatrix4x4& mesh_transform);
+        SceneObject create_scene_object_from(const aiMesh* mesh, const aiMatrix4x4& mesh_transform,
+                                             const aiScene* source_scene);
 
         std::filesystem::path path_to_scene;
         std::filesystem::path scene_directory;

@@ -84,7 +84,7 @@ namespace engine::scenes {
         const auto node_transform = parent_transform * node->mTransformation;
         for (auto i = 0u; i < node->mNumMeshes; ++i) {
             const auto mesh_index = node->mMeshes[i];
-            scene_objects.push_back(process_mesh(scene, scene->mMeshes[mesh_index], node_transform));
+            scene_objects.push_back(create_scene_object_from(scene->mMeshes[mesh_index], node_transform, scene));
         }
 
         for (auto child_index = 0u; child_index < node->mNumChildren; ++child_index) {
@@ -94,10 +94,8 @@ namespace engine::scenes {
         }
     }
 
-    //TODO: rename as create_scene_object_from(mesh, mesh_transform, source_scene)
-    SceneObject SceneLoader::process_mesh(const aiScene* source_scene,
-                                          const aiMesh* mesh,
-                                          const aiMatrix4x4& mesh_transform) {
+    SceneObject SceneLoader::create_scene_object_from(const aiMesh* mesh, const aiMatrix4x4& mesh_transform,
+                                                      const aiScene* source_scene) {
         const unsigned int material_index = mesh->mMaterialIndex;
         const aiMaterial* assimp_material = source_scene->mMaterials[material_index];
         SceneObject obj;
@@ -136,7 +134,6 @@ namespace engine::scenes {
         obj.vao->set_vbo(std::move(vbo));
         obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
         obj.material = convert_assimp_material(assimp_material);
-        //TODO: bind the texture object computed to this object's material
         return obj;
     }
 
