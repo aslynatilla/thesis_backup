@@ -119,6 +119,8 @@ namespace engine {
         [[nodiscard]] OpenGL3_Texture2D_Builder&& using_clamping_to_edge() &&;
 
         [[nodiscard]] std::unique_ptr<OpenGL3_Texture2D> as_resource();
+        [[nodiscard]] std::unique_ptr<OpenGL3_Texture2D> as_resource_with_data(const void* data);
+
     private:
         int width = 0;
         int height = 0;

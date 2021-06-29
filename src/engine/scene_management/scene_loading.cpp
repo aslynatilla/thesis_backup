@@ -112,8 +112,15 @@ namespace engine::scenes {
                 it == texture_path_hashes.end()){
                 texture_path_hashes.push_back(hashed_path);
                 auto load_result = load_texture(abs_path_to_texture.string());
-                //TODO: create a texture object and push it to the texture container
-
+                auto texture = OpenGL3_Texture2D_Builder()
+                        .with_size(load_result.width, load_result.height)
+                        .with_texture_format(GL_RGBA8)
+                        .with_data_format(GL_RGBA)
+                        .using_underlying_data_type(GL_UNSIGNED_BYTE)
+                        .using_linear_magnification()
+                        .using_linear_minification()
+                        .as_resource_with_data(load_result.data.data());
+                scene_textures.emplace_back(std::move(texture));
                 obj.texture_index = static_cast<int>(texture_path_hashes.size() - 1u);
             } else {
                 obj.texture_index = std::distance(texture_path_hashes.begin(), it);
@@ -201,10 +208,10 @@ namespace engine::scenes {
 
     TextureLoadResult load_texture(std::string_view texture_path) {
         TextureLoadResult result;
-        auto tex = stbi_load(texture_path.data(), &result.width, &result.height, &result.components_per_pixel, 0);
+        auto tex = stbi_load(texture_path.data(), &result.width, &result.height, &result.components_per_pixel, 4);
         if (tex != nullptr) {
             const auto pixel_num = result.width * result.height;
-            std::copy_n(tex, pixel_num, std::back_inserter(result.data));
+            std::copy_n(tex, pixel_num * 4, std::back_inserter(result.data));
             stbi_image_free(tex);
         }
         return result;

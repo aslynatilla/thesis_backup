@@ -87,6 +87,17 @@ namespace engine {
         return std::unique_ptr<OpenGL3_Texture2D>(new OpenGL3_Texture2D(id, width, height));
     }
 
+    std::unique_ptr<OpenGL3_Texture2D> OpenGL3_Texture2D_Builder::as_resource_with_data(const void* data) {
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexImage2D(GL_TEXTURE_2D, 0, texture_format, width, height, 0, texture_data_format, data_type, data);
+        for(auto&& parameter_pair : parameters){
+            glTexParameteri(GL_TEXTURE_2D, parameter_pair.first, parameter_pair.second);
+        }
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color.data());
+        return std::unique_ptr<OpenGL3_Texture2D>(new OpenGL3_Texture2D(id, width, height));
+    }
+
     OpenGL3_Texture1D_Builder&& OpenGL3_Texture1D_Builder::with_size(int size)&& {
         this->dimension = size;
         return std::move(*this);
