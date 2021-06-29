@@ -56,7 +56,6 @@ namespace engine::scenes {
     SceneLoader::SceneLoader(std::filesystem::path scene_path, unsigned int flags)
             : path_to_scene(std::move(scene_path)),
               assimp_postprocessing_flags(flags) {
-
         scene_directory = path_to_scene.parent_path();
     }
 
@@ -101,14 +100,27 @@ namespace engine::scenes {
                                           const aiMatrix4x4& mesh_transform) {
         const unsigned int material_index = mesh->mMaterialIndex;
         const aiMaterial* assimp_material = source_scene->mMaterials[material_index];
+        SceneObject obj;
 
         if (aiString diffuse_texture_path{}; mesh->HasTextureCoords(0) &&
                                              assimp_material->GetTexture(aiTextureType_DIFFUSE, 0,
                                                                          &diffuse_texture_path) == aiReturn_SUCCESS) {
-            std::filesystem::path abs_path_to_texture = scene_directory.append(diffuse_texture_path.data);
+            //  NOTE: operator/ is necessary since it returns a new path, while append would modify the first parameter
+            std::filesystem::path abs_path_to_texture = scene_directory / diffuse_texture_path.data;
             abs_path_to_texture = files::make_path_absolute(abs_path_to_texture.string());
-            auto load_result = load_texture(abs_path_to_texture.string());
-            //TODO: create a texture object and push it to the texture container
+            std::string tex_path = abs_path_to_texture.string();
+            std::size_t hashed_path = std::hash<std::string>{}(tex_path);
+            if(auto it = std::find(texture_path_hashes.begin(), texture_path_hashes.end(), hashed_path);
+                it == texture_path_hashes.end()){
+                texture_path_hashes.push_back(hashed_path);
+                auto load_result = load_texture(abs_path_to_texture.string());
+                //TODO: create a texture object and push it to the texture container
+
+                obj.texture_index = static_cast<int>(texture_path_hashes.size() - 1u);
+            } else {
+                obj.texture_index = std::distance(texture_path_hashes.begin(), it);
+            }
+
         }
 
         std::vector<float> vertices = get_vertex_data(mesh);
@@ -120,7 +132,6 @@ namespace engine::scenes {
         VertexBufferLayout layout = compute_vertex_buffer_layout(mesh);
         vbo->set_buffer_layout(layout);
 
-        SceneObject obj;
         obj.set_transform_matrix(aiMatrix4x4(mesh_transform));
         obj.vao->set_vbo(std::move(vbo));
         obj.vao->set_ebo(std::make_shared<ElementBuffer>(indices));
@@ -194,7 +205,7 @@ namespace engine::scenes {
     TextureLoadResult load_texture(std::string_view texture_path) {
         TextureLoadResult result;
         auto tex = stbi_load(texture_path.data(), &result.width, &result.height, &result.components_per_pixel, 0);
-        if(tex != nullptr) {
+        if (tex != nullptr) {
             const auto pixel_num = result.width * result.height;
             std::copy_n(tex, pixel_num, std::back_inserter(result.data));
             stbi_image_free(tex);

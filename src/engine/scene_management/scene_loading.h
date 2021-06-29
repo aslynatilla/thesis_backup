@@ -7,6 +7,8 @@
 
 #include "stb_image.h"
 
+#include <functional>
+
 namespace engine::scenes{
     using TextureResource = std::unique_ptr<OpenGL3_Texture2D>;
 
@@ -32,6 +34,7 @@ namespace engine::scenes{
         std::filesystem::path scene_directory;
         unsigned int assimp_postprocessing_flags;
         std::vector<SceneObject> scene_objects;
+        std::vector<std::size_t> texture_path_hashes;
         std::vector<TextureResource> scene_textures;
     };
 
