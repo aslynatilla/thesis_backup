@@ -236,6 +236,11 @@ namespace engine {
             material_buffer->copy_to_buffer(0, 16, glm::value_ptr(o.material.data.diffuse_color));
             material_buffer->copy_to_buffer(16, 4, &o.material.data.shininess);
             material_buffer->unbind_from_uniform_buffer_target();
+
+            if(o.texture_index >= 0){
+                scene_data.textures[o.texture_index]->bind_to_slot(4);
+                rsm_creation->set_int(7, 4);
+            }
             OpenGL3_Renderer::draw(*(o.vao));
         }
         rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
@@ -305,7 +310,7 @@ namespace engine {
         glm::vec3 light_angles = light.get_rotation_in_degrees();
 
         ImGui::Begin("Light controls");
-        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.05f,  -0.5f, 3.5f, "%.3f")) {
+        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f,  -0.5f, 3.5f, "%.3f")) {
             light.translate_to(light_position);
             event_pump(std::make_unique<SceneChangedEvent>());
         }

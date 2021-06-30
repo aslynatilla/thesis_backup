@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec3 vertex_position;
 layout (location = 1) in vec3 vertex_normal;
+layout (location = 2) in vec2 vertex_uvs;
 
 layout(std140, binding = 0) uniform GBufferMatrices{
     uniform mat4 projection_view;               // with P left-multiplied by V, as in P * V
@@ -11,6 +12,7 @@ layout(std140, binding = 0) uniform GBufferMatrices{
 
 out VS_DATA{
     vec3 normal;
+    vec2 uv_coords;
 } vertex_data;
 
 void main(){

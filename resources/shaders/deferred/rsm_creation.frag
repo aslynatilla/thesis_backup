@@ -3,6 +3,7 @@
 in vec4 fragment_position;
 in vec4 light_space_fragment_position;
 in vec3 fragment_normal;
+in vec2 fragment_uv_coords;
 
 layout (std140, binding = 1) uniform MaterialProperties{
     vec4 diffuse_color;
@@ -27,6 +28,7 @@ layout(std140, binding = 3) uniform CommonData{
 };
 
 layout (location = 6) uniform samplerCube ies_masking_texture;
+layout (location = 7) uniform sampler2D diffuse_texture;
 
 layout (location = 0) out vec4 fragment_world_coords;
 layout (location = 1) out vec4 fragment_normals;
@@ -49,6 +51,8 @@ void main(){
     float intensity_modifier = ies_mask_data.g;
 
     //  Temporarily disabling this line allows to render without a IES mask
-    fragment_fluxes = vec4(computed_flux.xyz * intensity_modifier * is_emitting_light_along_l, 1.0);
+    vec4 tex_color = texture(diffuse_texture, fragment_uv_coords).rgba;
+    fragment_fluxes = vec4(computed_flux.xyz * tex_color.rgb * intensity_modifier * is_emitting_light_along_l,
+                            1.0 * tex_color.a);
     //  fragment_fluxes = computed_flux;
 }
