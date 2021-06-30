@@ -52,7 +52,7 @@ void main(){
 
     //  Temporarily disabling this line allows to render without a IES mask
     vec4 tex_color = texture(diffuse_texture, fragment_uv_coords).rgba;
-    fragment_fluxes = vec4(computed_flux.xyz * tex_color.rgb * intensity_modifier * is_emitting_light_along_l,
-                            1.0 * tex_color.a);
+    computed_flux *= tex_color;
+    fragment_fluxes = vec4(computed_flux.xyz * intensity_modifier * is_emitting_light_along_l, 1.0);
     //  fragment_fluxes = computed_flux;
 }

@@ -18,5 +18,6 @@ out VS_DATA{
 void main(){
     vec4 fragment_position = model * vec4(vertex_position, 1.0);
     vertex_data.normal = normalize(mat3(transposed_inversed_model) * vertex_normal);
+    vertex_data.uv_coords = vertex_uvs;
     gl_Position = fragment_position;
 }

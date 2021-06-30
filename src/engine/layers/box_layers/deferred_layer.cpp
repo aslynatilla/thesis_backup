@@ -11,9 +11,9 @@ namespace engine {
         const auto path_to_sponza = files::make_path_absolute("resources/sponza/small_sponza.obj");
         scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
 
-        light = Point_Light(glm::vec4(0.0f, 1.5f, 0.0f, 1.0f),
+        light = Point_Light(glm::vec4(0.0f, 0.2f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        light.set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
+        light.set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
 
         auto viewport_size = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
@@ -166,6 +166,7 @@ namespace engine {
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
 
+        gbuffer_creation->set_int(0, 3);
         for (const auto& o : scene_data.objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -180,7 +181,6 @@ namespace engine {
 
             if(o.texture_index >= 0){
                 scene_data.textures[o.texture_index]->bind_to_slot(3);
-                gbuffer_creation->set_int(0, 3);
             }
 
             OpenGL3_Renderer::draw(*(o.vao));
@@ -225,6 +225,7 @@ namespace engine {
             rsm_creation->set_mat4(0 + i, light_transformations[i]);
         }
 
+        rsm_creation->set_int(7, 4);
         for (const auto& o : scene_data.objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -239,7 +240,6 @@ namespace engine {
 
             if(o.texture_index >= 0){
                 scene_data.textures[o.texture_index]->bind_to_slot(4);
-                rsm_creation->set_int(7, 4);
             }
             OpenGL3_Renderer::draw(*(o.vao));
         }
