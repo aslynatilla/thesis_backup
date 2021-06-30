@@ -177,6 +177,12 @@ namespace engine {
             material_buffer->copy_to_buffer(0, 16, glm::value_ptr(o.material.data.diffuse_color));
             material_buffer->copy_to_buffer(16, 4, &o.material.data.shininess);
             material_buffer->unbind_from_uniform_buffer_target();
+
+            if(o.texture_index >= 0){
+                scene_data.textures[o.texture_index]->bind_to_slot(3);
+                gbuffer_creation->set_int(0, 3);
+            }
+
             OpenGL3_Renderer::draw(*(o.vao));
         }
         gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);

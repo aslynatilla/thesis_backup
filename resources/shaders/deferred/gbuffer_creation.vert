@@ -2,6 +2,7 @@
 
 in vec3 vertex_position;
 in vec3 vertex_normal;
+in vec2 vertex_uvs;
 
 layout(std140, binding = 0) uniform GBufferMatrices{
     uniform mat4 projection_view;               // with P left-multiplied by V, as in P * V
@@ -15,6 +16,7 @@ layout(std140, binding = 0) uniform GBufferMatrices{
 
 out vec3 world_position;
 out vec3 world_normal;
+out vec2 uv_coords;
 
 void main(){
     vec4 w_position = model * vec4(vertex_position, 1.0);
@@ -22,4 +24,5 @@ void main(){
     world_position = w_position.xyz;
     world_normal = normalize(mat3(transposed_inversed_model) * vertex_normal);
     gl_Position = projection_view * w_position;
+    uv_coords = vertex_uvs;
 }
