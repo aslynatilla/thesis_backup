@@ -9,7 +9,7 @@ namespace engine {
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
         const auto path_to_sponza = files::make_path_absolute("resources/sponza/small_sponza.obj");
-        objects = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags).objects;
+        scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
 
         light = Point_Light(glm::vec4(0.0f, 1.5f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
@@ -166,7 +166,7 @@ namespace engine {
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
 
-        for (const auto& o : objects) {
+        for (const auto& o : scene_data.objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
             gbuffer_transformation->bind_to_uniform_buffer_target();
@@ -219,7 +219,7 @@ namespace engine {
             rsm_creation->set_mat4(0 + i, light_transformations[i]);
         }
 
-        for (const auto& o : objects) {
+        for (const auto& o : scene_data.objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
             gbuffer_transformation->bind_to_uniform_buffer_target();

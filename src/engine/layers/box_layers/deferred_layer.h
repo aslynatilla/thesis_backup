@@ -87,7 +87,7 @@ namespace engine{
         Point_Light light;
         glm::mat4 ies_model_matrix;
         glm::mat4 ies_inverse_transposed_matrix;
-        std::vector<SceneObject> objects;
+        scenes::SceneData scene_data;
         RenderingQuad quad;
 
         std::unique_ptr<OpenGL3_FrameBuffer> gbuffer_creation_fbo;
