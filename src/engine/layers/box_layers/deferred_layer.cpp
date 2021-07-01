@@ -310,7 +310,7 @@ namespace engine {
         glm::vec3 light_angles = light.get_rotation_in_degrees();
 
         ImGui::Begin("Light controls");
-        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f,  -0.5f, 3.5f, "%.3f")) {
+        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f,  -5.0f, +5.0f, "%.3f")) {
             light.translate_to(light_position);
             event_pump(std::make_unique<SceneChangedEvent>());
         }

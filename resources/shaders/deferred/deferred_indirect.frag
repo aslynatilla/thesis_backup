@@ -37,6 +37,7 @@ void main(){
 
     vec3 indirect_component = vec3(0.0);
 
+    float normalizer = 1/(float(samples_per_fragment));
     for(int i=0; i < samples_per_fragment; i++){
         vec3 offset = texelFetch(sampling_offsets, i, 0).rgb;
         vec3 sampling_direction = normalize(
@@ -46,7 +47,7 @@ void main(){
                                         -l.z + offset.z * displacement_sphere_radius
                                         )
                                     );
-        float weight = 1.0 - dot(sampling_direction, -l);
+        float weight = (1.0 - dot(sampling_direction, -l)) * normalizer;
 
         vec3 vpl_position = texture(rsm_position_map, sampling_direction).rgb;
         vec3 vpl_normal = texture(rsm_normal_map, sampling_direction).rgb;
@@ -61,7 +62,8 @@ void main(){
                         (d2 * d2);
         indirect_component += result * weight;
     }
-    indirect_component = clamp(indirect_component, 0.0, 1.0) * 12.566/(float(samples_per_fragment)) * diffuse_color;
+    //indirect_component = clamp(indirect_component, 0.0, 1.0) * 12.566/(float(samples_per_fragment)) * diffuse_color;
+    indirect_component = clamp(indirect_component, 0.0, 1.0) * diffuse_color;
 
     indirect_lighting = vec4(indirect_component, 1.0);
 }
