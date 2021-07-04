@@ -1,4 +1,5 @@
 #version 430 core
+#define NUMBER_OF_LIGHTS 2
 
 in vec2 uv_coords;
 
@@ -17,11 +18,11 @@ layout(std140, binding = 2) uniform Light{
     float quadratic_attenuation;
     float intensity;
     vec4 color;
-} scene_light;
+} scene_lights[NUMBER_OF_LIGHTS];
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
-    float light_camera_far_plane;
+    float light_camera_far_plane[NUMBER_OF_LIGHTS];
     float shadow_threshold;
 };
 
@@ -29,11 +30,11 @@ layout (location = 0) uniform sampler2D g_positions;
 layout (location = 1) uniform sampler2D g_normals;
 layout (location = 2) uniform sampler2D g_diffuse;
 
-layout (location = 3) uniform samplerCube light_shadow_map;
-layout (location = 4) uniform samplerCube ies_masking_texture;
+layout (location = 3) uniform samplerCube light_shadow_maps[NUMBER_OF_LIGHTS];
+layout (location = 4) uniform samplerCube ies_masking_textures[NUMBER_OF_LIGHTS];
 
-float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light){
-    float depth = texture(light_shadow_map, light_to_fragment).r;
+float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light, int index){
+    float depth = texture(light_shadow_maps[index], light_to_fragment).r;
     depth *= light_camera_far_plane;
 
     if(distance_from_light < depth + shadow_threshold){
@@ -48,24 +49,31 @@ void main(){
     vec3 n = texture(g_normals, uv_coords).xyz;
     vec3 diffuse_color = texture(g_diffuse, uv_coords).xyz;
 
-    vec3 fragment_to_light = scene_light.position.xyz - world_position;
-    float distance_from_light = length(fragment_to_light);
-    vec3 l = normalize(fragment_to_light);
+    float distances_from_lights[NUMBER_OF_LIGHTS];
+    vec3 ls[NUMBER_OF_LIGHTS];
 
-    float shadow_factor = compute_shadow_factor(-l, distance_from_light);
+    for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
+        vec3 fragment_to_light = scene_lights[i].position.xyz - world_position;
+        distances_from_lights[i] = length(fragment_to_light);
+        ls[i] = normalize(fragment_to_light);
+    }
 
-    float attenuation_factor = 1.0/(scene_light.constant_attenuation +
-                                    scene_light.linear_attenuation * distance_from_light +
-                                    scene_light.quadratic_attenuation * distance_from_light * distance_from_light);
+    for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
+        float shadow_factor = compute_shadow_factor(-ls[i], distance_from_light[i], i);
+        if(shadow_factor >= 0.0){
+            float attenuation_factor = 1.0/(scene_lights[i].constant_attenuation +
+                                            scene_lights[i].linear_attenuation * distances_from_lights[i] +
+                                            scene_lights[i].quadratic_attenuation * distances_from_lights[i] * distances_from_lights[i]);
 
-    float d = max(dot(n, l), 0.0);
-    d = d * attenuation_factor;
-    vec3 diffuse_component = d * diffuse_color * scene_light.intensity;
+            float d = max(dot(n, ls[i]), 0.0);
+            d = d * attenuation_factor;
+            vec3 diffuse_component = d * diffuse_color * scene_light.intensity;
 
-    vec3 mask_value = texture(ies_masking_texture, -l).rgb;
-    float multiplier = mask_value.r;
-    bool is_active = (mask_value.b == 1.0);
-    diffuse_component *= is_active ? multiplier : 0.0;
-
-    direct_lighting = vec4(diffuse_component * shadow_factor, 1.0);
+            vec3 mask_value = texture(ies_masking_textures[i], -ls[i]).rgb;
+            float multiplier = mask_value.r;
+            bool is_active = (mask_value.b == 1.0);
+            diffuse_component *= is_active ? multiplier : 0.0;
+            direct_lighting += vec4(diffuse_component * shadow_factor, 1.0);
+        }
+    }
 }

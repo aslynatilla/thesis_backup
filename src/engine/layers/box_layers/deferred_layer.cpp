@@ -461,14 +461,14 @@ namespace engine {
                 .using_linear_minification()
                 .as_resource();
         rsm_normals = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB16F)
+                .with_texture_format(GL_RGB)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
                 .using_linear_minification()
                 .as_resource();
         rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB16F)
+                .with_texture_format(GL_RGB)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
