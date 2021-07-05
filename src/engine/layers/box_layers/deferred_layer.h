@@ -75,18 +75,19 @@ namespace engine{
         glm::vec<2, int> target_resolution {0, 0};
         glm::vec<2, int> texture_resolution {0, 0};
         float shadow_threshold = 0.15f;
-        float max_distance_to_ies_vertex = 1.0f;
+        std::vector<float> max_distance_to_ies_vertex = {1.0f, 1.0f};
         float light_camera_far_plane = 100.0f;
-        float scale_modifier = 0.0010f;
+        std::vector<float> scale_modifier = { 0.0010f, 1.0f };
         int offsets_number = 400;
         float offset_displacement_radius = 2.0f;
         bool draw_wireframe_in_scene = true;
         glm::vec4 wireframe_color = {0.20f, 1.00f, 1.00f, 0.60f};
 
-        VertexArray ies_light_vao;
-        Point_Light light;
-        glm::mat4 ies_model_matrix;
-        glm::mat4 ies_inverse_transposed_matrix;
+        int number_of_lights = 2;
+        std::vector<std::unique_ptr<VertexArray>> ies_light_vaos;
+        std::vector<Point_Light> lights;
+        std::vector<glm::mat4> ies_model_matrices{{}, {}};
+        std::vector<glm::mat4> ies_inverse_transposed_matrices{{}, {}};
         scenes::SceneData scene_data;
         RenderingQuad quad;
 
@@ -97,13 +98,14 @@ namespace engine{
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
 
         std::unique_ptr<OpenGL3_FrameBuffer> mask_creation_fbo;
-        std::unique_ptr<OpenGL3_Cubemap> light_mask;
+        std::vector<std::unique_ptr<OpenGL3_Cubemap>> light_masks;
 
         std::unique_ptr<OpenGL3_FrameBuffer> rsm_creation_fbo;
-        std::unique_ptr<OpenGL3_Cubemap> rsm_positions;
-        std::unique_ptr<OpenGL3_Cubemap> rsm_normals;
-        std::unique_ptr<OpenGL3_Cubemap> rsm_fluxes;
-        std::unique_ptr<OpenGL3_Cubemap> shadow_map;
+        //TODO: positions can be deduced from the depth map - consider this optimization
+        std::vector<std::unique_ptr<OpenGL3_Cubemap>> rsm_position_vec;
+        std::vector<std::unique_ptr<OpenGL3_Cubemap>> rsm_normal_vec;
+        std::vector<std::unique_ptr<OpenGL3_Cubemap>> rsm_flux_vec;
+        std::vector<std::unique_ptr<OpenGL3_Cubemap>> rsm_depth_vec;
 
         std::unique_ptr<OpenGL3_Texture2D> temp_depth_buffer;
 
@@ -131,8 +133,8 @@ namespace engine{
 
 
         void create_gbuffer();
-        void update_rsm(const std::vector<glm::mat4>& light_transformations);
-        void update_light_mask(const std::vector<glm::mat4>& light_transforms);
+        void update_rsm(const std::vector<glm::mat4>& light_transformations, int light_index);
+        void update_light_mask(const std::vector<glm::mat4>& light_transforms, int light_index);
         void render_direct_lighting();
         void render_indirect_lighting() const;
         void sum_lighting_components() const;
@@ -146,11 +148,12 @@ namespace engine{
 
         [[nodiscard]] std::vector<glm::mat4> compute_cubemap_view_projection_transforms(const glm::vec3& camera_position,
                                                                           const glm::mat4& camera_projection_matrix) const;
-        [[nodiscard]] glm::mat4 compute_light_model_matrix(const glm::vec3& light_position,
-                                                           const glm::mat4& light_orientation) const;
+        [[nodiscard]] glm::mat4
+        compute_light_model_matrix(const glm::vec3& light_position, const glm::mat4& light_orientation,
+                                   float light_scale) const;
 
         //TODO: refactor this better, so that it can be a free function
-        void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data);
+        void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data, int light_index);
         void update_camera_related_buffers();
         void update_scene_buffers_and_representations();
     };

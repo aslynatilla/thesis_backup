@@ -11,9 +11,13 @@ namespace engine {
         const auto path_to_sponza = files::make_path_absolute("resources/sponza/small_sponza.obj");
         scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
 
-        light = Point_Light(glm::vec4(0.0f, 0.2f, 0.0f, 1.0f),
+        lights.reserve(number_of_lights);
+        lights.emplace_back(glm::vec4(0.0f, 0.2f, 0.0f, 1.0f),
+                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
+        lights[0].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
+        lights.emplace_back(glm::vec4(0.0f, 2.0f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        light.set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
+        lights[1].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
 
         auto viewport_size = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
@@ -67,7 +71,10 @@ namespace engine {
                                                        "resources/shaders/deferred/deferred_indirect.frag");
 
         const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
-        load_IES_light_as_VAO(path_to_IES_data);
+        ies_light_vaos.push_back(std::make_unique<VertexArray>());
+        ies_light_vaos.push_back(std::make_unique<VertexArray>());
+        load_IES_light_as_VAO(path_to_IES_data, 0);
+        load_IES_light_as_VAO(path_to_IES_data, 1);
         uniform_buffers_setup();
     }
 
@@ -89,70 +96,69 @@ namespace engine {
 
     void DeferredLayer::update(float delta_time) {
         [[maybe_unused]] float timestep = delta_time;
-        if (auto view_camera = camera.lock()) {
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_DEPTH_TEST);
 
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glEnable(GL_DEPTH_TEST);
-
-            if (scene_changed) {
-                update_camera_related_buffers();
-                update_scene_buffers_and_representations();
-                create_gbuffer();
-                //  conditionally, draw_wireframe()
-                if (draw_wireframe_in_scene){
-                    gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
-                    glViewport(0, 0, target_resolution[0], target_resolution[1]);
-                    wireframe_drawer->use();
-                    gbuffer_diffuse_texture->bind_to_slot(2);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    gbuffer_transformation->bind_to_uniform_buffer_target();
-                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrix));
-                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(ies_inverse_transposed_matrix));
-                    gbuffer_transformation->unbind_from_uniform_buffer_target();
-                    material_buffer->bind_to_uniform_buffer_target();
-                    material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
-                    material_buffer->unbind_from_uniform_buffer_target();
-                    OpenGL3_Renderer::draw(ies_light_vao);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                    gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-                }
-                scene_changed = false;
-                camera_moved = false;
-            } else if (camera_moved) {
-                update_camera_related_buffers();
-                create_gbuffer();
-                if (draw_wireframe_in_scene){
-                    gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
-                    glViewport(0, 0, target_resolution[0], target_resolution[1]);
-                    wireframe_drawer->use();
-                    gbuffer_diffuse_texture->bind_to_slot(2);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    gbuffer_transformation->bind_to_uniform_buffer_target();
-                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrix));
-                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4, glm::value_ptr(ies_inverse_transposed_matrix));
-                    gbuffer_transformation->unbind_from_uniform_buffer_target();
-                    material_buffer->bind_to_uniform_buffer_target();
-                    material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
-                    material_buffer->unbind_from_uniform_buffer_target();
-                    OpenGL3_Renderer::draw(ies_light_vao);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                    gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
-                }
-                camera_moved = false;
+        if (scene_changed) {
+            update_camera_related_buffers();
+            update_scene_buffers_and_representations();
+            create_gbuffer();
+            //  conditionally, draw_wireframe() //TODO: extract function
+            if (draw_wireframe_in_scene) {
+                gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                wireframe_drawer->use();
+                gbuffer_diffuse_texture->bind_to_slot(2);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                gbuffer_transformation->bind_to_uniform_buffer_target();
+                gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
+                gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
+                                                       glm::value_ptr(ies_inverse_transposed_matrices[0]));
+                gbuffer_transformation->unbind_from_uniform_buffer_target();
+                material_buffer->bind_to_uniform_buffer_target();
+                material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
+                material_buffer->unbind_from_uniform_buffer_target();
+                OpenGL3_Renderer::draw(*ies_light_vaos[0]);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
             }
-
-            render_direct_lighting();
-            render_indirect_lighting();
-
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc(GL_ONE, GL_ONE);
-            glDisable(GL_DEPTH_TEST);
-
-            glEnable(GL_FRAMEBUFFER_SRGB);
-            sum_lighting_components();
-            glDisable(GL_FRAMEBUFFER_SRGB);
+            scene_changed = false;
+            camera_moved = false;
+        } else if (camera_moved) {
+            update_camera_related_buffers();
+            create_gbuffer();
+            if (draw_wireframe_in_scene) {
+                gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                wireframe_drawer->use();
+                gbuffer_diffuse_texture->bind_to_slot(2);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                gbuffer_transformation->bind_to_uniform_buffer_target();
+                gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
+                gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
+                                                       glm::value_ptr(ies_inverse_transposed_matrices[0]));
+                gbuffer_transformation->unbind_from_uniform_buffer_target();
+                material_buffer->bind_to_uniform_buffer_target();
+                material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
+                material_buffer->unbind_from_uniform_buffer_target();
+                OpenGL3_Renderer::draw(*ies_light_vaos[0]);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+            }
+            camera_moved = false;
         }
+
+        render_direct_lighting();
+        render_indirect_lighting();
+
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_FRAMEBUFFER_SRGB);
+        sum_lighting_components();
+        glDisable(GL_FRAMEBUFFER_SRGB);
     }
 
     void DeferredLayer::create_gbuffer() {
@@ -188,44 +194,51 @@ namespace engine {
         gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
-    void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms) {
+    void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms, int light_index) {
         mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
         glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_FRONT);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mask_creation->use();
-        for (unsigned int i = 0u; i < 6; ++i) {
+        for (int i = 0; i < 6; ++i) {
             mask_creation->set_mat4(0 + i,
                                     light_transforms[i]);
         }
+        mask_creation->set_int(6, light_index);
         gbuffer_transformation->bind_to_uniform_buffer_target();
-        gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_model_matrix));
+        gbuffer_transformation->copy_to_buffer(64, 64, glm::value_ptr(ies_model_matrices[light_index]));
         gbuffer_transformation->unbind_from_uniform_buffer_target();
-        OpenGL3_Renderer::draw(ies_light_vao);
+        OpenGL3_Renderer::draw(*ies_light_vaos[light_index]);
         mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void
-    DeferredLayer::update_rsm(const std::vector<glm::mat4>& light_transformations) {
+    DeferredLayer::update_rsm(const std::vector<glm::mat4>& light_transformations, int light_index) {
         rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *rsm_depth_vec[light_index]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_position_vec[light_index]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normal_vec[light_index]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_flux_vec[light_index]);
+
         glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_BACK);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         rsm_creation->use();
-        rsm_positions->bind_to_slot(0);
-        rsm_normals->bind_to_slot(1);
-        rsm_fluxes->bind_to_slot(2);
-        light_mask->bind_to_slot(3);
-        rsm_creation->set_int(6, 3);
+        rsm_position_vec[light_index]->bind_to_slot(0);
+        rsm_normal_vec[light_index]->bind_to_slot(1);
+        rsm_flux_vec[light_index]->bind_to_slot(2);
+        light_masks[light_index]->bind_to_slot(3);
 
         for (int i = 0; i < 6; ++i) {
             rsm_creation->set_mat4(0 + i, light_transformations[i]);
         }
 
+        rsm_creation->set_int(6, 3);
         rsm_creation->set_int(7, 4);
+        rsm_creation->set_int(8, light_index);
         for (const auto& o : scene_data.objects) {
             const auto& model_matrix = o.transform;
             const auto& transposed_inversed_model_matrix = o.transpose_inverse_transform;
@@ -256,13 +269,30 @@ namespace engine {
         deferred_direct->set_int(0, 0);
         deferred_direct->set_int(1, 1);
         deferred_direct->set_int(2, 2);
+
+        //  Bind RSM depthmaps
+        for(int i = 0; i < number_of_lights; ++i){
+            deferred_direct->set_int(3 + i, 3 + i);
+        }
+        //  Bind light IES masks
+        for(int i = 0; i < number_of_lights; ++i){
+            deferred_direct->set_int(3 + number_of_lights + i, 3 + number_of_lights + i);
+        }
+
         deferred_direct->set_int(3, 3);
         deferred_direct->set_int(4, 4);
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
-        shadow_map->bind_to_slot(3);
-        light_mask->bind_to_slot(4);
+
+        for(int slot_number = 3; auto&& depthmap : rsm_depth_vec){
+            depthmap->bind_to_slot(slot_number);
+            ++slot_number;
+        }
+        for(int slot_number = 3 + number_of_lights; auto&& mask : light_masks){
+            mask->bind_to_slot(slot_number);
+            ++slot_number;
+        }
 
         OpenGL3_Renderer::draw(quad.vao);
         direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
@@ -278,18 +308,35 @@ namespace engine {
         deferred_indirect->set_int(1, 1);
         deferred_indirect->set_int(2, 2);
         deferred_indirect->set_int(3, 3);
-        deferred_indirect->set_int(4, 4);
-        deferred_indirect->set_int(5, 5);
-        deferred_indirect->set_int(6, 6);
-        deferred_indirect->set_int(10, offsets_number);
-        deferred_indirect->set_float(11, offset_displacement_radius);
+        deferred_indirect->set_int(4, offsets_number);
+
+        int next_texture_slot = 4;
+        int location = 5;
+        for(; next_texture_slot < 4 + 3 * number_of_lights; ++next_texture_slot, ++location){
+            deferred_indirect->set_int(location, next_texture_slot);
+        }
+        for(int i = 0; i < number_of_lights; ++i, ++location){
+            //TODO: right now, displacement radius is one value for both lights
+            deferred_indirect->set_float(location, offset_displacement_radius);
+        }
+
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
-        rsm_positions->bind_to_slot(3);
-        rsm_normals->bind_to_slot(4);
-        rsm_fluxes->bind_to_slot(5);
-        offsets_texture->bind_to_slot(6);
+        offsets_texture->bind_to_slot(3);
+        next_texture_slot = 4;
+        for(auto&& position_rsm : rsm_position_vec){
+            position_rsm->bind_to_slot(next_texture_slot);
+            ++next_texture_slot;
+        }
+        for(auto&& normal_rsm : rsm_normal_vec){
+            normal_rsm->bind_to_slot(next_texture_slot);
+            ++next_texture_slot;
+        }
+        for(auto&& flux_rsm : rsm_normal_vec){
+            flux_rsm->bind_to_slot(next_texture_slot);
+            ++next_texture_slot;
+        }
         OpenGL3_Renderer::draw(quad.vao);
         indirect_pass_fbo->unbind_from(GL_FRAMEBUFFER);
     }
@@ -306,23 +353,36 @@ namespace engine {
     }
 
     void DeferredLayer::on_imgui_render() {
-        glm::vec4 light_position = light.get_position();
-        glm::vec3 light_angles = light.get_rotation_in_degrees();
+
 
         ImGui::Begin("Light controls");
-        if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f,  -5.0f, +5.0f, "%.3f")) {
-            light.translate_to(light_position);
-            event_pump(std::make_unique<SceneChangedEvent>());
+
+        auto light_controller = [this](const int index){
+            glm::vec4 light_position = lights[index].get_position();
+            glm::vec3 light_angles = lights[index].get_rotation_in_degrees();
+            if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f, -5.0f, +5.0f,
+                                  "%.3f")) {
+                lights[index].translate_to(light_position);
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+            if (ImGui::DragFloat3("Light's Rotation Angles", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f,
+                                  "%.3f")) {
+                lights[index].set_rotation(light_angles);
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+            if (ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier[index], 0.00001f, 2.0f, "%.5f",
+                                   ImGuiSliderFlags_Logarithmic)) {
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+        };
+
+        for(int i = 0; i < number_of_lights; ++i){
+            ImGui::Separator();
+            ImGui::Text("Light %d", i);
+            light_controller(i);
+            ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex[i] * scale_modifier[i]);
         }
-        if (ImGui::DragFloat3("Light's Rotation Angles", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f, "%.3f")) {
-            light.set_rotation(light_angles);
-            event_pump(std::make_unique<SceneChangedEvent>());
-        }
-        if(ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier, 0.00001f, 2.0f, "%.5f",
-                           ImGuiSliderFlags_Logarithmic)){
-            event_pump(std::make_unique<SceneChangedEvent>());
-        }
-        ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex * scale_modifier);
+
         if(ImGui::SliderFloat("RSM Sampling displacement", &offset_displacement_radius, 0.0f, 2.0f)){
             event_pump(std::make_unique<SceneChangedEvent>());
         }
@@ -406,7 +466,7 @@ namespace engine {
 
         gbuffer_positions_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB32F)
+                .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
@@ -417,7 +477,7 @@ namespace engine {
 
         gbuffer_normals_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB32F)
+                .with_texture_format(GL_RGB)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
@@ -428,7 +488,7 @@ namespace engine {
 
         gbuffer_diffuse_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB32F)
+                .with_texture_format(GL_RGB)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
@@ -453,66 +513,70 @@ namespace engine {
 
 
     void DeferredLayer::rsm_creation_setup(std::array<GLenum, 3>& color_attachments) {
-        rsm_positions = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-        rsm_normals = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-        rsm_fluxes = OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
-
+        for(int i = 0; i < number_of_lights; ++i) {
+            rsm_position_vec.push_back(OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
+                    .with_texture_format(GL_RGB16F)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .as_resource());
+            rsm_normal_vec.push_back(OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
+                    .with_texture_format(GL_RGB)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .as_resource());
+            rsm_flux_vec.push_back(OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
+                    .with_texture_format(GL_RGB)
+                    .with_data_format(GL_RGB)
+                    .using_underlying_data_type(GL_FLOAT)
+                    .using_linear_magnification()
+                    .using_linear_minification()
+                    .as_resource());
+        }
         rsm_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
         rsm_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_positions);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normals);
-        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_fluxes);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *rsm_depth_vec[0]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *rsm_position_vec[0]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, *rsm_normal_vec[0]);
+        rsm_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, *rsm_flux_vec[0]);
         glDrawBuffers(3, color_attachments.data());
         rsm_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments) {
-        shadow_map = OpenGL3_Cubemap_Builder()
-                .with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_DEPTH_COMPONENT)
-                .with_data_format(GL_DEPTH_COMPONENT)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .as_resource();
+        for(int i = 0; i < number_of_lights; ++i){
+            rsm_depth_vec.push_back(OpenGL3_Cubemap_Builder()
+                                            .with_size(texture_resolution[0], texture_resolution[1])
+                                            .with_texture_format(GL_DEPTH_COMPONENT)
+                                            .with_data_format(GL_DEPTH_COMPONENT)
+                                            .using_underlying_data_type(GL_FLOAT)
+                                            .using_linear_magnification()
+                                            .using_linear_minification()
+                                            .as_resource());
 
-        light_mask = OpenGL3_Cubemap_Builder()
-                .with_size(texture_resolution[0], texture_resolution[1])
-                .with_texture_format(GL_RGB16F)
-                .with_data_format(GL_RGB)
-                .using_underlying_data_type(GL_FLOAT)
-                .using_linear_magnification()
-                .using_linear_minification()
-                .using_clamping_to_borders()
-                .as_resource();
+            light_masks.push_back(OpenGL3_Cubemap_Builder()
+                                          .with_size(texture_resolution[0], texture_resolution[1])
+                                          .with_texture_format(GL_RGB16F)
+                                          .with_data_format(GL_RGB)
+                                          .using_underlying_data_type(GL_FLOAT)
+                                          .using_linear_magnification()
+                                          .using_linear_minification()
+                                          .using_clamping_to_borders()
+                                          .as_resource());
+        }
 
         mask_creation_fbo = std::make_unique<OpenGL3_FrameBuffer>();
         mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
-        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *shadow_map);
-        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *light_mask);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *rsm_depth_vec[0]);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *light_masks[0]);
         glDrawBuffers(1, color_attachments.data());
         mask_creation_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
+    //TODO: fix sizes according to number_of_lights
     void DeferredLayer::uniform_buffers_setup() {
         gbuffer_transformation = std::make_shared<UniformBuffer>((4 * 4 * 4) * 3, GL_DYNAMIC_DRAW);
         gbuffer_transformation->bind_to_binding_point(0);
@@ -522,20 +586,31 @@ namespace engine {
         material_buffer->bind_to_binding_point(1);
         material_buffer->unbind_from_uniform_buffer_target();
 
-        light_buffer = std::make_shared<UniformBuffer>((16 * 3) + (4 * 4), GL_DYNAMIC_DRAW);
+        //  sizeof(vec4) = 16, sizeof(float) = 4; (3 vec4s and 4 floats per light)
+        light_buffer = std::make_shared<UniformBuffer>(((16 * 3) + (4 * 4)) * number_of_lights, GL_DYNAMIC_DRAW);
         light_buffer->bind_to_binding_point(2);
         light_buffer->unbind_from_uniform_buffer_target();
 
+        //  sizeof(vec4) = 16, sizeof(float) = 4; 1 vec4, 1 float and (2 float per light)
         common_buffer = std::make_shared<UniformBuffer>((16 * 1) + (4 * 3), GL_DYNAMIC_DRAW);
         common_buffer->bind_to_binding_point(3);
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
         const auto camera_position_projective = glm::vec4(view_camera->position(), 1.0f);
         common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
-        common_buffer->copy_to_buffer(16, 4, &light_camera_far_plane);
-        common_buffer->copy_to_buffer(20, 4, &shadow_threshold);
-        const auto ies_solid_scale = max_distance_to_ies_vertex * scale_modifier;
-        common_buffer->copy_to_buffer(24, 4, &ies_solid_scale);
+        common_buffer->copy_to_buffer(16, 4, &shadow_threshold);
+
+        int start_offset = 20;
+        //TODO: light_camera_far_plane could be different for each light
+        for(int i = 0; i < number_of_lights; ++i){
+            common_buffer->copy_to_buffer(start_offset, 4, &light_camera_far_plane);
+            start_offset += 4;
+        }
+        for(int i = 0; i < number_of_lights; ++i){
+            const auto ies_solid_scale = max_distance_to_ies_vertex[i] * scale_modifier[i];
+            common_buffer->copy_to_buffer(start_offset, 4, &ies_solid_scale);
+            start_offset += 4;
+        }
         common_buffer->unbind_from_uniform_buffer_target();
     }
 
@@ -556,26 +631,26 @@ namespace engine {
     }
 
     glm::mat4
-    DeferredLayer::compute_light_model_matrix(const glm::vec3& light_position,
-                                              const glm::mat4& light_orientation) const {
+    DeferredLayer::compute_light_model_matrix(const glm::vec3& light_position, const glm::mat4& light_orientation,
+                                              float light_scale) const {
         auto ies_light_model_matrix = glm::mat4(1.0f);
         ies_light_model_matrix = glm::translate(ies_light_model_matrix, light_position);
         ies_light_model_matrix = ies_light_model_matrix * light_orientation;
         ies_light_model_matrix = glm::rotate(ies_light_model_matrix, glm::radians(90.0f),
                                              glm::vec3(1.0f, 0.0f, 0.0f));
-        ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(scale_modifier));
+        ies_light_model_matrix = glm::scale(ies_light_model_matrix, glm::vec3(light_scale));
         return ies_light_model_matrix;
     }
 
-    void DeferredLayer::load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data) {
+    void DeferredLayer::load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data, int light_index) {
         auto document = ies::IES_Default_Parser()
                 .parse(path_to_IES_data.filename().string(), files::read_file(path_to_IES_data));
-        ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
-//        const auto photometric_solid = ies::adapter::IES_Mesh(document);
+//        ies::adapter::IES_Mesh photometric_solid = ies::adapter::IES_Mesh::interpolate_from(document, 3);
+        const auto photometric_solid = ies::adapter::IES_Mesh(document);
 
         const auto vertices = photometric_solid.get_vertices();
 
-        max_distance_to_ies_vertex = [](const std::vector<float>& vs) -> float {
+        max_distance_to_ies_vertex[light_index] = [](const std::vector<float>& vs) -> float {
             float result = 0.0f;
             for (auto i = 0u; i < vs.size() / 3; ++i) {
                 const glm::vec3 p(vs[3 * i + 0],
@@ -589,7 +664,7 @@ namespace engine {
             return result;
         }(vertices);
 
-        scale_modifier = 1.5f / max_distance_to_ies_vertex;
+        scale_modifier[light_index] = 1.5f / max_distance_to_ies_vertex[light_index];
 
         auto vbo = std::make_shared<VertexBuffer>(vertices.size() * sizeof(float),
                                                   vertices.data());
@@ -598,8 +673,8 @@ namespace engine {
                                                                               "position"),
                                                           VertexBufferElement(ShaderDataType::Float3,
                                                                               "normal")}));
-        ies_light_vao.set_vbo(std::move(vbo));
-        ies_light_vao.set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
+        ies_light_vaos[light_index]->set_vbo(std::move(vbo));
+        ies_light_vaos[light_index]->set_ebo(std::make_shared<ElementBuffer>(photometric_solid.get_indices()));
     }
 
     void DeferredLayer::update_camera_related_buffers() {
@@ -619,36 +694,39 @@ namespace engine {
         constexpr auto light_intensity = 1.0f;
         constexpr auto light_color = glm::vec4(1.0f);
 
-        const auto light_data = light.get_representative_data();
-        const auto light_position = glm::vec3(light_data.position);
-        const auto light_orientation = glm::mat4_cast(light.get_orientation());
-        const auto light_camera = Camera(
-                CameraGeometricDefinition{light_data.position,
-                                          light_data.position + light_data.direction,
-                                          light.get_up()},
-                90.0f, 1.0f,
-                CameraPlanes{0.001f, light_camera_far_plane},
-                CameraMode::Perspective);
+        //TODO: we can set a flag for updating only one light if only one is moving
+        for(int i = 0; i < number_of_lights; ++i){
+            const auto light_data = lights[i].get_representative_data();
+            const auto light_position = glm::vec3(light_data.position);
+            const auto light_orientation = glm::mat4_cast(lights[i].get_orientation());
+            const auto light_camera = Camera(
+                    CameraGeometricDefinition{light_data.position,
+                                              light_data.position + light_data.direction,
+                                              lights[i].get_up()},
+                    90.0f, 1.0f,
+                    CameraPlanes{0.001f, light_camera_far_plane},
+                    CameraMode::Perspective);
 
-        const auto light_projection_matrix = light_camera.get_projection_matrix();
-        const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
-                                                                                 light_projection_matrix);
+            const auto light_projection_matrix = light_camera.get_projection_matrix();
+            const auto light_transforms = compute_cubemap_view_projection_transforms(light_position,
+                                                                                     light_projection_matrix);
 
-        ies_model_matrix = compute_light_model_matrix(light_position,
-                                                      light_orientation);
-        ies_inverse_transposed_matrix = glm::transpose(glm::inverse(ies_model_matrix));
+            ies_model_matrices[i] = compute_light_model_matrix(light_position,
+                                                            light_orientation, scale_modifier[i]);
+            ies_inverse_transposed_matrices[i] = glm::transpose(glm::inverse(ies_model_matrices[i]));
 
-        light_buffer->bind_to_uniform_buffer_target();
-        light_buffer->copy_to_buffer(0, 16, glm::value_ptr(light_data.position));
-        light_buffer->copy_to_buffer(16, 16, glm::value_ptr(light_data.direction));
-        light_buffer->copy_to_buffer(32, 4, &light.attenuation.constant);
-        light_buffer->copy_to_buffer(36, 4, &light.attenuation.linear);
-        light_buffer->copy_to_buffer(40, 4, &light.attenuation.quadratic);
-        light_buffer->copy_to_buffer(44, 4, &light_intensity);
-        light_buffer->copy_to_buffer(48, 16, glm::value_ptr(light_color));
-        light_buffer->unbind_from_uniform_buffer_target();
+            light_buffer->bind_to_uniform_buffer_target();
+            light_buffer->copy_to_buffer(64 * i + 0, 16, glm::value_ptr(light_data.position));
+            light_buffer->copy_to_buffer(64 * i + 16, 16, glm::value_ptr(light_data.direction));
+            light_buffer->copy_to_buffer(64 * i + 32, 4, &lights[i].attenuation.constant);
+            light_buffer->copy_to_buffer(64 * i + 36, 4, &lights[i].attenuation.linear);
+            light_buffer->copy_to_buffer(64 * i + 40, 4, &lights[i].attenuation.quadratic);
+            light_buffer->copy_to_buffer(64 * i + 44, 4, &light_intensity);
+            light_buffer->copy_to_buffer(64 * i + 48, 16, glm::value_ptr(light_color));
+            light_buffer->unbind_from_uniform_buffer_target();
 
-        update_light_mask(light_transforms);
-        update_rsm(light_transforms);
+            update_light_mask(light_transforms, i);
+            update_rsm(light_transforms, i);
+        }
     }
 }

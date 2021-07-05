@@ -18,12 +18,17 @@ layout(std140, binding = 2) uniform Light{
 layout (location = 0) uniform sampler2D g_positions;
 layout (location = 1) uniform sampler2D g_normals;
 layout (location = 2) uniform sampler2D g_diffuse_colors;
-layout (location = 3) uniform samplerCube rsm_position_maps[NUMBER_OF_LIGHTS];
-layout (location = 4) uniform samplerCube rsm_normal_maps[NUMBER_OF_LIGHTS];
-layout (location = 5) uniform samplerCube rsm_flux_maps[NUMBER_OF_LIGHTS];
-layout (location = 6) uniform sampler1D sampling_offsets;
+layout (location = 3) uniform sampler1D sampling_offsets;
+layout (location = 4) uniform int samples_per_fragment;
 
-layout (location = 10) uniform int samples_per_fragment;
+layout (location = 5) uniform samplerCube rsm_position_maps[NUMBER_OF_LIGHTS];
+
+//      The following ones are      5 + NUMBER_OF_LIGHTS * 1
+//                                  5 + NUMBER_OF_LIGHTS * 2
+//      ...and so on.
+
+layout (location = 7) uniform samplerCube rsm_normal_maps[NUMBER_OF_LIGHTS];
+layout (location = 9) uniform samplerCube rsm_flux_maps[NUMBER_OF_LIGHTS];
 layout (location = 11) uniform float displacement_sphere_radiuses[NUMBER_OF_LIGHTS];
 
 void main(){

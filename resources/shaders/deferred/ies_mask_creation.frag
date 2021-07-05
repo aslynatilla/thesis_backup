@@ -1,4 +1,5 @@
 #version 430 core
+#define NUMBER_OF_LIGHTS 2
 
 in vec4 fragment_position;
 in vec4 light_space_fragment_position;
@@ -16,10 +17,12 @@ layout(std140, binding = 2) uniform Light{
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
-    float light_camera_far_plane;
     float shadow_threshold;
-    float distance_to_furthest_ies_vertex;
+    float light_camera_far_planes[NUMBER_OF_LIGHTS];
+    float distances_to_furthest_ies_vertex[NUMBER_OF_LIGHTS];
 };
+
+layout (location = 6) uniform int light_index;
 
 layout (location = 0) out vec4 ies_mask;
 
@@ -27,7 +30,7 @@ void main(){
     vec3 light_to_fragment = fragment_position.xyz - scene_light.position.xyz;
     float distance_from_light = length(light_to_fragment);
 
-    float scaled_distance = distance_from_light / distance_to_furthest_ies_vertex;
+    float scaled_distance = distance_from_light / distances_to_furthest_ies_vertex[light_index];
     float emitting_along_direction_l = 1.0;
 
     ies_mask = vec4(distance_from_light, scaled_distance, emitting_along_direction_l, 1.0);

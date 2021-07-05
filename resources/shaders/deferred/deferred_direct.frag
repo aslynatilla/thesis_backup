@@ -22,8 +22,9 @@ layout(std140, binding = 2) uniform Light{
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
-    float light_camera_far_plane[NUMBER_OF_LIGHTS];
     float shadow_threshold;
+    float light_camera_far_planes[NUMBER_OF_LIGHTS];
+    float distances_to_furthest_ies_vertex[NUMBER_OF_LIGHTS];
 };
 
 layout (location = 0) uniform sampler2D g_positions;
@@ -31,11 +32,12 @@ layout (location = 1) uniform sampler2D g_normals;
 layout (location = 2) uniform sampler2D g_diffuse;
 
 layout (location = 3) uniform samplerCube light_shadow_maps[NUMBER_OF_LIGHTS];
-layout (location = 4) uniform samplerCube ies_masking_textures[NUMBER_OF_LIGHTS];
+//      5 = 3 + NUMBER_OF_LIGHTS
+layout (location = 5) uniform samplerCube ies_masking_textures[NUMBER_OF_LIGHTS];
 
 float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light, int index){
     float depth = texture(light_shadow_maps[index], light_to_fragment).r;
-    depth *= light_camera_far_plane;
+    depth *= light_camera_far_planes[index];
 
     if(distance_from_light < depth + shadow_threshold){
         return 1.0;
@@ -59,7 +61,7 @@ void main(){
     }
 
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
-        float shadow_factor = compute_shadow_factor(-ls[i], distance_from_light[i], i);
+        float shadow_factor = compute_shadow_factor(-ls[i], distances_from_lights[i], i);
         if(shadow_factor >= 0.0){
             float attenuation_factor = 1.0/(scene_lights[i].constant_attenuation +
                                             scene_lights[i].linear_attenuation * distances_from_lights[i] +
@@ -67,7 +69,7 @@ void main(){
 
             float d = max(dot(n, ls[i]), 0.0);
             d = d * attenuation_factor;
-            vec3 diffuse_component = d * diffuse_color * scene_light.intensity;
+            vec3 diffuse_component = d * diffuse_color * scene_lights[i].intensity;
 
             vec3 mask_value = texture(ies_masking_textures[i], -ls[i]).rgb;
             float multiplier = mask_value.r;
