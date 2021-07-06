@@ -333,7 +333,7 @@ namespace engine {
             normal_rsm->bind_to_slot(next_texture_slot);
             ++next_texture_slot;
         }
-        for(auto&& flux_rsm : rsm_normal_vec){
+        for(auto&& flux_rsm : rsm_flux_vec){
             flux_rsm->bind_to_slot(next_texture_slot);
             ++next_texture_slot;
         }
@@ -716,13 +716,13 @@ namespace engine {
             ies_inverse_transposed_matrices[i] = glm::transpose(glm::inverse(ies_model_matrices[i]));
 
             light_buffer->bind_to_uniform_buffer_target();
-            light_buffer->copy_to_buffer(64 * i + 0, 16, glm::value_ptr(light_data.position));
-            light_buffer->copy_to_buffer(64 * i + 16, 16, glm::value_ptr(light_data.direction));
-            light_buffer->copy_to_buffer(64 * i + 32, 4, &lights[i].attenuation.constant);
-            light_buffer->copy_to_buffer(64 * i + 36, 4, &lights[i].attenuation.linear);
-            light_buffer->copy_to_buffer(64 * i + 40, 4, &lights[i].attenuation.quadratic);
-            light_buffer->copy_to_buffer(64 * i + 44, 4, &light_intensity);
-            light_buffer->copy_to_buffer(64 * i + 48, 16, glm::value_ptr(light_color));
+            light_buffer->copy_to_buffer(0 + 16 * i, 16, glm::value_ptr(light_data.position));
+            light_buffer->copy_to_buffer(16 * number_of_lights + 16 * i, 16, glm::value_ptr(light_data.direction));
+            light_buffer->copy_to_buffer(32 * number_of_lights + 16 * i + 0, 4, &lights[i].attenuation.constant);
+            light_buffer->copy_to_buffer(32 * number_of_lights + 16 * i + 4, 4, &lights[i].attenuation.linear);
+            light_buffer->copy_to_buffer(32 * number_of_lights + 16 * i + 8, 4, &lights[i].attenuation.quadratic);
+            light_buffer->copy_to_buffer(32 * number_of_lights + 16 * i + 12, 4, &light_intensity);
+            light_buffer->copy_to_buffer(48 * number_of_lights + 16 * i, 16, glm::value_ptr(light_color));
             light_buffer->unbind_from_uniform_buffer_target();
 
             update_light_mask(light_transforms, i);

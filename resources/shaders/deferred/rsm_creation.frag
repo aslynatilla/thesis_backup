@@ -11,15 +11,12 @@ layout (std140, binding = 1) uniform MaterialProperties{
     float shininess;
 };
 
-layout(std140, binding = 2) uniform Light{
-    vec4 position;
-    vec4 direction;
-    float constant_attenuation;
-    float linear_attenuation;
-    float quadratic_attenuation;
-    float intensity;
-    vec4 color;
-} scene_lights[NUMBER_OF_LIGHTS];
+layout(std140, binding = 2) uniform Lights{
+    vec4 positions[NUMBER_OF_LIGHTS];
+    vec4 directions[NUMBER_OF_LIGHTS];
+    vec4 attenuations_and_intensities[NUMBER_OF_LIGHTS];    //constant, linear, quadratic attenuation and intensity
+    vec4 colors[NUMBER_OF_LIGHTS];
+} scene_lights;
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
@@ -37,7 +34,7 @@ layout (location = 1) out vec4 fragment_normals;
 layout (location = 2) out vec4 fragment_fluxes;
 
 void main(){
-    vec3 light_to_fragment = fragment_position.xyz - scene_lights[light_index].position.xyz;
+    vec3 light_to_fragment = fragment_position.xyz - scene_lights.positions[light_index].xyz;
     float distance_to_light = length(light_to_fragment);
     vec3 l = normalize(light_to_fragment);
 
@@ -48,7 +45,9 @@ void main(){
     fragment_normals = vec4(fragment_normal, 1.0);
 
     vec3 ies_mask_data = texture(ies_masking_texture, l).rgb;
-    vec4 computed_flux = diffuse_color * scene_lights[light_index].color * scene_lights[light_index].intensity;
+    vec4 computed_flux = diffuse_color
+                        * scene_lights.colors[light_index]
+                        * scene_lights.attenuations_and_intensities[light_index].a;
     float is_emitting_light_along_l = ies_mask_data.b;
     float intensity_modifier = ies_mask_data.g;
 

@@ -10,15 +10,12 @@ layout (std140, binding = 1) uniform MaterialProperties{
     float shininess;
 };
 
-layout(std140, binding = 2) uniform Light{
-    vec4 position;
-    vec4 direction;
-    float constant_attenuation;
-    float linear_attenuation;
-    float quadratic_attenuation;
-    float intensity;
-    vec4 color;
-} scene_lights[NUMBER_OF_LIGHTS];
+layout(std140, binding = 2) uniform Lights{
+    vec4 positions[NUMBER_OF_LIGHTS];
+    vec4 directions[NUMBER_OF_LIGHTS];
+    vec4 attenuations_and_intensities[NUMBER_OF_LIGHTS];    //constant, linear, quadratic attenuation and intensity
+    vec4 colors[NUMBER_OF_LIGHTS];
+} scene_lights;
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
@@ -55,7 +52,7 @@ void main(){
     vec3 ls[NUMBER_OF_LIGHTS];
 
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
-        vec3 fragment_to_light = scene_lights[i].position.xyz - world_position;
+        vec3 fragment_to_light = scene_lights.positions[i].xyz - world_position;
         distances_from_lights[i] = length(fragment_to_light);
         ls[i] = normalize(fragment_to_light);
     }
@@ -63,13 +60,16 @@ void main(){
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
         float shadow_factor = compute_shadow_factor(-ls[i], distances_from_lights[i], i);
         if(shadow_factor >= 0.0){
-            float attenuation_factor = 1.0/(scene_lights[i].constant_attenuation +
-                                            scene_lights[i].linear_attenuation * distances_from_lights[i] +
-                                            scene_lights[i].quadratic_attenuation * distances_from_lights[i] * distances_from_lights[i]);
+            vec3 attenuations = scene_lights.attenuations_and_intensities[i].rgb;
+            float intensity = scene_lights.attenuations_and_intensities[i].a;
+
+            float attenuation_factor = 1.0/(attenuations.r +
+                                            attenuations.g * distances_from_lights[i] +
+                                            attenuations.b * distances_from_lights[i] * distances_from_lights[i]);
 
             float d = max(dot(n, ls[i]), 0.0);
             d = d * attenuation_factor;
-            vec3 diffuse_component = d * diffuse_color * scene_lights[i].intensity;
+            vec3 diffuse_component = d * diffuse_color * intensity;
 
             vec3 mask_value = texture(ies_masking_textures[i], -ls[i]).rgb;
             float multiplier = mask_value.r;
