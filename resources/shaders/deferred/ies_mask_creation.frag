@@ -13,7 +13,7 @@ layout(std140, binding = 2) uniform Light{
     float quadratic_attenuation;
     float intensity;
     vec4 color;
-} scene_light;
+} scene_lights[NUMBER_OF_LIGHTS];
 
 layout(std140, binding = 3) uniform CommonData{
     vec4 camera_position;
@@ -27,7 +27,7 @@ layout (location = 6) uniform int light_index;
 layout (location = 0) out vec4 ies_mask;
 
 void main(){
-    vec3 light_to_fragment = fragment_position.xyz - scene_light.position.xyz;
+    vec3 light_to_fragment = fragment_position.xyz - scene_lights[light_index].position.xyz;
     float distance_from_light = length(light_to_fragment);
 
     float scaled_distance = distance_from_light / distances_to_furthest_ies_vertex[light_index];

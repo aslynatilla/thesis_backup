@@ -353,35 +353,32 @@ namespace engine {
     }
 
     void DeferredLayer::on_imgui_render() {
-
-
         ImGui::Begin("Light controls");
-
-        auto light_controller = [this](const int index){
-            glm::vec4 light_position = lights[index].get_position();
-            glm::vec3 light_angles = lights[index].get_rotation_in_degrees();
-            if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f, -5.0f, +5.0f,
-                                  "%.3f")) {
-                lights[index].translate_to(light_position);
-                event_pump(std::make_unique<SceneChangedEvent>());
-            }
-            if (ImGui::DragFloat3("Light's Rotation Angles", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f,
-                                  "%.3f")) {
-                lights[index].set_rotation(light_angles);
-                event_pump(std::make_unique<SceneChangedEvent>());
-            }
-            if (ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier[index], 0.00001f, 2.0f, "%.5f",
-                                   ImGuiSliderFlags_Logarithmic)) {
-                event_pump(std::make_unique<SceneChangedEvent>());
-            }
-        };
 
         for(int i = 0; i < number_of_lights; ++i){
             ImGui::Separator();
             ImGui::Text("Light %d", i);
-            light_controller(i);
+
+            glm::vec4 light_position = lights[i].get_position();
+            glm::vec3 light_angles = lights[i].get_rotation_in_degrees();
+            if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f, -5.0f, +5.0f,
+                                  "%.3f")) {
+                lights[i].translate_to(light_position);
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+            if (ImGui::DragFloat3("Light's Rotation Angles", glm::value_ptr(light_angles), 1.0f, 0.0f, 360.0f,
+                                  "%.3f")) {
+                lights[i].set_rotation(light_angles);
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+            if (ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier[i], 0.00001f, 2.0f, "%.5f",
+                                   ImGuiSliderFlags_Logarithmic)) {
+                event_pump(std::make_unique<SceneChangedEvent>());
+            }
+
             ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex[i] * scale_modifier[i]);
         }
+        ImGui::Separator();
 
         if(ImGui::SliderFloat("RSM Sampling displacement", &offset_displacement_radius, 0.0f, 2.0f)){
             event_pump(std::make_unique<SceneChangedEvent>());
