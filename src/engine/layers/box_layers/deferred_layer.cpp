@@ -591,8 +591,10 @@ namespace engine {
         light_buffer->bind_to_binding_point(2);
         light_buffer->unbind_from_uniform_buffer_target();
 
-        //  sizeof(vec4) = 16, sizeof(float) = 4; 1 vec4, 1 float and (2 float per light)
-        common_buffer = std::make_shared<UniformBuffer>((16 * 1) + 4 + (4 * 2) * number_of_lights, GL_DYNAMIC_DRAW);
+        //  sizeof(vec4) = 16, sizeof(float) = 4; 1 vec4,
+        //  1 float (rounded up to 16) and (2 float per light) (rounded up to 16)
+        //  see rule 4: https://community.khronos.org/t/std140-layout/71764/2
+        common_buffer = std::make_shared<UniformBuffer>((16 * 1) + 16 + (16 * 2) * number_of_lights, GL_DYNAMIC_DRAW);
         common_buffer->bind_to_binding_point(3);
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
@@ -600,16 +602,17 @@ namespace engine {
         common_buffer->copy_to_buffer(0, 16, glm::value_ptr(camera_position_projective));
         common_buffer->copy_to_buffer(16, 4, &shadow_threshold);
 
-        int start_offset = 20;
+        int start_offset = 32;
         //TODO: light_camera_far_plane could be different for each light
+        //NOTE: because of the alignment rules for arrays, float[] have each element aligned to 16 bytes
         for(int i = 0; i < number_of_lights; ++i){
             common_buffer->copy_to_buffer(start_offset, 4, &light_camera_far_plane);
-            start_offset += 4;
+            start_offset += 16;
         }
         for(int i = 0; i < number_of_lights; ++i){
-            const auto ies_solid_scale = max_distance_to_ies_vertex[i] * scale_modifier[i];
+            const float ies_solid_scale = max_distance_to_ies_vertex[i] * scale_modifier[i];
             common_buffer->copy_to_buffer(start_offset, 4, &ies_solid_scale);
-            start_offset += 4;
+            start_offset += 16;
         }
         common_buffer->unbind_from_uniform_buffer_target();
     }
