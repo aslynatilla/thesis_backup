@@ -592,7 +592,7 @@ namespace engine {
         light_buffer->unbind_from_uniform_buffer_target();
 
         //  sizeof(vec4) = 16, sizeof(float) = 4; 1 vec4, 1 float and (2 float per light)
-        common_buffer = std::make_shared<UniformBuffer>((16 * 1) + (4 * 3), GL_DYNAMIC_DRAW);
+        common_buffer = std::make_shared<UniformBuffer>((16 * 1) + 4 + (4 * 2) * number_of_lights, GL_DYNAMIC_DRAW);
         common_buffer->bind_to_binding_point(3);
         common_buffer->bind_to_uniform_buffer_target();
         const auto view_camera = camera.lock();
