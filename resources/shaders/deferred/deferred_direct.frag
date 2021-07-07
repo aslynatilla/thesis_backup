@@ -60,7 +60,7 @@ void main(){
     vec4 direct_component = vec4(0.0);
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
         float shadow_factor = compute_shadow_factor(-ls[i], distances_from_lights[i], i);
-        if(shadow_factor >= 0.0){
+        if(shadow_factor > 0.0){
             vec3 attenuations = scene_lights.attenuations_and_intensities[i].rgb;
             float intensity = scene_lights.attenuations_and_intensities[i].a;
 

@@ -15,9 +15,9 @@ namespace engine {
         lights.emplace_back(glm::vec4(0.0f, 0.2f, 0.0f, 1.0f),
                              LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[0].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
-        lights.emplace_back(glm::vec4(0.0f, 2.0f, 0.0f, 1.0f),
+        lights.emplace_back(glm::vec4(0.0f, 2.5f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        lights[1].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
+        lights[1].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
         auto viewport_size = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
@@ -70,11 +70,12 @@ namespace engine {
         deferred_indirect = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                        "resources/shaders/deferred/deferred_indirect.frag");
 
-        const auto path_to_IES_data = files::make_path_absolute("resources/ies/111621PN.IES");
+        const auto path_to_IES_light_1 = files::make_path_absolute("resources/ies/111621PN.IES");
+        const auto path_to_IES_light_2 = files::make_path_absolute("resources/ies/ITL53278.ies");
         ies_light_vaos.push_back(std::make_unique<VertexArray>());
         ies_light_vaos.push_back(std::make_unique<VertexArray>());
-        load_IES_light_as_VAO(path_to_IES_data, 0);
-        load_IES_light_as_VAO(path_to_IES_data, 1);
+        load_IES_light_as_VAO(path_to_IES_light_1, 0);
+        load_IES_light_as_VAO(path_to_IES_light_2, 1);
         uniform_buffers_setup();
     }
 
@@ -477,7 +478,7 @@ namespace engine {
 
         gbuffer_normals_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB)
+                .with_texture_format(GL_RGB16F)
                 .with_data_format(GL_RGB)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
@@ -522,7 +523,7 @@ namespace engine {
                     .using_linear_minification()
                     .as_resource());
             rsm_normal_vec.push_back(OpenGL3_Cubemap_Builder().with_size(texture_resolution[0], texture_resolution[1])
-                    .with_texture_format(GL_RGB)
+                    .with_texture_format(GL_RGB16F)
                     .with_data_format(GL_RGB)
                     .using_underlying_data_type(GL_FLOAT)
                     .using_linear_magnification()
