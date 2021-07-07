@@ -359,6 +359,7 @@ namespace engine {
 
         for(int i = 0; i < number_of_lights; ++i){
             ImGui::Separator();
+            ImGui::PushID(i);
             ImGui::Text("Light %d", i);
             glm::vec4 light_position = lights[i].get_position();
             glm::vec3 light_angles = lights[i].get_rotation_in_degrees();
@@ -378,6 +379,7 @@ namespace engine {
             }
 
             ImGui::Text("Photometric Solid size: %.5f", max_distance_to_ies_vertex[i] * scale_modifier[i]);
+            ImGui::PopID();
         }
         ImGui::Separator();
 
