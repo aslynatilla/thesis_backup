@@ -196,6 +196,8 @@ namespace engine {
 
     void DeferredLayer::update_light_mask(const std::vector<glm::mat4>& light_transforms, int light_index) {
         mask_creation_fbo->bind_as(GL_FRAMEBUFFER);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *rsm_depth_vec[light_index]);
+        mask_creation_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *light_masks[light_index]);
         glViewport(0, 0, texture_resolution[0], texture_resolution[1]);
         glCullFace(GL_FRONT);
         OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -279,8 +281,8 @@ namespace engine {
             deferred_direct->set_int(3 + number_of_lights + i, 3 + number_of_lights + i);
         }
 
-        deferred_direct->set_int(3, 3);
-        deferred_direct->set_int(4, 4);
+//        deferred_direct->set_int(3, 3);
+//        deferred_direct->set_int(4, 4);
         gbuffer_positions_texture->bind_to_slot(0);
         gbuffer_normals_texture->bind_to_slot(1);
         gbuffer_diffuse_texture->bind_to_slot(2);
@@ -358,7 +360,6 @@ namespace engine {
         for(int i = 0; i < number_of_lights; ++i){
             ImGui::Separator();
             ImGui::Text("Light %d", i);
-
             glm::vec4 light_position = lights[i].get_position();
             glm::vec3 light_angles = lights[i].get_rotation_in_degrees();
             if (ImGui::DragFloat3("Light's Global Coordinates", glm::value_ptr(light_position), 0.01f, -5.0f, +5.0f,

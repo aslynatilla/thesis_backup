@@ -57,6 +57,7 @@ void main(){
         ls[i] = normalize(fragment_to_light);
     }
 
+    vec4 direct_component = vec4(0.0);
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
         float shadow_factor = compute_shadow_factor(-ls[i], distances_from_lights[i], i);
         if(shadow_factor >= 0.0){
@@ -75,7 +76,8 @@ void main(){
             float multiplier = mask_value.r;
             bool is_active = (mask_value.b == 1.0);
             diffuse_component *= is_active ? multiplier : 0.0;
-            direct_lighting += vec4(diffuse_component * shadow_factor, 1.0);
+            direct_component += vec4(diffuse_component * shadow_factor, 1.0);
         }
     }
+    direct_lighting = direct_component;
 }
