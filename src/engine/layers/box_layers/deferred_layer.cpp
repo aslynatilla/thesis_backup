@@ -116,15 +116,17 @@ namespace engine {
                 wireframe_drawer->use();
                 wireframe_overlay_output->bind_to_slot(2);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                gbuffer_transformation->bind_to_uniform_buffer_target();
-                gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
-                gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
-                                                       glm::value_ptr(ies_inverse_transposed_matrices[0]));
-                gbuffer_transformation->unbind_from_uniform_buffer_target();
                 material_buffer->bind_to_uniform_buffer_target();
                 material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
                 material_buffer->unbind_from_uniform_buffer_target();
-                OpenGL3_Renderer::draw(*ies_light_vaos[0]);
+                for (int i = 0; i < number_of_lights; ++i) {
+                    gbuffer_transformation->bind_to_uniform_buffer_target();
+                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[i]));
+                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
+                                                           glm::value_ptr(ies_inverse_transposed_matrices[i]));
+                    gbuffer_transformation->unbind_from_uniform_buffer_target();
+                    OpenGL3_Renderer::draw(*ies_light_vaos[i]);
+                }
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 debug_fbo->unbind_from(GL_FRAMEBUFFER);
             }
@@ -141,15 +143,17 @@ namespace engine {
                 wireframe_drawer->use();
                 wireframe_overlay_output->bind_to_slot(2);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                gbuffer_transformation->bind_to_uniform_buffer_target();
-                gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
-                gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
-                                                       glm::value_ptr(ies_inverse_transposed_matrices[0]));
-                gbuffer_transformation->unbind_from_uniform_buffer_target();
                 material_buffer->bind_to_uniform_buffer_target();
                 material_buffer->copy_to_buffer(0, 16, glm::value_ptr(wireframe_color));
                 material_buffer->unbind_from_uniform_buffer_target();
-                OpenGL3_Renderer::draw(*ies_light_vaos[0]);
+                for (int i = 0; i < number_of_lights; ++i) {
+                    gbuffer_transformation->bind_to_uniform_buffer_target();
+                    gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[i]));
+                    gbuffer_transformation->copy_to_buffer(128, 4 * 4 * 4,
+                                                           glm::value_ptr(ies_inverse_transposed_matrices[i]));
+                    gbuffer_transformation->unbind_from_uniform_buffer_target();
+                    OpenGL3_Renderer::draw(*ies_light_vaos[i]);
+                }
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 debug_fbo->unbind_from(GL_FRAMEBUFFER);
             }
