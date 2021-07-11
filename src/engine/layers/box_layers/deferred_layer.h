@@ -111,6 +111,8 @@ namespace engine{
 
         std::unique_ptr<OpenGL3_FrameBuffer> direct_pass_fbo;
         std::unique_ptr<OpenGL3_Texture2D> direct_pass_output;
+        std::unique_ptr<OpenGL3_FrameBuffer> debug_fbo;
+        std::unique_ptr<OpenGL3_Texture2D> wireframe_overlay_output;
 
         std::unique_ptr<OpenGL3_FrameBuffer> indirect_pass_fbo;
         std::unique_ptr<OpenGL3_Texture1D> offsets_texture;
@@ -143,6 +145,7 @@ namespace engine{
         void ies_mask_creation_setup(std::array<GLenum, 3>& color_attachments);
         void rsm_creation_setup(std::array<GLenum, 3>& color_attachments);
         void direct_pass_setup();
+        void debug_setup();
         void indirect_pass_setup();
         void uniform_buffers_setup();
 
@@ -156,6 +159,7 @@ namespace engine{
         void load_IES_light_as_VAO(const std::filesystem::path& path_to_IES_data, int light_index);
         void update_camera_related_buffers();
         void update_scene_buffers_and_representations();
+
     };
 }
 

@@ -8,8 +8,8 @@ layout (std140, binding = 1) uniform MaterialProperties{
     float shininess;
 };
 
-layout (location = 2) out vec4 gbuff_diffuse;
+layout (location = 0) out vec4 wireframe_overlay;
 
 void main(){
-    gbuff_diffuse = diffuse_color;
+    wireframe_overlay = diffuse_color;
 }

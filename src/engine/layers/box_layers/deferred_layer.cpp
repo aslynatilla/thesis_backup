@@ -39,6 +39,7 @@ namespace engine {
                 .as_resource();
 
         gbuffer_creation_setup(color_attachments);
+        debug_setup();
         ies_mask_creation_setup(color_attachments);     // ies_mask_creation_setup generates a texture that
         rsm_creation_setup(color_attachments);          // rsm_creation_setup uses to generate the RSM
         direct_pass_setup();
@@ -56,7 +57,7 @@ namespace engine {
         gbuffer_creation = shader::create_shader_from("resources/shaders/deferred/gbuffer_creation.vert",
                                                       "resources/shaders/deferred/gbuffer_creation.frag");
         wireframe_drawer = shader::create_shader_from("resources/shaders/deferred/gbuffer_creation.vert",
-                                                      "resources/shaders/deferred/wireframe_to_gbuffer.frag");
+                                                      "resources/shaders/deferred/wireframe.frag");
         quad_render = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                  "resources/shaders/deferred/quad_rendering.frag");
         deferred_direct = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
@@ -78,6 +79,7 @@ namespace engine {
         load_IES_light_as_VAO(path_to_IES_light_2, 1);
         uniform_buffers_setup();
     }
+
 
     void DeferredLayer::on_detach() {}
 
@@ -107,10 +109,12 @@ namespace engine {
             create_gbuffer();
             //  conditionally, draw_wireframe() //TODO: extract function
             if (draw_wireframe_in_scene) {
-                gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                debug_fbo->bind_as(GL_FRAMEBUFFER);
                 glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+                OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT);
                 wireframe_drawer->use();
-                gbuffer_diffuse_texture->bind_to_slot(2);
+                wireframe_overlay_output->bind_to_slot(2);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 gbuffer_transformation->bind_to_uniform_buffer_target();
                 gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
@@ -122,7 +126,7 @@ namespace engine {
                 material_buffer->unbind_from_uniform_buffer_target();
                 OpenGL3_Renderer::draw(*ies_light_vaos[0]);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+                debug_fbo->unbind_from(GL_FRAMEBUFFER);
             }
             scene_changed = false;
             camera_moved = false;
@@ -130,10 +134,12 @@ namespace engine {
             update_camera_related_buffers();
             create_gbuffer();
             if (draw_wireframe_in_scene) {
-                gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
+                debug_fbo->bind_as(GL_FRAMEBUFFER);
                 glViewport(0, 0, target_resolution[0], target_resolution[1]);
+                OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+                OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT);
                 wireframe_drawer->use();
-                gbuffer_diffuse_texture->bind_to_slot(2);
+                wireframe_overlay_output->bind_to_slot(2);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 gbuffer_transformation->bind_to_uniform_buffer_target();
                 gbuffer_transformation->copy_to_buffer(64, 4 * 4 * 4, glm::value_ptr(ies_model_matrices[0]));
@@ -145,7 +151,7 @@ namespace engine {
                 material_buffer->unbind_from_uniform_buffer_target();
                 OpenGL3_Renderer::draw(*ies_light_vaos[0]);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                gbuffer_creation_fbo->unbind_from(GL_FRAMEBUFFER);
+                debug_fbo->unbind_from(GL_FRAMEBUFFER);
             }
             camera_moved = false;
         }
@@ -353,6 +359,8 @@ namespace engine {
         OpenGL3_Renderer::draw(quad.vao);
         indirect_pass_output->bind_to_slot(0);
         OpenGL3_Renderer::draw(quad.vao);
+        wireframe_overlay_output->bind_to_slot(0);
+        OpenGL3_Renderer::draw(quad.vao);
     }
 
     void DeferredLayer::on_imgui_render() {
@@ -447,6 +455,29 @@ namespace engine {
                                                      *direct_pass_output);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
         direct_pass_fbo->unbind_from(GL_FRAMEBUFFER);
+    }
+
+    void DeferredLayer::debug_setup() {
+        constexpr std::array<float, 4> transparent_border{0.0f, 0.0f, 0.0f, 0.0f};
+        wireframe_overlay_output = OpenGL3_Texture2D_Builder()
+                .with_size(target_resolution[0], target_resolution[1])
+                .with_texture_format(GL_RGBA)
+                .with_data_format(GL_RGBA)
+                .using_underlying_data_type(GL_FLOAT)
+                .using_linear_magnification()
+                .using_linear_minification()
+                .using_clamping_to_borders()
+                .using_border_color(transparent_border)
+                .as_resource();
+
+        debug_fbo = std::make_unique<OpenGL3_FrameBuffer>();
+        debug_fbo->bind_as(GL_FRAMEBUFFER);
+        debug_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                                          *gbuffer_depth_texture);
+        debug_fbo->texture_to_attachment_point(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                                          *wireframe_overlay_output);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        debug_fbo->unbind_from(GL_FRAMEBUFFER);
     }
 
     void DeferredLayer::gbuffer_creation_setup(const std::array<GLenum, 3>& color_attachments) {
