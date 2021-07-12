@@ -160,6 +160,7 @@ namespace engine{
         void update_camera_related_buffers();
         void update_scene_buffers_and_representations();
 
+        void draw_wireframes();
     };
 }
 
