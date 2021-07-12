@@ -71,12 +71,12 @@ namespace engine {
         deferred_indirect = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                        "resources/shaders/deferred/deferred_indirect.frag");
 
-        const auto path_to_IES_light_1 = files::make_path_absolute("resources/ies/111621PN.IES");
-        const auto path_to_IES_light_2 = files::make_path_absolute("resources/ies/ITL53278.ies");
-        ies_light_vaos.push_back(std::make_unique<VertexArray>());
-        ies_light_vaos.push_back(std::make_unique<VertexArray>());
-        load_IES_light_as_VAO(path_to_IES_light_1, 0);
-        load_IES_light_as_VAO(path_to_IES_light_2, 1);
+        ies_paths = {files::make_path_absolute("resources/ies/111621PN.IES"),
+                     files::make_path_absolute("resources/ies/ITL53278.ies")};
+        for (int i = 0; i < number_of_lights; ++i) {
+            ies_light_vaos.push_back(std::make_unique<VertexArray>());
+            load_IES_light_as_VAO(ies_paths[i], i);
+        }
         uniform_buffers_setup();
     }
 

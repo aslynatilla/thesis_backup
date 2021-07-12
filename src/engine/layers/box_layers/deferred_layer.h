@@ -84,6 +84,8 @@ namespace engine{
         glm::vec4 wireframe_color = {0.20f, 1.00f, 1.00f, 0.60f};
 
         int number_of_lights = 2;
+        std::vector<std::filesystem::path> ies_paths;
+
         std::vector<std::unique_ptr<VertexArray>> ies_light_vaos;
         std::vector<Point_Light> lights;
         std::vector<glm::mat4> ies_model_matrices{{}, {}};
@@ -92,7 +94,7 @@ namespace engine{
         RenderingQuad quad;
 
         std::unique_ptr<OpenGL3_FrameBuffer> gbuffer_creation_fbo;
-        std::unique_ptr<OpenGL3_Texture2D> gbuffer_depth_texture;           //TODO: this might be unnecessary
+        std::unique_ptr<OpenGL3_Texture2D> gbuffer_depth_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_positions_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_normals_texture;
         std::unique_ptr<OpenGL3_Texture2D> gbuffer_diffuse_texture;
@@ -137,6 +139,7 @@ namespace engine{
         void create_gbuffer();
         void update_rsm(const std::vector<glm::mat4>& light_transformations, int light_index);
         void update_light_mask(const std::vector<glm::mat4>& light_transforms, int light_index);
+        void draw_wireframes();
         void render_direct_lighting();
         void render_indirect_lighting() const;
         void sum_lighting_components() const;
@@ -160,7 +163,6 @@ namespace engine{
         void update_camera_related_buffers();
         void update_scene_buffers_and_representations();
 
-        void draw_wireframes();
     };
 }
 
