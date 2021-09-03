@@ -5,15 +5,12 @@ in vec2 uv_coords;
 
 out vec4 indirect_lighting;
 
-layout(std140, binding = 2) uniform Light{
-    vec4 position;
-    vec4 direction;
-    float constant_attenuation;
-    float linear_attenuation;
-    float quadratic_attenuation;
-    float intensity;
-    vec4 color;
-} scene_lights[NUMBER_OF_LIGHTS];
+layout(std140, binding = 2) uniform Lights{
+    vec4 positions[NUMBER_OF_LIGHTS];
+    vec4 directions[NUMBER_OF_LIGHTS];
+    vec4 attenuations_and_intensities[NUMBER_OF_LIGHTS];    //constant, linear, quadratic attenuation and intensity
+    vec4 colors[NUMBER_OF_LIGHTS];
+} scene_lights;
 
 layout (location = 0) uniform sampler2D g_positions;
 layout (location = 1) uniform sampler2D g_normals;
@@ -37,7 +34,7 @@ void main(){
 
     vec3 ls[NUMBER_OF_LIGHTS];
     for(int i = 0; i < NUMBER_OF_LIGHTS; ++i){
-        vec3 fragment_to_light = scene_lights[i].position.xyz - world_position;
+        vec3 fragment_to_light = scene_lights.positions[i].xyz - world_position;
         ls[i] = normalize(fragment_to_light);
     }
 

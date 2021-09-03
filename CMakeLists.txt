@@ -99,4 +99,7 @@ endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES MSVC)
     target_compile_options(cornell_box PRIVATE /WX /W4 /w44265 /w44061 /w44062 /permissive- /Wv:18 /wd4201 /w44800)
+    if(CMAKE_BUILD_TYPE MATCHES Release)
+        target_compile_options(cornell_box PRIVATE /wd4189 /wd4100)
+    endif()
 endif ()
