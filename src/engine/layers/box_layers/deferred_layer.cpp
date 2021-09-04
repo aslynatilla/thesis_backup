@@ -136,7 +136,7 @@ namespace engine {
     void DeferredLayer::create_gbuffer() {
         gbuffer_creation_fbo->bind_as(GL_FRAMEBUFFER);
         glViewport(0, 0, target_resolution[0], target_resolution[1]);
-        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+        OpenGL3_Renderer::set_clear_color(0.0f, 0.0f, 0.0f, 0.0f);
         OpenGL3_Renderer::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gbuffer_creation->use();
 
@@ -513,8 +513,8 @@ namespace engine {
 
         gbuffer_diffuse_texture = OpenGL3_Texture2D_Builder()
                 .with_size(target_resolution[0], target_resolution[1])
-                .with_texture_format(GL_RGB)
-                .with_data_format(GL_RGB)
+                .with_texture_format(GL_RGBA)
+                .with_data_format(GL_RGBA)
                 .using_underlying_data_type(GL_FLOAT)
                 .using_linear_magnification()
                 .using_linear_minification()

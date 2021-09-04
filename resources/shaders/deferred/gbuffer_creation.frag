@@ -19,5 +19,8 @@ void main(){
     gbuff_position = vec4(world_position, 1.0);
     gbuff_normal = vec4(world_normal, 1.0);
     vec4 texture_color = texture(diffuse_texture, uv_coords).rgba;
+    if( texture_color.a < 0.1 ) {
+        discard;
+    }
     gbuff_diffuse = diffuse_color * texture_color;
 }
