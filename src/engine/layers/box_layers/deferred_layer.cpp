@@ -12,10 +12,10 @@ namespace engine {
         scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
 
         lights.reserve(number_of_lights);
-        lights.emplace_back(glm::vec4(0.0f, 0.2f, 0.0f, 1.0f),
+        lights.emplace_back(glm::vec4(-1.5f, 0.2f, 0.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[0].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
-        lights.emplace_back(glm::vec4(0.0f, 2.5f, 0.0f, 1.0f),
+        lights.emplace_back(glm::vec4(0.0f, 2.5f, 4.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[1].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
