@@ -1,5 +1,5 @@
 #version 430 core
-#define NUMBER_OF_LIGHTS 2
+#define NUMBER_OF_LIGHTS 1
 
 in vec2 uv_coords;
 
@@ -30,7 +30,7 @@ layout (location = 2) uniform sampler2D g_diffuse;
 
 layout (location = 3) uniform samplerCube light_shadow_maps[NUMBER_OF_LIGHTS];
 //      5 = 3 + NUMBER_OF_LIGHTS
-layout (location = 5) uniform samplerCube ies_masking_textures[NUMBER_OF_LIGHTS];
+layout (location = 4) uniform samplerCube ies_masking_textures[NUMBER_OF_LIGHTS];
 
 float compute_shadow_factor(vec3 light_to_fragment, float distance_from_light, int index){
     float depth = texture(light_shadow_maps[index], light_to_fragment).r;

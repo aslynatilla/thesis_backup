@@ -1,5 +1,5 @@
 #version 430 core
-#define NUMBER_OF_LIGHTS 2
+#define NUMBER_OF_LIGHTS 1
 
 in vec2 uv_coords;
 
@@ -24,9 +24,9 @@ layout (location = 5) uniform samplerCube rsm_position_maps[NUMBER_OF_LIGHTS];
 //                                  5 + NUMBER_OF_LIGHTS * 2
 //      ...and so on.
 
-layout (location = 7) uniform samplerCube rsm_normal_maps[NUMBER_OF_LIGHTS];
-layout (location = 9) uniform samplerCube rsm_flux_maps[NUMBER_OF_LIGHTS];
-layout (location = 11) uniform float displacement_sphere_radiuses[NUMBER_OF_LIGHTS];
+layout (location = 6) uniform samplerCube rsm_normal_maps[NUMBER_OF_LIGHTS];
+layout (location = 7) uniform samplerCube rsm_flux_maps[NUMBER_OF_LIGHTS];
+layout (location = 8) uniform float displacement_sphere_radiuses[NUMBER_OF_LIGHTS];
 
 void main(){
     vec3 world_position = texture(g_positions, uv_coords).xyz;

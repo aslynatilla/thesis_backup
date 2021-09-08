@@ -1,5 +1,5 @@
 #version 430 core
-#define NUMBER_OF_LIGHTS 2
+#define NUMBER_OF_LIGHTS 1
 
 in vec4 fragment_position;
 in vec4 light_space_fragment_position;

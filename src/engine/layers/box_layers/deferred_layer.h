@@ -83,7 +83,7 @@ namespace engine{
         bool draw_wireframe_in_scene = true;
         glm::vec4 wireframe_color = {0.20f, 1.00f, 1.00f, 0.60f};
 
-        int number_of_lights = 2;
+        int number_of_lights = 1;
         std::vector<std::filesystem::path> ies_paths;
 
         std::vector<std::unique_ptr<VertexArray>> ies_light_vaos;

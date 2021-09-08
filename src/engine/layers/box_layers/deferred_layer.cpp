@@ -12,12 +12,9 @@ namespace engine {
         scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
 
         lights.reserve(number_of_lights);
-        lights.emplace_back(glm::vec4(-1.5f, 0.2f, 0.0f, 1.0f),
+        lights.emplace_back(glm::vec4(-1.5f, 0.5f, 0.77f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        lights[0].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
-        lights.emplace_back(glm::vec4(0.0f, 2.5f, 4.0f, 1.0f),
-                            LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        lights[1].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
+        lights[0].set_rotation(glm::vec3(130.0f, 90.0f, 0.0f));
 
         auto viewport_size = std::make_unique<float[]>(4);
         glGetFloatv(GL_VIEWPORT, viewport_size.get());
@@ -71,8 +68,7 @@ namespace engine {
         deferred_indirect = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                        "resources/shaders/deferred/deferred_indirect.frag");
 
-        ies_paths = {files::make_path_absolute("resources/ies/111621PN.IES"),
-                     files::make_path_absolute("resources/ies/ITL53278.ies")};
+        ies_paths = {files::make_path_absolute("resources/ies/TEST.IES"),};
         for (int i = 0; i < number_of_lights; ++i) {
             ies_light_vaos.push_back(std::make_unique<VertexArray>());
             load_IES_light_as_VAO(ies_paths[i], i);
@@ -375,7 +371,7 @@ namespace engine {
                 lights[i].set_rotation(light_angles);
                 event_pump(std::make_unique<SceneChangedEvent>());
             }
-            if (ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier[i], 0.00001f, 2.0f, "%.5f",
+            if (ImGui::SliderFloat("Photometric Solid scaling", &scale_modifier[i], 0.000001f, 2.0f, "%.6f",
                                    ImGuiSliderFlags_Logarithmic)) {
                 event_pump(std::make_unique<SceneChangedEvent>());
             }
