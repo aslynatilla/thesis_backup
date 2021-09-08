@@ -12,10 +12,10 @@ namespace engine {
         scene_data = scenes::SceneLoader::load_scene_from(path_to_cornell, postprocessing_flags);
 
         lights.reserve(number_of_lights);
-        lights.emplace_back(glm::vec4(1.4f, 1.9f, 1.4f, 1.0f),
+        lights.emplace_back(glm::vec4(2.5f, 1.0f, 1.0f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[0].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
-        lights.emplace_back(glm::vec4(1.4f, 1.9f, 1.4f, 1.0f),
+        lights.emplace_back(glm::vec4(1.46f, 2.99f, 2.9f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[1].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
@@ -77,6 +77,8 @@ namespace engine {
             ies_light_vaos.push_back(std::make_unique<VertexArray>());
             load_IES_light_as_VAO(ies_paths[i], i);
         }
+        max_distance_to_ies_vertex[0] = 0.00003f;
+        max_distance_to_ies_vertex[1] = 0.00003f;
         uniform_buffers_setup();
     }
 

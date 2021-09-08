@@ -52,8 +52,6 @@ void main(){
     float intensity_modifier = ies_mask_data.g;
 
     //  Temporarily disabling this line allows to render without a IES mask
-    vec4 tex_color = texture(diffuse_texture, fragment_uv_coords).rgba;
-    computed_flux *= tex_color;
     fragment_fluxes = vec4(computed_flux.xyz * intensity_modifier * is_emitting_light_along_l, 1.0);
     //  fragment_fluxes = computed_flux;
 }
