@@ -8,14 +8,14 @@ namespace engine {
         constexpr unsigned int postprocessing_flags = aiProcess_GenNormals |
                                                       aiProcess_Triangulate |
                                                       aiProcess_ValidateDataStructure;
-        const auto path_to_sponza = files::make_path_absolute("resources/sponza/small_sponza.obj");
-        scene_data = scenes::SceneLoader::load_scene_from(path_to_sponza, postprocessing_flags);
+        const auto path_to_cornell = files::make_path_absolute("resources/cornell_victory.obj");
+        scene_data = scenes::SceneLoader::load_scene_from(path_to_cornell, postprocessing_flags);
 
         lights.reserve(number_of_lights);
-        lights.emplace_back(glm::vec4(-1.5f, 0.2f, 0.0f, 1.0f),
+        lights.emplace_back(glm::vec4(1.4f, 1.9f, 1.4f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
-        lights[0].set_rotation(glm::vec3(0.0f, 0.0f, 0.0f));
-        lights.emplace_back(glm::vec4(0.0f, 2.5f, 4.0f, 1.0f),
+        lights[0].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
+        lights.emplace_back(glm::vec4(1.4f, 1.9f, 1.4f, 1.0f),
                             LightAttenuationParameters{1.0f, 0.5f, 1.8f});
         lights[1].set_rotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
@@ -71,8 +71,8 @@ namespace engine {
         deferred_indirect = shader::create_shader_from("resources/shaders/deferred/quad_rendering.vert",
                                                        "resources/shaders/deferred/deferred_indirect.frag");
 
-        ies_paths = {files::make_path_absolute("resources/ies/111621PN.IES"),
-                     files::make_path_absolute("resources/ies/ITL53278.ies")};
+        ies_paths = {files::make_path_absolute("resources/ies/TEST.IES"),
+                     files::make_path_absolute("resources/ies/TEST.IES")};
         for (int i = 0; i < number_of_lights; ++i) {
             ies_light_vaos.push_back(std::make_unique<VertexArray>());
             load_IES_light_as_VAO(ies_paths[i], i);

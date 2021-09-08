@@ -77,8 +77,8 @@ install_file_to_bin(resources/shaders/deferred quad_rendering.vert)
 install_file_to_bin(resources/shaders/deferred quad_rendering.frag)
 
 #   Copy cornell box scene to resources
-install_file_to_bin(resources cornell_box_multimaterial.obj)
-install_file_to_bin(resources cornell_box.mtl)
+install_file_to_bin(resources cornell_victory.obj)
+install_file_to_bin(resources cornell_victory.mtl)
 install_file_to_bin(resources Winged_Victory.obj)
 
 set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE 1)
